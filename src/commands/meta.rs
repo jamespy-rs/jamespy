@@ -12,6 +12,6 @@ pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
 // Post a link to my source code!
 #[poise::command(slash_command, prefix_command, category = "Meta")]
 pub async fn source(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.say("<https://github.com/jamesbt365/jamespy-rs>\n<https://github.com/jamesbt365/jamespy/tree/frontend>").await?;
+    ctx.say("https://github.com/jamesbt365/jamespy-rs\nhttps://github.com/jamesbt365/jamespy/tree/frontend").await?;
     Ok(())
 }
