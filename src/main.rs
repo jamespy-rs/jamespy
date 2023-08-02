@@ -1,3 +1,7 @@
+mod commands;
+use commands::*;
+
+
 use poise::serenity_prelude as serenity;
 use std::{env::var, time::Duration};
 
@@ -43,7 +47,11 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 #[tokio::main]
 async fn main() {
     let options = poise::FrameworkOptions {
-        commands: vec![register()],
+        commands: vec![
+            register(),
+            meta::shutdown(),
+            meta::source(),
+            ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
             edit_tracker: Some(poise::EditTracker::for_timespan(Duration::from_secs(3600))),
