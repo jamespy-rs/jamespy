@@ -1,27 +1,47 @@
 mod commands;
 use commands::*;
-
+mod database;
+mod event_handler;
+//use sqlx::query;
 
 use poise::serenity_prelude as serenity;
 use std::{env::var, time::Duration};
+use database::init_data;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
-async fn event_handler(
-    _ctx: &serenity::Context,
-    event: &poise::Event<'_>,
-    _ctx_poise: poise::FrameworkContext<'_, Data, Error>,
-    _data: &Data,
-) -> Result<(), Error> {
-    match event {
-        _ => (),
+pub struct Data {
+    pub db: database::DbPool,
+}
+
+/* #[poise::command(prefix_command, hide_in_help)]
+async fn testdb(ctx: Context<'_>) -> Result<(), Error> {
+    let db_pool = &ctx.data().db;
+
+    // Increment the "test" column using an SQL query
+    let update_result = query!("UPDATE your_table_name SET test = test + 1")
+        .execute(db_pool)
+        .await;
+
+    if update_result.is_ok() {
+        // Query the updated value
+        let updated_value: i32 = query!("SELECT test FROM your_table_name")
+            .fetch_one(db_pool)
+            .await
+            .map(|row| row.test)
+            .unwrap_or(0);
+
+        println!("{}", format!("Database connection successful! New test value: {}", updated_value))
+    } else {
+        println!("Failed to update the test value in the database.");
     }
 
     Ok(())
 }
 
-pub struct Data {}
+
+ */
 
 #[poise::command(prefix_command, hide_in_help)]
 async fn register(ctx: Context<'_>) -> Result<(), Error> {
@@ -46,6 +66,10 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 
 #[tokio::main]
 async fn main() {
+
+
+    let db_pool = init_data().await;
+
     let options = poise::FrameworkOptions {
         commands: vec![
             register(),
@@ -74,14 +98,20 @@ async fn main() {
 
         skip_checks_for_owners: false,
         event_handler: |ctx, event, framework, data| {
-            Box::pin(event_handler(ctx, event, framework, data))
+            Box::pin(event_handler::event_handler(ctx, event, framework, data))
         },
         ..Default::default()
     };
 
     poise::Framework::builder()
         .token(var("JAMESPY_TOKEN").expect("JAMESPY_TOKEN is not set. aborting..."))
-        .setup(move |_ctx, _ready, _framework| Box::pin(async move { Ok(Data {}) }))
+        .setup(move |_ctx, _ready, _framework| {
+            Box::pin(async move {
+                Ok(Data {
+                    db: db_pool.clone(),
+                })
+            })
+        })
         .options(options)
         .intents(
             serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
