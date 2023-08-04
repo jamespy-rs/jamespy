@@ -1,7 +1,7 @@
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::env;
 use bb8_redis::{
-    bb8::{Pool, PooledConnection},
+    bb8::Pool,
     RedisConnectionManager,
 };
 
