@@ -53,18 +53,12 @@ pub async fn event_handler(
             let guild_id = guild.id.0.to_string();
             let redis_key = format!("guild:{}", guild_id);
 
-            let result: redis::RedisResult<()> = redis_conn
+            // Fix that.
+            let _: redis::RedisResult<()> = redis_conn
                 .hset(&redis_key, "name", guild.name.clone())
                 .await;
 
-            match result {
-                Ok(_) => {
-                    println!("Added guild '{}' to Redis with key '{}'", guild.name, redis_key);
-                }
-                Err(err) => {
-                    eprintln!("Failed to add guild to Redis: {:?}", err);
-                }
-            }
+
         }
         poise::Event::GuildDelete { incomplete, full } => {
             let redis_pool = &data.redis;
@@ -78,6 +72,39 @@ pub async fn event_handler(
 
 
         }
+        poise::Event::ReactionAdd { add_reaction } => {
+            // Get channel name and guild name from redis
+            // You can either use a partial member and get the user from that or grab it from cache (need to cache it first)
+        }
+        poise::Event::ReactionRemove { removed_reaction } => {
+            // Get channel name and guild name from redis
+            // You can either use a partial member and get the user from that or grab it from cache (need to cache it first)
+        }
+        poise::Event::ReactionRemoveAll { channel_id, removed_from_message_id } => {
+            // Need to do the funny here.
+        }
+        poise::Event::ChannelCreate { channel } => {
+
+        }
+        poise::Event::ChannelDelete { channel } => {
+
+        }
+        poise::Event::CategoryCreate { category } => {
+
+        }
+        poise::Event::CategoryDelete { category } => {
+
+        }
+        poise::Event::ThreadCreate { thread } => {
+
+        }
+        poise::Event::ThreadDelete { thread } => {
+
+        }
+        poise::Event::VoiceStateUpdate { old, new } => {
+            // Oh this one will be fun..
+        }
+
         // Remove on guild remove
         // Track channel, thread deletion/creation/edits
         // Track edits/deletion of messages & cache them properly with a limit of like 1000?
