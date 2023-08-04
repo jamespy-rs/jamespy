@@ -29,8 +29,7 @@ pub async fn event_handler(
                 Some(name) => name,
                 None => "None".to_owned(),
             };
-
-            println!("[{}] [{}] Message ID: {}", guild_name, new_message.channel_id, new_message.id.0);
+            println!("[{}] [#{}] {}: {}", guild_name, new_message.channel_id, new_message.author.tag(), new_message.content);
 
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
@@ -49,7 +48,7 @@ pub async fn event_handler(
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
-            let guild_id = guild.id.0.to_string(); // Convert guild ID to string
+            let guild_id = guild.id.0.to_string();
             let redis_key = format!("guild:{}", guild_id);
 
             let result: redis::RedisResult<()> = redis_conn
@@ -65,6 +64,13 @@ pub async fn event_handler(
                 }
             }
         }
+        // Remove on guild remove
+        // Track channel, thread deletion/creation/edits
+        // Track edits/deletion of messages & cache them properly with a limit of like 1000?
+        // user join/leave tracking
+        // reaction add/remove/remove all
+        // thread member updates?
+        // user updates
 
         _ => (),
     }
