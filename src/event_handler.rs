@@ -1,3 +1,4 @@
+use bb8_redis::redis::{self, AsyncCommands};
 use poise::serenity_prelude as serenity;
 use sqlx::query;
 
@@ -14,6 +15,10 @@ pub async fn event_handler(
     match event {
         poise::Event::Message { new_message } => {
             let db_pool = &data.db;
+            let redis_pool = &data.redis;
+            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
+            let result: redis::RedisResult<()> = redis_conn.set("test", "test").await;
+
             let guild_id = new_message.guild_id.map(|id| id.0 as i64);
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
@@ -28,6 +33,7 @@ pub async fn event_handler(
             .execute(&*db_pool)
             .await;
         }
+
 
         _ => (),
     }

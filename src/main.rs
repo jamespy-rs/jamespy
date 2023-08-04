@@ -7,12 +7,14 @@ mod event_handler;
 use poise::serenity_prelude as serenity;
 use std::{env::var, time::Duration};
 use database::init_data;
+use database::init_redis_pool;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
 pub struct Data {
     pub db: database::DbPool,
+    pub redis: database::RedisPool,
 }
 
 /* #[poise::command(prefix_command, hide_in_help)]
@@ -69,6 +71,7 @@ async fn main() {
 
 
     let db_pool = init_data().await;
+    let redis_pool = init_redis_pool().await;
 
     let options = poise::FrameworkOptions {
         commands: vec![
@@ -109,6 +112,7 @@ async fn main() {
             Box::pin(async move {
                 Ok(Data {
                     db: db_pool.clone(),
+                    redis: redis_pool.clone(),
                 })
             })
         })

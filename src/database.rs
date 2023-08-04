@@ -1,9 +1,16 @@
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::env;
+use bb8_redis::{
+    bb8::{Pool, PooledConnection},
+    RedisConnectionManager,
+};
+
 
 
 // Could you tell I have no idea what i'm doing?
 pub type DbPool = PgPool;
+pub type RedisPool = Pool<RedisConnectionManager>;
+
 
 pub async fn init_data() -> DbPool {
     let database_url =
@@ -14,9 +21,24 @@ pub async fn init_data() -> DbPool {
         .await
         .expect("Failed to connect to database!");
 
-    // Apply migrations
     sqlx::migrate!().run(&database).await.expect("Unable to apply migrations!");
 
     database
 }
+
+pub async fn init_redis_pool() -> RedisPool {
+    let redis_url = env::var("REDIS_URL").expect("No Redis URL found in environment variables!");
+
+    let manager = RedisConnectionManager::new(redis_url)
+        .expect("Failed to create Redis connection manager!");
+
+    let pool = Pool::builder()
+        .build(manager)
+        .await
+        .expect("Failed to create Redis connection pool!");
+
+    pool
+}
+
+
 
