@@ -1,5 +1,5 @@
 use bb8_redis::redis::{self, AsyncCommands};
-use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::{self as serenity, Channel};
 use sqlx::query;
 
 use crate::Data;
@@ -20,7 +20,6 @@ pub async fn event_handler(
             let guild_id = new_message.guild_id.map(|id| id.0 as i64).unwrap_or_default();
 
             // Handle dms vs invalid guild and add the guild if it isn't added for some reason.
-
             let guild_key = format!("guild:{}", &guild_id);
 
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
@@ -30,8 +29,18 @@ pub async fn event_handler(
                 Some(name) => name,
                 None => "None".to_owned(),
             };
-            println!("[{}] [#{}] {}: {}", guild_name, new_message.channel_id, new_message.author.tag(), new_message.content);
-            // Replace with channel name, but I need to cache this first meaning I need to improve code first.
+
+            let channel_name: String;
+            let channel_key = format!("channel:{}", new_message.channel_id.0);
+
+            let channel_name_redis: Option<String> = redis_conn.hget(&channel_key, "name").await.expect("Failed to fetch channel from cache.");
+            if let Some(name) = channel_name_redis {
+                channel_name = name;
+            } else {
+                channel_name = format!("{}", new_message.channel_id.0);
+            }
+
+            println!("[{}] [#{}] {}: {}", guild_name, channel_name, new_message.author.name, new_message.content);
 
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
@@ -46,20 +55,40 @@ pub async fn event_handler(
             .execute(&*db_pool)
             .await;
         }
+
+
+
         poise::Event::GuildCreate { guild, is_new } => {
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
             let guild_id = guild.id.0.to_string();
-            let redis_key = format!("guild:{}", guild_id);
+            let guild_redis_key = format!("guild:{}", guild_id);
 
-            // Fix that.
             let _: redis::RedisResult<()> = redis_conn
-                .hset(&redis_key, "name", guild.name.clone())
+                .hset(&guild_redis_key, "name", guild.name.clone())
                 .await;
 
+            for (channel_id, channel) in &guild.channels {
+                let channel_redis_key = format!("channel:{}", channel_id.0);
 
+                let channel_name = match channel {
+                    Channel::Guild(guild_channel) => guild_channel.name.clone(),
+                    Channel::Category(category_channel) => category_channel.name.clone(),
+                    // Maybe I need Channel:Private too?
+                    _ => todo!(),
+                };
+
+                let _: redis::RedisResult<()> = redis_conn
+                    .hset(&channel_redis_key, "name", channel_name)
+                    .await;
+
+                let _: redis::RedisResult<()> = redis_conn
+                    .sadd(&guild_redis_key, channel_id.0.to_string())
+                    .await;
+            }
         }
+
         poise::Event::GuildDelete { incomplete, full } => {
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
