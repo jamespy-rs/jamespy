@@ -78,6 +78,8 @@ async fn main() {
             register(),
             meta::shutdown(),
             meta::source(),
+            meta::about(),
+            meta::help(),
             ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),

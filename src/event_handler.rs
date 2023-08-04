@@ -24,7 +24,7 @@ pub async fn event_handler(
             let guild_key = format!("guild:{}", &guild_id);
 
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
-            let guild_name: Option<String> = redis_conn.hget(&guild_key, "name").await.expect("Failed to fetch guild name from Redis");
+            let guild_name: Option<String> = redis_conn.hget(&guild_key, "name").await.expect("Failed to fetch guild from cache.");
 
             let guild_name = match guild_name {
                 Some(name) => name,
@@ -66,6 +66,18 @@ pub async fn event_handler(
                 }
             }
         }
+        poise::Event::GuildDelete { incomplete, full } => {
+            let redis_pool = &data.redis;
+            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
+
+
+            let guild_id = incomplete.id.0.to_string();
+            let guild_key: String = format!("guild:{}", &guild_id);
+            let guild_name: Option<String> = redis_conn.hget(&guild_key, "name").await.expect("Failed to fetch guild from cache.");
+            println!("{:?}", guild_name) // This is a some() so fix it then remove guild and channels
+
+
+        }
         // Remove on guild remove
         // Track channel, thread deletion/creation/edits
         // Track edits/deletion of messages & cache them properly with a limit of like 1000?
@@ -73,6 +85,7 @@ pub async fn event_handler(
         // reaction add/remove/remove all
         // thread member updates?
         // user updates
+        // voice events
         // Implement anti 32 Bit Link measures
         _ => (),
     }
