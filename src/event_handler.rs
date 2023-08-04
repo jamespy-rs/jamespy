@@ -19,6 +19,7 @@ pub async fn event_handler(
 
             let guild_id = new_message.guild_id.map(|id| id.0 as i64).unwrap_or_default();
 
+            // Handle dms vs invalid guild and add the guild if it isn't added for some reason.
 
             let guild_key = format!("guild:{}", &guild_id);
 
@@ -30,6 +31,7 @@ pub async fn event_handler(
                 None => "None".to_owned(),
             };
             println!("[{}] [#{}] {}: {}", guild_name, new_message.channel_id, new_message.author.tag(), new_message.content);
+            // Replace with channel name, but I need to cache this first meaning I need to improve code first.
 
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
@@ -71,7 +73,7 @@ pub async fn event_handler(
         // reaction add/remove/remove all
         // thread member updates?
         // user updates
-
+        // Implement anti 32 Bit Link measures
         _ => (),
     }
 
