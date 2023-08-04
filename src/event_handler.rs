@@ -6,6 +6,8 @@ use crate::Data;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 
+const MAX_CACHED_MESSAGES: usize = 250; // Max number of messages cached per channel
+
 pub async fn event_handler(
     _ctx: &serenity::Context,
     event: &poise::Event<'_>,
@@ -29,6 +31,17 @@ pub async fn event_handler(
                 Some(name) => name,
                 None => "None".to_owned(),
             };
+
+            let message_cache_key = format!("channel:{}:messages", new_message.channel_id.0);
+
+            let _result: Result<(), _> = redis_conn
+                .lpush(&message_cache_key, format!("{}:{}", new_message.id.0, new_message.content))
+                .await;
+
+            // Should work
+            let _trim_result: Result<(), _> = redis_conn
+                .ltrim(&message_cache_key, 0, (MAX_CACHED_MESSAGES as isize) - 1)
+                .await;
 
             let channel_name: String;
             let channel_key = format!("channel:{}", new_message.channel_id.0);
@@ -56,9 +69,7 @@ pub async fn event_handler(
             .await;
         }
 
-
-
-        poise::Event::GuildCreate { guild, is_new } => {
+        poise::Event::GuildCreate { guild, is_new: _ } => {
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
@@ -75,7 +86,6 @@ pub async fn event_handler(
                 let channel_name = match channel {
                     Channel::Guild(guild_channel) => guild_channel.name.clone(),
                     Channel::Category(category_channel) => category_channel.name.clone(),
-                    // Maybe I need Channel:Private too?
                     _ => todo!(),
                 };
 
@@ -87,9 +97,10 @@ pub async fn event_handler(
                     .sadd(&guild_redis_key, channel_id.0.to_string())
                     .await;
             }
+            // Need to cache threads!
         }
 
-        poise::Event::GuildDelete { incomplete, full } => {
+        poise::Event::GuildDelete { incomplete, full: _ } => {
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
@@ -113,17 +124,65 @@ pub async fn event_handler(
             // Need to do the funny here.
         }
         poise::Event::ChannelCreate { channel } => {
+            // Get the guild name from the cache
+            let redis_pool = &data.redis;
+            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
+            let guild_id = channel.guild_id.0.to_string();
+            let guild_redis_key = format!("guild:{}", guild_id);
+
+            let guild_name: Option<String> = redis_conn.hget(&guild_redis_key, "name").await.expect("Failed to fetch guild from cache.");
+
+            let guild_name = match guild_name {
+                Some(name) => name,
+                None => "Unknown Guild".to_owned(),
+            };
+
+            println!("[{}] #{} was created!", guild_name, channel.name);
+
+            // Cache the new channel
+            let channel_redis_key = format!("channel:{}", channel.id.0);
+            let _channel_cache_result: Result<(), _> = redis_conn
+                .hset(&channel_redis_key, "name", channel.name.clone())
+                .await;
+
+            let _guild_channels_result: Result<(), _> = redis_conn
+                .sadd(&guild_redis_key, channel.id.0.to_string())
+                .await;
         }
         poise::Event::ChannelDelete { channel } => {
+            let redis_pool = &data.redis;
+            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
+            // Delete channel information from cache
+            let channel_redis_key = format!("channel:{}", channel.id.0);
+            let _delete_channel_result: Result<(), _> = redis_conn
+                .del(&channel_redis_key)
+                .await;
+
+            // Remove channel from guild's channel set
+            let guild_id = channel.guild_id.0.to_string();
+            let guild_redis_key = format!("guild:{}", guild_id);
+            let _remove_channel_result: Result<(), _> = redis_conn
+                .srem(&guild_redis_key, channel.id.0.to_string())
+                .await;
+
+            // Delete cached messages for the channel
+            let message_cache_key = format!("channel:{}:messages", channel.id.0);
+            let _delete_messages_result: Result<(), _> = redis_conn
+                .del(&message_cache_key)
+                .await;
         }
+        // Old jamespy didn't really log these, so this rewrite won't until feature parity is reached.
+        /*
         poise::Event::CategoryCreate { category } => {
 
         }
         poise::Event::CategoryDelete { category } => {
 
         }
+         */
+        // Will come back for threads when I cache them
         poise::Event::ThreadCreate { thread } => {
 
         }
