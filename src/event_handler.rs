@@ -113,15 +113,16 @@ pub async fn event_handler(
 
         }
         poise::Event::ReactionAdd { add_reaction } => {
-            // Get channel name and guild name from redis
-            // You can either use a partial member and get the user from that or grab it from cache (need to cache it first)
+            println!("[{:?}] [#{}] {:?} added a reaction: {}", add_reaction.guild_id, add_reaction.channel_id, add_reaction.user_id, add_reaction.emoji)
+            // Need to just cache and recieve almost everything!
         }
         poise::Event::ReactionRemove { removed_reaction } => {
-            // Get channel name and guild name from redis
-            // You can either use a partial member and get the user from that or grab it from cache (need to cache it first)
+            println!("[{:?}] [#{}] {:?} added a reaction: {}", removed_reaction.guild_id, removed_reaction.channel_id, removed_reaction.user_id, removed_reaction.emoji)
+            // Need to just cache and recieve almost everything!
         }
-        poise::Event::ReactionRemoveAll { channel_id, removed_from_message_id } => {
+        poise::Event::ReactionRemoveAll { channel_id: _, removed_from_message_id: _ } => {
             // Need to do the funny here.
+            // Will leave it untouched until I have a better codebase.
         }
         poise::Event::ChannelCreate { channel } => {
             let redis_pool = &data.redis;
