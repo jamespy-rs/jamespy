@@ -171,7 +171,7 @@ pub async fn event_handler(
                 .await;
             // This will also need to delete messages from all threads if the channel has them.
         }
-        poise::Event::ChannelUpdate { old, new } => {
+        poise::Event::ChannelUpdate { old: _, new } => {
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
@@ -190,15 +190,6 @@ pub async fn event_handler(
             println!("#{}'s name updated to {}!", channel_name, channel_name);
         }
 
-        // Old jamespy didn't really log these, so this rewrite won't until feature parity is reached.
-        /*
-        poise::Event::CategoryCreate { category } => {
-
-        }
-        poise::Event::CategoryDelete { category } => {
-
-        }
-         */
         // Will come back for threads when I cache them
         poise::Event::ThreadCreate { thread } => {
 
@@ -211,12 +202,10 @@ pub async fn event_handler(
             // Later me problem!
         }
 
-        // Remove on guild remove
-        // Track channel, thread deletion/creation/edits
-        // Track edits/deletion of messages & cache them properly with a limit of like 1000?
+        // Remove on guild remove (technically done, just need to do it on threads as well)
+        // Thread deletion/creation/edits
+        // Track edits/deletion of messages & cache them properly with a limit
         // user join/leave tracking
-        // reaction add/remove/remove all
-        // thread member updates?
         // user updates
         // voice events
         // Implement anti 32 Bit Link measures
