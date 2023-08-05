@@ -117,7 +117,7 @@ pub async fn event_handler(
             // Need to just cache and recieve almost everything!
         }
         poise::Event::ReactionRemove { removed_reaction } => {
-            println!("[{:?}] [#{}] {:?} added a reaction: {}", removed_reaction.guild_id, removed_reaction.channel_id, removed_reaction.user_id, removed_reaction.emoji)
+            println!("[{:?}] [#{}] {:?} removed a reaction: {}", removed_reaction.guild_id, removed_reaction.channel_id, removed_reaction.user_id, removed_reaction.emoji)
             // Need to just cache and recieve almost everything!
         }
         poise::Event::ReactionRemoveAll { channel_id: _, removed_from_message_id: _ } => {
@@ -171,6 +171,25 @@ pub async fn event_handler(
                 .await;
             // This will also need to delete messages from all threads if the channel has them.
         }
+        poise::Event::ChannelUpdate { old, new } => {
+            let redis_pool = &data.redis;
+            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
+
+            let channel_name = match &new {
+                Channel::Guild(guild_channel) => guild_channel.name.clone(),
+                Channel::Category(category_channel) => category_channel.name.clone(),
+                _ => todo!(),
+            };
+
+            let channel_redis_key = format!("channel:{}", new.id().0);
+
+            let _channel_cache_result: Result<(), _> = redis_conn
+                .hset(&channel_redis_key, "name", channel_name.clone())
+                .await;
+
+            println!("#{}'s name updated to {}!", channel_name, channel_name);
+        }
+
         // Old jamespy didn't really log these, so this rewrite won't until feature parity is reached.
         /*
         poise::Event::CategoryCreate { category } => {
