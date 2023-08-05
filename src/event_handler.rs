@@ -20,7 +20,6 @@ pub async fn event_handler(
             let redis_pool = &data.redis;
 
             let guild_id = new_message.guild_id.map(|id| id.0 as i64).unwrap_or_default();
-
             // Handle dms vs invalid guild and add the guild if it isn't added for some reason.
             let guild_key = format!("guild:{}", &guild_id);
 
@@ -38,7 +37,6 @@ pub async fn event_handler(
                 .lpush(&message_cache_key, format!("{}:{}", new_message.id.0, new_message.content))
                 .await;
 
-            // Should work
             let _trim_result: Result<(), _> = redis_conn
                 .ltrim(&message_cache_key, 0, (MAX_CACHED_MESSAGES as isize) - 1)
                 .await;
@@ -52,8 +50,10 @@ pub async fn event_handler(
             } else {
                 channel_name = format!("{}", new_message.channel_id.0);
             }
-
+            // Print the message
+            // TODO: colouring!
             println!("[{}] [#{}] {}: {}", guild_name, channel_name, new_message.author.name, new_message.content);
+
 
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
@@ -124,7 +124,6 @@ pub async fn event_handler(
             // Need to do the funny here.
         }
         poise::Event::ChannelCreate { channel } => {
-            // Get the guild name from the cache
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
@@ -140,7 +139,6 @@ pub async fn event_handler(
 
             println!("[{}] #{} was created!", guild_name, channel.name);
 
-            // Cache the new channel
             let channel_redis_key = format!("channel:{}", channel.id.0);
             let _channel_cache_result: Result<(), _> = redis_conn
                 .hset(&channel_redis_key, "name", channel.name.clone())
@@ -150,28 +148,27 @@ pub async fn event_handler(
                 .sadd(&guild_redis_key, channel.id.0.to_string())
                 .await;
         }
+
         poise::Event::ChannelDelete { channel } => {
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
-            // Delete channel information from cache
             let channel_redis_key = format!("channel:{}", channel.id.0);
             let _delete_channel_result: Result<(), _> = redis_conn
                 .del(&channel_redis_key)
                 .await;
 
-            // Remove channel from guild's channel set
             let guild_id = channel.guild_id.0.to_string();
             let guild_redis_key = format!("guild:{}", guild_id);
             let _remove_channel_result: Result<(), _> = redis_conn
                 .srem(&guild_redis_key, channel.id.0.to_string())
                 .await;
 
-            // Delete cached messages for the channel
             let message_cache_key = format!("channel:{}:messages", channel.id.0);
             let _delete_messages_result: Result<(), _> = redis_conn
                 .del(&message_cache_key)
                 .await;
+            // This will also need to delete messages from all threads if the channel has them.
         }
         // Old jamespy didn't really log these, so this rewrite won't until feature parity is reached.
         /*
@@ -191,6 +188,7 @@ pub async fn event_handler(
         }
         poise::Event::VoiceStateUpdate { old, new } => {
             // Oh this one will be fun..
+            // Later me problem!
         }
 
         // Remove on guild remove

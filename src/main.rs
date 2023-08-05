@@ -80,6 +80,7 @@ async fn main() {
             meta::source(),
             meta::about(),
             meta::help(),
+            utility::random::choose(),
             ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),

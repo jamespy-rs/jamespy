@@ -7,7 +7,6 @@ use bb8_redis::{
 
 
 
-// Could you tell I have no idea what i'm doing?
 pub type DbPool = PgPool;
 pub type RedisPool = Pool<RedisConnectionManager>;
 
