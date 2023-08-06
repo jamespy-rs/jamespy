@@ -3,13 +3,37 @@ use poise::serenity_prelude::{self as serenity, Channel};
 use sqlx::query;
 
 use crate::Data;
-
-type Error = Box<dyn std::error::Error + Send + Sync>;
+use crate::Error;
 
 const MAX_CACHED_MESSAGES: usize = 250; // Max number of messages cached per channel
 
+
+
+pub async fn recieve_or_cache_guild(ctx: &serenity::Context, guild_id: i64, data: &Data) -> Result<String, serenity::Error> {
+    let redis_pool = &data.redis;
+    let guild_key = format!("guild:{}", &guild_id);
+    let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
+    let guild_name: Option<String> = redis_conn.hget(&guild_key, "name").await.expect("Failed to fetch guild from cache.");
+
+    let guild_name = match guild_name {
+        Some(name) => name,
+        None => {
+            let guild = ctx.http.get_guild(guild_id.try_into().unwrap()).await?;
+            let guild_name = guild.name.clone();
+
+            redis_conn.hset::<_, _, _, String>(&guild_key, "name", &guild_name).await.expect("Failed to cache guild.");
+            // Is that even right?
+            guild_name
+        }
+    };
+
+    Ok(guild_name)
+}
+
+
+
 pub async fn event_handler(
-    _ctx: &serenity::Context,
+    ctx: &serenity::Context,
     event: &poise::Event<'_>,
     _ctx_poise: poise::FrameworkContext<'_, Data, Error>,
     data: &Data,
@@ -19,19 +43,18 @@ pub async fn event_handler(
             let db_pool = &data.db;
             let redis_pool = &data.redis;
 
-            let guild_id = new_message.guild_id.map(|id| id.0 as i64).unwrap_or_default();
-            // Handle dms vs invalid guild and add the guild if it isn't added for some reason.
-            let guild_key = format!("guild:{}", &guild_id);
+            let guild_id = new_message.guild_id.map(|id| id.0 as i64).unwrap_or_default(); // This makes it 0 if no guild is present
 
-            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
-            let guild_name: Option<String> = redis_conn.hget(&guild_key, "name").await.expect("Failed to fetch guild from cache.");
-
-            let guild_name = match guild_name {
-                Some(name) => name,
-                None => "None".to_owned(),
+            let guild_name = if guild_id == 0 {
+                "None".to_string()
+            } else {
+                recieve_or_cache_guild(ctx, guild_id, data).await?
             };
 
+            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
             let message_cache_key = format!("channel:{}:messages", new_message.channel_id.0);
+
+            // I should cache everything about a message thats important!
 
             let _result: Result<(), _> = redis_conn
                 .lpush(&message_cache_key, format!("{}:{}", new_message.id.0, new_message.content))
@@ -214,4 +237,3 @@ pub async fn event_handler(
 
     Ok(())
 }
-
