@@ -7,8 +7,6 @@ use crate::Error;
 
 const MAX_CACHED_MESSAGES: usize = 250; // Max number of messages cached per channel
 
-
-
 pub async fn recieve_or_cache_guild(ctx: &serenity::Context, guild_id: i64, data: &Data) -> Result<String, serenity::Error> {
     let redis_pool = &data.redis;
     let guild_key = format!("guild:{}", &guild_id);
@@ -21,16 +19,13 @@ pub async fn recieve_or_cache_guild(ctx: &serenity::Context, guild_id: i64, data
             let guild = ctx.http.get_guild(guild_id.try_into().unwrap()).await?;
             let guild_name = guild.name.clone();
 
-            redis_conn.hset::<_, _, _, String>(&guild_key, "name", &guild_name).await.expect("Failed to cache guild.");
-            // Is that even right?
+            redis_conn.hset::<_, _, _, ()>(&guild_key, "name", &guild_name.as_str()).await.expect("Failed to cache guild.");
             guild_name
         }
     };
 
     Ok(guild_name)
 }
-
-
 
 pub async fn event_handler(
     ctx: &serenity::Context,
