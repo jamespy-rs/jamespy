@@ -1,5 +1,4 @@
 use bb8_redis::redis::{self, AsyncCommands};
-use poise::serenity_prelude::channel;
 use poise::serenity_prelude::{self as serenity, Channel};
 use sqlx::query;
 
@@ -62,11 +61,6 @@ pub async fn recieve_or_cache_channel(ctx: &serenity::Context, guild_id: i64, ch
 
     Ok(channel_name)
 }
-
-
-
-
-
 
 pub async fn event_handler(
     ctx: &serenity::Context,
