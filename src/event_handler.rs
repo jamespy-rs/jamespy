@@ -131,26 +131,24 @@ pub async fn event_handler(
                 .await;
 
             for (channel_id, channel) in &guild.channels {
-                let channel_redis_key = format!("channel:{}", channel_id.0);
-                let channel_set_key = format!("channel_set:{}", guild_id);
+                if let Channel::Guild(guild_channel) = channel {
+                    let channel_redis_key = format!("channel:{}", channel_id.0);
+                    let channel_set_key = format!("channel_set:{}", guild_id);
 
-                let channel_name = match channel {
-                    Channel::Guild(guild_channel) => guild_channel.name.clone(),
-                    Channel::Category(category_channel) => category_channel.name.clone(),
-                    _ => todo!(),
-                };
+                    let channel_name = guild_channel.name.clone();
 
-                let _: redis::RedisResult<()> = redis_conn
-                    .hset(&channel_redis_key, "name", channel_name)
-                    .await;
+                    let _: redis::RedisResult<()> = redis_conn
+                        .hset(&channel_redis_key, "name", channel_name)
+                        .await;
 
-                let _: redis::RedisResult<()> = redis_conn
-                    .sadd(&channel_set_key, channel_id.0.to_string())
-                    .await;
-                // I need to, but currently haven't filtered categories.
+                    let _: redis::RedisResult<()> = redis_conn
+                        .sadd(&channel_set_key, channel_id.0.to_string())
+                        .await;
+                }
             }
             // Need to cache threads!
         }
+
 
         poise::Event::GuildDelete { incomplete, full: _ } => {
             let redis_pool = &data.redis;
