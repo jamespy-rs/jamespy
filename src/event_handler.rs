@@ -227,20 +227,29 @@ pub async fn event_handler(
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
-            let channel_name = match &new {
-                Channel::Guild(guild_channel) => guild_channel.name.clone(),
-                Channel::Category(category_channel) => category_channel.name.clone(),
+            let channel_redis_key = format!("channel:{}", new.id().0);
+
+            let old_channel_name: String = redis_conn
+                .hget(&channel_redis_key, "name")
+                .await
+                .unwrap_or_else(|_| String::from("Unknown"));
+
+            let new_channel_name = match &new {
+                Channel::Guild(new_guild_channel) => new_guild_channel.name.clone(),
+                Channel::Category(new_category_channel) => new_category_channel.name.clone(),
                 _ => todo!(),
             };
 
-            let channel_redis_key = format!("channel:{}", new.id().0);
-
             let _channel_cache_result: Result<(), _> = redis_conn
-                .hset(&channel_redis_key, "name", channel_name.clone())
+                .hset(&channel_redis_key, "name", new_channel_name.clone())
                 .await;
 
-            println!("#{}'s name updated to {}!", channel_name, channel_name);
+            println!(
+                "#{}'s name updated to #{}!",
+                old_channel_name, new_channel_name
+            );
         }
+
 
         // Will come back for threads when I cache them
         poise::Event::ThreadCreate { thread } => {
