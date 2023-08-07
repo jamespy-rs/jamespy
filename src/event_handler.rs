@@ -32,7 +32,6 @@ pub async fn recieve_or_cache_guild(ctx: &serenity::Context, guild_id: i64, data
 pub async fn recieve_or_cache_channel(ctx: &serenity::Context, guild_id: i64, channel_id: i64, data: &Data) -> Result<String, serenity::Error> {
     let redis_pool = &data.redis;
     let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
-    let guild_redis_key = format!("guild:{}", guild_id);
 
     let channel_key = format!("channel:{}", channel_id);
 
@@ -54,9 +53,8 @@ pub async fn recieve_or_cache_channel(ctx: &serenity::Context, guild_id: i64, ch
 
             redis_conn.hset::<_, _, _, ()>(&channel_key, "name", &fetched_channel_name).await.expect("Failed to cache channel.");
 
-            // Using a separate key for the set data
             let channel_set_key = format!("channel_set:{}", guild_id);
-            dbg!(redis_conn.sadd::<_, _, ()>(&channel_set_key, channel_id.to_string()).await.expect("Failed to add channel_id to guild set."));
+            redis_conn.sadd::<_, _, ()>(&channel_set_key, channel_id.to_string()).await.expect("Failed to add channel_id to guild set.");
 
             fetched_channel_name
         }
@@ -140,6 +138,7 @@ pub async fn event_handler(
 
             for (channel_id, channel) in &guild.channels {
                 let channel_redis_key = format!("channel:{}", channel_id.0);
+                let channel_set_key = format!("channel_set:{}", guild_id);
 
                 let channel_name = match channel {
                     Channel::Guild(guild_channel) => guild_channel.name.clone(),
@@ -152,8 +151,9 @@ pub async fn event_handler(
                     .await;
 
                 let _: redis::RedisResult<()> = redis_conn
-                    .sadd(&guild_redis_key, channel_id.0.to_string())
+                    .sadd(&channel_set_key, channel_id.0.to_string())
                     .await;
+                // I need to, but currently haven't filtered categories.
             }
             // Need to cache threads!
         }
@@ -188,6 +188,7 @@ pub async fn event_handler(
 
             let guild_id = channel.guild_id.0.to_string();
             let guild_redis_key = format!("guild:{}", guild_id);
+            let channel_set_key = format!("channel_set:{}", guild_id);
 
             let guild_name: Option<String> = redis_conn.hget(&guild_redis_key, "name").await.expect("Failed to fetch guild from cache.");
 
@@ -203,9 +204,9 @@ pub async fn event_handler(
                 .hset(&channel_redis_key, "name", channel.name.clone())
                 .await;
 
-            let _guild_channels_result: Result<(), _> = redis_conn
-                .sadd(&guild_redis_key, channel.id.0.to_string())
-                .await;
+            let _: redis::RedisResult<()> = redis_conn
+            .sadd(&channel_set_key, channel.id.0.to_string())
+            .await;
         }
 
         poise::Event::ChannelDelete { channel } => {
@@ -213,14 +214,15 @@ pub async fn event_handler(
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
             let channel_redis_key = format!("channel:{}", channel.id.0);
+
             let _delete_channel_result: Result<(), _> = redis_conn
                 .del(&channel_redis_key)
                 .await;
 
             let guild_id = channel.guild_id.0.to_string();
-            let guild_redis_key = format!("guild:{}", guild_id);
+            let channel_set_key = format!("channel_set:{}", guild_id);
             let _remove_channel_result: Result<(), _> = redis_conn
-                .srem(&guild_redis_key, channel.id.0.to_string())
+                .srem(&channel_set_key, channel.id.0.to_string())
                 .await;
 
             let message_cache_key = format!("channel:{}:messages", channel.id.0);
