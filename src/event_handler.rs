@@ -1,4 +1,5 @@
 use bb8_redis::redis::{self, AsyncCommands};
+use poise::serenity_prelude::channel;
 use poise::serenity_prelude::{self as serenity, Channel};
 use sqlx::query;
 
@@ -26,6 +27,48 @@ pub async fn recieve_or_cache_guild(ctx: &serenity::Context, guild_id: i64, data
 
     Ok(guild_name)
 }
+// I could probably merge this with threads or whatever else? I need to cache users regardless anyway so I might make a combo version.
+// (I have no good developer practices)
+pub async fn recieve_or_cache_channel(ctx: &serenity::Context, guild_id: i64, channel_id: i64, data: &Data) -> Result<String, serenity::Error> {
+    let redis_pool = &data.redis;
+    let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
+    let guild_redis_key = format!("guild:{}", guild_id);
+
+    let channel_key = format!("channel:{}", channel_id);
+
+    let channel_name: Option<String> = redis_conn.hget(&channel_key, "name").await.expect("Failed to fetch channel from cache.");
+
+    let channel_name = match channel_name {
+        Some(name) => name,
+        None => {
+            let channel = match ctx.http.get_channel(channel_id.try_into().unwrap()).await {
+                Ok(channel) => channel,
+                Err(_) => return Err(serenity::Error::Other("Failed to receive the channel!")),
+            };
+
+            let fetched_channel_name = match &channel {
+                serenity::model::channel::Channel::Guild(text_channel) => text_channel.name.clone(),
+                serenity::model::channel::Channel::Private(private_channel) => private_channel.name().clone(),
+                _ => "Unknown Channel Name".to_string(),
+            };
+
+            redis_conn.hset::<_, _, _, ()>(&channel_key, "name", &fetched_channel_name).await.expect("Failed to cache channel.");
+
+            // Using a separate key for the set data
+            let channel_set_key = format!("channel_set:{}", guild_id);
+            dbg!(redis_conn.sadd::<_, _, ()>(&channel_set_key, channel_id.to_string()).await.expect("Failed to add channel_id to guild set."));
+
+            fetched_channel_name
+        }
+    };
+
+    Ok(channel_name)
+}
+
+
+
+
+
 
 pub async fn event_handler(
     ctx: &serenity::Context,
@@ -46,6 +89,12 @@ pub async fn event_handler(
                 recieve_or_cache_guild(ctx, guild_id, data).await?
             };
 
+            let channel_name = if guild_id == 0 {
+                new_message.channel_id.to_string()
+            } else {
+                recieve_or_cache_channel(ctx, guild_id, new_message.channel_id.into(), data).await?
+            };
+
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
             let message_cache_key = format!("channel:{}:messages", new_message.channel_id.0);
 
@@ -59,15 +108,6 @@ pub async fn event_handler(
                 .ltrim(&message_cache_key, 0, (MAX_CACHED_MESSAGES as isize) - 1)
                 .await;
 
-            let channel_name: String;
-            let channel_key = format!("channel:{}", new_message.channel_id.0);
-
-            let channel_name_redis: Option<String> = redis_conn.hget(&channel_key, "name").await.expect("Failed to fetch channel from cache.");
-            if let Some(name) = channel_name_redis {
-                channel_name = name;
-            } else {
-                channel_name = format!("{}", new_message.channel_id.0);
-            }
             // Print the message
             // TODO: colouring!
             println!("[{}] [#{}] {}: {}", guild_name, channel_name, new_message.author.name, new_message.content);
