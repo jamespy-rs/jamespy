@@ -62,6 +62,34 @@ pub async fn recieve_or_cache_channel(ctx: &serenity::Context, guild_id: i64, ch
     Ok(channel_name)
 }
 
+pub async fn receive_or_cache_user(ctx: &serenity::Context, user_id: i64, data: &Data) -> Result<String, serenity::Error> {
+    let redis_pool = &data.redis;
+    let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
+
+    let user_key = format!("user:{}", user_id);
+
+    let user_name: Option<String> = redis_conn.hget(&user_key, "name").await.expect("Failed to fetch user from cache.");
+
+    let user_name = match user_name {
+        Some(name) => name,
+        None => {
+            let user = match ctx.http.get_user(user_id.try_into().unwrap()).await {
+                Ok(user) => user,
+                Err(_) => return Err(serenity::Error::Other("Failed to receive the user!")),
+            };
+
+            let fetched_user_name = user.name.clone();
+
+            redis_conn.hset::<_, _, _, ()>(&user_key, "name", &fetched_user_name).await.expect("Failed to cache user.");
+
+            fetched_user_name
+        }
+    };
+
+    Ok(user_name)
+}
+
+
 pub async fn event_handler(
     ctx: &serenity::Context,
     event: &poise::Event<'_>,
@@ -86,6 +114,8 @@ pub async fn event_handler(
             } else {
                 recieve_or_cache_channel(ctx, guild_id, new_message.channel_id.into(), data).await?
             };
+            // I 100% should handle threads at some point, but I may have to merge the channels & threads set for this to happen without an extra request?
+            // I'm not actually sure if this is the case.
 
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
             let message_cache_key = format!("channel:{}:messages", new_message.channel_id.0);
@@ -100,10 +130,12 @@ pub async fn event_handler(
                 .ltrim(&message_cache_key, 0, (MAX_CACHED_MESSAGES as isize) - 1)
                 .await;
 
+            // I can get this directly from the message but eh
+            let user_name = receive_or_cache_user(ctx, new_message.author.id.0 as i64, data).await?; // Cache or retrieve user name
+
             // Print the message
             // TODO: colouring!
-            println!("[{}] [#{}] {}: {}", guild_name, channel_name, new_message.author.name, new_message.content);
-
+            println!("[{}] [#{}] {}: {}", guild_name, channel_name, user_name, new_message.content);
 
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
@@ -169,12 +201,49 @@ pub async fn event_handler(
 
         }
         poise::Event::ReactionAdd { add_reaction } => {
-            println!("[{:?}] [#{}] {:?} added a reaction: {}", add_reaction.guild_id, add_reaction.channel_id, add_reaction.user_id, add_reaction.emoji)
-            // Need to just cache and recieve almost everything!
+            if let Some(guild_id) = add_reaction.guild_id {
+                let guild_name = recieve_or_cache_guild(ctx, guild_id.into(), data).await;
+                let channel_id = add_reaction.channel_id;
+                let channel_name = recieve_or_cache_channel(ctx, guild_id.into(), channel_id.into(), data).await;
+
+                let user_id = add_reaction.user_id.unwrap();
+                let user_name = match user_id.to_user(&ctx.http).await {
+                    // I'm going to phase out the function for caching users probably and use this instead.
+                    Ok(user) => user.name,
+                    Err(_) => "Unknown User".to_string(),
+                };
+
+                if let (Ok(guild_name), Ok(channel_name)) = (guild_name, channel_name) {
+                    println!(
+                        "[{}] [#{}] {} added a reaction: {}",
+                        guild_name, channel_name, user_name, add_reaction.emoji
+                    );
+                }
+            }
         }
+
+
+
         poise::Event::ReactionRemove { removed_reaction } => {
-            println!("[{:?}] [#{}] {:?} removed a reaction: {}", removed_reaction.guild_id, removed_reaction.channel_id, removed_reaction.user_id, removed_reaction.emoji)
-            // Need to just cache and recieve almost everything!
+            if let Some(guild_id) = removed_reaction.guild_id {
+                let guild_name = recieve_or_cache_guild(ctx, guild_id.into(), data).await;
+                let channel_id = removed_reaction.channel_id;
+                let channel_name = recieve_or_cache_channel(ctx, guild_id.into(), channel_id.into(), data).await;
+
+                let user_id = removed_reaction.user_id.unwrap();
+                let user_name = match user_id.to_user(&ctx.http).await {
+                    // I'm going to phase out the function for caching users probably and use this instead.
+                    Ok(user) => user.name,
+                    Err(_) => "Unknown User".to_string(),
+                };
+
+                if let (Ok(guild_name), Ok(channel_name)) = (guild_name, channel_name) {
+                    println!(
+                        "[{}] [#{}] {} added a reaction: {}",
+                        guild_name, channel_name, user_name, removed_reaction.emoji
+                    );
+                }
+            }
         }
         poise::Event::ReactionRemoveAll { channel_id: _, removed_from_message_id: _ } => {
             // Need to do the funny here.
@@ -311,8 +380,6 @@ pub async fn event_handler(
                 old_thread_name, new_thread_name
             );
         }
-
-
 
         poise::Event::VoiceStateUpdate { old, new } => {
             // Oh this one will be fun..
