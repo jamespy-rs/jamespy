@@ -200,7 +200,7 @@ pub async fn event_handler(
             .sadd(&channel_set_key, channel.id.0.to_string())
             .await;
         }
-
+        // I need to go back to this.
         poise::Event::ChannelDelete { channel } => {
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
@@ -253,11 +253,61 @@ pub async fn event_handler(
 
         // Will come back for threads when I cache them
         poise::Event::ThreadCreate { thread } => {
+            let redis_pool = &data.redis;
+            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
+            let guild_id = thread.guild_id.0.to_string();
+            let guild_redis_key = format!("guild:{}", guild_id);
+            let thread_set_key = format!("thread_set:{}", guild_id);  // Adjust this key name as needed
+
+            let guild_name: Option<String> = redis_conn.hget(&guild_redis_key, "name").await.expect("Failed to fetch guild from cache.");
+
+            let guild_name = match guild_name {
+                Some(name) => name,
+                None => "Unknown Guild".to_owned(),
+            };
+
+            println!("[{}] Thread #{} was created!", guild_name, thread.name);
+
+            let thread_redis_key = format!("thread:{}", thread.id.0);
+            let _thread_cache_result: Result<(), _> = redis_conn
+                .hset(&thread_redis_key, "name", thread.name.clone())
+                .await;
+
+            let _: redis::RedisResult<()> = redis_conn
+                .sadd(&thread_set_key, thread.id.0.to_string())
+                .await;
         }
+
         poise::Event::ThreadDelete { thread } => {
-
+            // TODO: do this after cleanup of the rest of the bot is done. (need to delete cached messages related etc etc)
         }
+
+        poise::Event::ThreadUpdate { thread } => {
+            let redis_pool = &data.redis;
+            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
+
+            let thread_redis_key = format!("thread:{}", thread.id.0);
+
+            let old_thread_name: String = redis_conn
+                .hget(&thread_redis_key, "name")
+                .await
+                .unwrap_or_else(|_| String::from("Unknown"));
+
+            let new_thread_name = thread.name.clone();
+
+            let _thread_cache_result: Result<(), _> = redis_conn
+                .hset(&thread_redis_key, "name", new_thread_name.clone())
+                .await;
+
+            println!(
+                "Thread #{}'s name updated to #{}!",
+                old_thread_name, new_thread_name
+            );
+        }
+
+
+
         poise::Event::VoiceStateUpdate { old, new } => {
             // Oh this one will be fun..
             // Later me problem!
