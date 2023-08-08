@@ -80,6 +80,7 @@ async fn main() {
             meta::source(),
             meta::about(),
             meta::help(),
+            general::lob::lob(),
             utility::random::choose(),
             ],
         prefix_options: poise::PrefixFrameworkOptions {

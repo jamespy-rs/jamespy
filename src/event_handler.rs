@@ -386,6 +386,22 @@ pub async fn event_handler(
             // Later me problem!
         }
 
+        poise::Event::GuildMemberUpdate { old_if_available: _, new } => {
+            let redis_pool = &data.redis;
+            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
+
+            let user_id = new.user.id.0 as i64;
+
+            let user_key = format!("user:{}", user_id);
+
+            let updated_name = new.user.name.clone();
+            // I assume this works, but I need to do the same for nicknames and AAAAAAAAAAA
+            redis_conn.hset::<_, _, _, ()>(&user_key, "name", &updated_name).await.expect("Failed to update cached user name.");
+
+            // ... (rest of your code)
+        }
+
+
         // Remove on guild remove (technically done, just need to do it on threads as well)
         // Thread deletion/creation/edits
         // Track edits/deletion of messages & cache them properly with a limit
