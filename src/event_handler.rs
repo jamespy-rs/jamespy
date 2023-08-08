@@ -146,9 +146,15 @@ pub async fn event_handler(
                         .await;
                 }
             }
-            // Need to cache threads!
-        }
+            for thread in &guild.threads {
+                let thread_redis_key = format!("thread:{}", thread.id.0);
+                let thread_name = thread.name.clone();
 
+                let _: redis::RedisResult<()> = redis_conn
+                    .hset(&thread_redis_key, "name", thread_name)
+                    .await;
+            }
+        }
 
         poise::Event::GuildDelete { incomplete, full: _ } => {
             let redis_pool = &data.redis;
@@ -258,7 +264,7 @@ pub async fn event_handler(
 
             let guild_id = thread.guild_id.0.to_string();
             let guild_redis_key = format!("guild:{}", guild_id);
-            let thread_set_key = format!("thread_set:{}", guild_id);  // Adjust this key name as needed
+            let thread_set_key = format!("thread_set:{}", guild_id);
 
             let guild_name: Option<String> = redis_conn.hget(&guild_redis_key, "name").await.expect("Failed to fetch guild from cache.");
 
