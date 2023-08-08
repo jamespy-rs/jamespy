@@ -7,7 +7,7 @@ use crate::Error;
 
 const MAX_CACHED_MESSAGES: usize = 250; // Max number of messages cached per channel
 
-pub async fn recieve_or_cache_guild(ctx: &serenity::Context, guild_id: i64, data: &Data) -> Result<String, serenity::Error> {
+pub async fn receive_or_cache_guild(ctx: &serenity::Context, guild_id: i64, data: &Data) -> Result<String, serenity::Error> {
     let redis_pool = &data.redis;
     let guild_key = format!("guild:{}", &guild_id);
     let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
@@ -28,7 +28,7 @@ pub async fn recieve_or_cache_guild(ctx: &serenity::Context, guild_id: i64, data
 }
 // I could probably merge this with threads or whatever else? I need to cache users regardless anyway so I might make a combo version.
 // (I have no good developer practices)
-pub async fn recieve_or_cache_channel(ctx: &serenity::Context, guild_id: i64, channel_id: i64, data: &Data) -> Result<String, serenity::Error> {
+pub async fn receive_or_cache_channel(ctx: &serenity::Context, guild_id: i64, channel_id: i64, data: &Data) -> Result<String, serenity::Error> {
     let redis_pool = &data.redis;
     let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
 
@@ -106,13 +106,13 @@ pub async fn event_handler(
             let guild_name = if guild_id == 0 {
                 "None".to_string()
             } else {
-                recieve_or_cache_guild(ctx, guild_id, data).await?
+                receive_or_cache_guild(ctx, guild_id, data).await?
             };
 
             let channel_name = if guild_id == 0 {
                 new_message.channel_id.to_string()
             } else {
-                recieve_or_cache_channel(ctx, guild_id, new_message.channel_id.into(), data).await?
+                receive_or_cache_channel(ctx, guild_id, new_message.channel_id.into(), data).await?
             };
             // I 100% should handle threads at some point, but I may have to merge the channels & threads set for this to happen without an extra request?
             // I'm not actually sure if this is the case.
@@ -202,9 +202,9 @@ pub async fn event_handler(
         }
         poise::Event::ReactionAdd { add_reaction } => {
             if let Some(guild_id) = add_reaction.guild_id {
-                let guild_name = recieve_or_cache_guild(ctx, guild_id.into(), data).await;
+                let guild_name = receive_or_cache_guild(ctx, guild_id.into(), data).await;
                 let channel_id = add_reaction.channel_id;
-                let channel_name = recieve_or_cache_channel(ctx, guild_id.into(), channel_id.into(), data).await;
+                let channel_name = receive_or_cache_channel(ctx, guild_id.into(), channel_id.into(), data).await;
 
                 let user_id = add_reaction.user_id.unwrap();
                 let user_name = match user_id.to_user(&ctx.http).await {
@@ -226,9 +226,9 @@ pub async fn event_handler(
 
         poise::Event::ReactionRemove { removed_reaction } => {
             if let Some(guild_id) = removed_reaction.guild_id {
-                let guild_name = recieve_or_cache_guild(ctx, guild_id.into(), data).await;
+                let guild_name = receive_or_cache_guild(ctx, guild_id.into(), data).await;
                 let channel_id = removed_reaction.channel_id;
-                let channel_name = recieve_or_cache_channel(ctx, guild_id.into(), channel_id.into(), data).await;
+                let channel_name = receive_or_cache_channel(ctx, guild_id.into(), channel_id.into(), data).await;
 
                 let user_id = removed_reaction.user_id.unwrap();
                 let user_name = match user_id.to_user(&ctx.http).await {
