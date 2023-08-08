@@ -15,35 +15,8 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 pub struct Data {
     pub db: database::DbPool,
     pub redis: database::RedisPool,
+    time_started: std::time::Instant,
 }
-
-/* #[poise::command(prefix_command, hide_in_help)]
-async fn testdb(ctx: Context<'_>) -> Result<(), Error> {
-    let db_pool = &ctx.data().db;
-
-    // Increment the "test" column using an SQL query
-    let update_result = query!("UPDATE your_table_name SET test = test + 1")
-        .execute(db_pool)
-        .await;
-
-    if update_result.is_ok() {
-        // Query the updated value
-        let updated_value: i32 = query!("SELECT test FROM your_table_name")
-            .fetch_one(db_pool)
-            .await
-            .map(|row| row.test)
-            .unwrap_or(0);
-
-        println!("{}", format!("Database connection successful! New test value: {}", updated_value))
-    } else {
-        println!("Failed to update the test value in the database.");
-    }
-
-    Ok(())
-}
-
-
- */
 
 #[poise::command(prefix_command, hide_in_help)]
 async fn register(ctx: Context<'_>) -> Result<(), Error> {
@@ -80,6 +53,7 @@ async fn main() {
             meta::source(),
             meta::about(),
             meta::help(),
+            meta::uptime(),
             general::lob::lob(),
             utility::random::choose(),
             ],
@@ -117,6 +91,7 @@ async fn main() {
                 Ok(Data {
                     db: db_pool.clone(),
                     redis: redis_pool.clone(),
+                    time_started: std::time::Instant::now(),
                 })
             })
         })

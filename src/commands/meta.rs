@@ -4,12 +4,31 @@ use toml::Value;
 
 use crate::{Context, Error};
 
-// ... (other imports)
 
 #[poise::command(prefix_command, owners_only, hide_in_help)]
 pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say("**Bailing out, you are on your own. Good luck.**").await?;
     ctx.framework().shard_manager().lock().await.shutdown_all().await;
+    Ok(())
+}
+
+#[poise::command(slash_command, prefix_command, category = "Meta")]
+pub async fn uptime(ctx: Context<'_>) -> Result<(), Error> {
+    let uptime = std::time::Instant::now() - ctx.data().time_started;
+
+    let calculation = |a, b| (a / b, a % b);
+
+    let seconds = uptime.as_secs();
+    let (minutes, seconds) = calculation(seconds, 60);
+    let (hours, minutes) = calculation(minutes, 60);
+    let (days, hours) = calculation(hours, 24);
+
+    ctx.say(format!(
+        "`Uptime: {}d {}h {}m {}s`",
+        days, hours, minutes, seconds
+    ))
+    .await?;
+
     Ok(())
 }
 

@@ -401,7 +401,7 @@ pub async fn event_handler(
             // ... (rest of your code)
         }
 
-
+        // Only say the name changed if the name changed.
         // Remove on guild remove (technically done, just need to do it on threads as well)
         // Thread deletion/creation/edits
         // Track edits/deletion of messages & cache them properly with a limit
