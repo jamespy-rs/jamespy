@@ -57,6 +57,7 @@ async fn main() {
             general::lob::lob(),
             utility::snippets::set_snippet(),
             utility::snippets::snippet(),
+            utility::snippets::list_snippets(),
             utility::random::choose(),
             ],
         prefix_options: poise::PrefixFrameworkOptions {

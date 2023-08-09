@@ -1,4 +1,5 @@
 use bb8_redis::redis::AsyncCommands;
+use poise::serenity_prelude::{Colour, CreateEmbed};
 use sqlx::query;
 use regex::Regex;
 use crate::{Context, Error, Data};
@@ -17,6 +18,26 @@ pub async fn save_snippet(_ctx: &Context<'_>, guild_id: i64, data: &Data, snippe
 
     Ok(())
 }
+
+#[poise::command(slash_command, guild_only, category = "Utility", required_permissions = "MANAGE_MESSAGES")]
+pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<(), Error> {
+    let guild_id = ctx.guild_id().unwrap().0 as i64;
+    let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
+
+    let redis_pool = &ctx.data().redis;
+    let mut redis_conn = redis_pool.get().await?;
+
+    let deleted: i64 = redis_conn.del(&snippet_key).await?;
+
+    if deleted > 0 {
+        ctx.say(format!("Snippet '{}' has been removed.", snippet_name)).await?;
+    } else {
+        ctx.say(format!("Snippet '{}' not found.", snippet_name)).await?;
+    }
+
+    Ok(())
+}
+
 
 /// set a snippet for everyone to use!
 #[poise::command(slash_command, guild_only, category = "Utility", required_permissions = "MANAGE_MESSAGES", user_cooldown = "3")]
@@ -41,7 +62,7 @@ pub async fn set_snippet(
         ctx.say("Please provide at least one of title, description, image, or thumbnail.").await?;
         return Ok(());
     }
-
+    // cap name length please
     let name_regex = Regex::new(r"^[a-zA-Z0-9\-_.]+$").unwrap(); // enforces only some characters.
     if !name_regex.is_match(&name) {
         ctx.say("Invalid name format. It should only contain letters (a-z), hyphens (-), underscores (_), and periods (.)").await?;
@@ -77,20 +98,11 @@ pub async fn set_snippet(
     Ok(())
 }
 
-/// Show a snippet.
 #[poise::command(slash_command, prefix_command, guild_only, category = "Utility")]
 pub async fn snippet(
     ctx: Context<'_>,
-    #[description = "The name of the snippet"]
-    name: String,
+    #[description = "The name of the snippet"] name: String,
 ) -> Result<(), Error> {
-    // Need to cap name length.
-    let name_regex = Regex::new(r"^[a-zA-Z0-9\-_.]+$").unwrap(); // enforces only some characters.
-    if !name_regex.is_match(&name) {
-        ctx.say("Invalid name format. It should only contain letters (a-z), hyphens (-), underscores (_), and periods (.)").await?;
-        return Ok(());
-    }
-
     let guild_id = ctx.guild_id().unwrap().0 as i64;
     let snippet_key = format!("snippet:{}:{}", guild_id, name);
 
@@ -104,12 +116,79 @@ pub async fn snippet(
         return Ok(());
     }
 
-    let mut properties_string = String::new();
-    for (key, value) in snippet_properties {
-        properties_string.push_str(&format!("{}: {}\n", key, value));
-    }
+    ctx.send(|e| {
+        e.embed(|e| {
+            let _embed = CreateEmbed::default();
 
-    ctx.say(properties_string).await?;
+            for (key, value) in &snippet_properties {
+                match key.as_str() {
+                    "title" => {
+                        e.title(value);
+                    }
+                    "description" => {
+                        e.description(value.replace("\\n", "\n"));
+                    }
+                    "image" => {
+                        e.image(value);
+                    }
+                    "thumbnail" => {
+                        e.thumbnail(value);
+                    }
+                    "color" => {
+                        if let Some(color) = parse_colour(value) {
+                            e.color(color);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            e
+        })
+    })
+    .await?;
 
     Ok(())
 }
+
+
+fn parse_colour(value: &str) -> Option<Colour> {
+    let valid_colour = regex::Regex::new(r"^(#[0-9A-Fa-f]{6}|[0-9A-Fa-f]{6})$").unwrap();
+    if valid_colour.is_match(value) {
+        let rgb = u32::from_str_radix(&value[1..], 16).ok()?;
+        let red = ((rgb >> 16) & 0xFF) as u8;
+        let green = ((rgb >> 8) & 0xFF) as u8;
+        let blue = (rgb & 0xFF) as u8;
+        Some(Colour::from_rgb(red, green, blue))
+    } else {
+        None
+    }
+}
+
+#[poise::command(slash_command, prefix_command, guild_only, category = "Utility")]
+pub async fn list_snippets(ctx: Context<'_>) -> Result<(), Error> {
+    let guild_id = ctx.guild_id().unwrap().0 as i64;
+    let snippet_prefix = format!("snippet:{}:", guild_id);
+
+    let redis_pool = &ctx.data().redis;
+    let mut redis_conn = redis_pool.get().await?;
+
+    let snippet_keys: Vec<String> = redis_conn.keys(format!("{}*", snippet_prefix)).await?;
+
+    if snippet_keys.is_empty() {
+        ctx.say("No snippets found.").await?;
+        return Ok(());
+    }
+
+    let snippet_names: Vec<String> = snippet_keys
+        .into_iter()
+        .map(|key| key.trim_start_matches(&snippet_prefix).to_owned())
+        .collect();
+
+    let snippet_list = snippet_names.join(", ");
+
+    ctx.say(format!("Snippets in this guild: {}", snippet_list)).await?;
+
+    Ok(())
+}
+
+
