@@ -62,7 +62,10 @@ pub async fn set_snippet(
         ctx.say("Please provide at least one of title, description, image, or thumbnail.").await?;
         return Ok(());
     }
-    // cap name length please
+    if name.len() > 32 {
+        ctx.say("Snippet name must be 32 characters or less.").await?;
+        return Ok(());
+    }
     let name_regex = Regex::new(r"^[a-zA-Z0-9\-_.]+$").unwrap(); // enforces only some characters.
     if !name_regex.is_match(&name) {
         ctx.say("Invalid name format. It should only contain letters (a-z), hyphens (-), underscores (_), and periods (.)").await?;
@@ -190,5 +193,3 @@ pub async fn list_snippets(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
-
-
