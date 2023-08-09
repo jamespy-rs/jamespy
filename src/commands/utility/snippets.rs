@@ -15,7 +15,6 @@ pub async fn save_snippet(_ctx: &Context<'_>, guild_id: i64, data: &Data, snippe
         .hset_multiple(&snippet_key, snippet_properties)
         .await?;
 
-    // Extract the properties for the SQL query
     let mut title = None;
     let mut description = None;
     let mut image = None;
@@ -33,7 +32,6 @@ pub async fn save_snippet(_ctx: &Context<'_>, guild_id: i64, data: &Data, snippe
         }
     }
 
-    // Perform the SQL insertion
     sqlx::query!(
         "INSERT INTO snippets (guild_id, name, title, description, image, thumbnail, color)
          VALUES ($1, $2, $3, $4, $5, $6, $7)",
@@ -232,12 +230,19 @@ pub async fn listsnippets(ctx: Context<'_>) -> Result<(), Error> {
 
     let snippet_names: Vec<String> = snippet_keys
         .into_iter()
-        .map(|key| key.trim_start_matches(&snippet_prefix).to_owned())
+        .map(|key| format!("`{}`", key.trim_start_matches(&snippet_prefix)))
         .collect();
 
-    let snippet_list = snippet_names.join(", ");
+    let snippet_list = snippet_names.join("\n");
 
-    ctx.say(format!("Snippets in this guild: {}", snippet_list)).await?;
-
+    ctx.send(|e| {
+        e.embed(|e| {
+            e.title("Snippets");
+            e.description(format!("{}", snippet_list));
+            e.color(Colour::from_rgb(0, 255, 0))
+        })
+    })
+    .await?;
     Ok(())
 }
+
