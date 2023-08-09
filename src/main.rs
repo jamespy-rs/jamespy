@@ -55,6 +55,8 @@ async fn main() {
             meta::help(),
             meta::uptime(),
             general::lob::lob(),
+            utility::snippets::set_snippet(),
+            utility::snippets::snippet(),
             utility::random::choose(),
             ],
         prefix_options: poise::PrefixFrameworkOptions {
