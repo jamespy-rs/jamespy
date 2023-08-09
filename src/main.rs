@@ -58,6 +58,7 @@ async fn main() {
             utility::snippets::setsnippet(),
             utility::snippets::snippet(),
             utility::snippets::listsnippets(),
+            utility::snippets::removesnippet(),
             utility::random::choose(),
             ],
         prefix_options: poise::PrefixFrameworkOptions {

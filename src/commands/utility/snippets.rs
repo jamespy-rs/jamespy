@@ -1,11 +1,11 @@
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{Colour, CreateEmbed};
-use sqlx::query;
 use regex::Regex;
 use crate::{Context, Error, Data};
 
 pub async fn save_snippet(_ctx: &Context<'_>, guild_id: i64, data: &Data, snippet_name: &str, snippet_properties: &[(&str, &str)]) -> Result<(), Error> {
     let redis_pool = &data.redis;
+    let db_pool = &data.db;
 
     let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
 
@@ -14,20 +14,66 @@ pub async fn save_snippet(_ctx: &Context<'_>, guild_id: i64, data: &Data, snippe
     redis_conn
         .hset_multiple(&snippet_key, snippet_properties)
         .await?;
-    // Need to save persistently.
+
+    // Extract the properties for the SQL query
+    let mut title = None;
+    let mut description = None;
+    let mut image = None;
+    let mut thumbnail = None;
+    let mut color = None;
+
+    for (prop_name, prop_value) in snippet_properties {
+        match *prop_name {
+            "title" => title = Some(prop_value),
+            "description" => description = Some(prop_value),
+            "image" => image = Some(prop_value),
+            "thumbnail" => thumbnail = Some(prop_value),
+            "color" => color = Some(prop_value),
+            _ => (),
+        }
+    }
+
+    // Perform the SQL insertion
+    sqlx::query!(
+        "INSERT INTO snippets (guild_id, name, title, description, image, thumbnail, color)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        guild_id,
+        snippet_name,
+        title,
+        description,
+        image,
+        thumbnail,
+        color
+    )
+    .execute(db_pool)
+    .await?;
 
     Ok(())
 }
 
-#[poise::command(slash_command, guild_only, category = "Utility", required_permissions = "MANAGE_MESSAGES")]
-pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<(), Error> {
-    let guild_id = ctx.guild_id().unwrap().0 as i64;
+
+#[poise::command(slash_command, aliases("remove-snippet", "delsnippet", "del-snippet"), guild_only, category = "Utility", required_permissions = "MANAGE_MESSAGES")]
+pub async fn removesnippet(ctx: Context<'_>, snippet_name: String) -> Result<(), Error> {
+    let guild_id: i64 = ctx.guild_id().unwrap().0 as i64;
     let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
 
     let redis_pool = &ctx.data().redis;
+    let db_pool = &ctx.data().db;
+
     let mut redis_conn = redis_pool.get().await?;
 
+    // Remove snippet data from Redis
     let deleted: i64 = redis_conn.del(&snippet_key).await?;
+
+    // Perform the SQL deletion
+    sqlx::query!(
+        "DELETE FROM snippets
+         WHERE guild_id = $1 AND name = $2",
+        guild_id,
+        &snippet_name
+    )
+    .execute(db_pool)
+    .await?;
 
     if deleted > 0 {
         ctx.say(format!("Snippet '{}' has been removed.", snippet_name)).await?;
@@ -37,6 +83,7 @@ pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<()
 
     Ok(())
 }
+
 
 
 // No idea how to set the actual name of the command so I'm going to change it to setsnippet for now.

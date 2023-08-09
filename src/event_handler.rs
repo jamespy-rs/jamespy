@@ -398,7 +398,51 @@ pub async fn event_handler(
             // I assume this works, but I need to do the same for nicknames and AAAAAAAAAAA
             redis_conn.hset::<_, _, _, ()>(&user_key, "name", &updated_name).await.expect("Failed to update cached user name.");
 
-            // ... (rest of your code)
+        }
+        poise::Event::Ready { data_about_bot: _ } => {
+            let redis_pool = &data.redis;
+            let db_pool = &data.db;
+
+            // Fetch snippet data from the PostgreSQL database
+            let snippets_data = sqlx::query!(
+                "SELECT guild_id, name, title, description, image, thumbnail, color FROM snippets"
+            )
+            .fetch_all(db_pool)
+            .await
+            .unwrap_or_else(|e| {
+                eprintln!("Error fetching snippet data: {:?}", e);
+                Vec::new()
+            });
+
+            for snippet in snippets_data {
+                let guild_id = snippet.guild_id.unwrap_or_default();
+                let snippet_name = &snippet.name;  // Borrow the name
+
+                let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
+
+                let mut redis_conn = redis_pool.get().await.unwrap();
+
+                // I have no idea what is going on
+                let name = snippet_name.to_owned();
+                let title = snippet.title.as_ref().unwrap_or(&"".to_string()).to_owned();
+                let description = snippet.description.as_ref().unwrap_or(&"".to_string()).to_owned();
+                let image = snippet.image.as_ref().unwrap_or(&"".to_string()).to_owned();
+                let thumbnail = snippet.thumbnail.as_ref().unwrap_or(&"".to_string()).to_owned();
+                let color = snippet.color.as_ref().unwrap_or(&"".to_string()).to_owned();
+
+                let snippet_properties = vec![
+                    ("name", &name),
+                    ("title", &title),
+                    ("description", &description),
+                    ("image", &image),
+                    ("thumbnail", &thumbnail),
+                    ("color", &color),
+                ];
+
+                redis_conn
+                    .hset_multiple(&snippet_key, &snippet_properties)
+                    .await?;
+            }
         }
 
         // Only say the name changed if the name changed.
