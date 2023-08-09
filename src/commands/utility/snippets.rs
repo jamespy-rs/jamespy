@@ -50,7 +50,7 @@ pub async fn save_snippet(_ctx: &Context<'_>, guild_id: i64, data: &Data, snippe
 }
 
 
-#[poise::command(slash_command, aliases("remove-snippet", "delsnippet", "del-snippet"), guild_only, category = "Utility", required_permissions = "MANAGE_MESSAGES")]
+#[poise::command(slash_command, prefix_command, aliases("remove-snippet", "delsnippet", "del-snippet"), guild_only, category = "Utility", required_permissions = "MANAGE_MESSAGES")]
 pub async fn removesnippet(ctx: Context<'_>, snippet_name: String) -> Result<(), Error> {
     let guild_id: i64 = ctx.guild_id().unwrap().0 as i64;
     let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
