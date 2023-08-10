@@ -15,10 +15,8 @@ pub async fn removesnippet(ctx: Context<'_>, snippet_name: String) -> Result<(),
 
     let mut redis_conn = redis_pool.get().await?;
 
-    // Remove snippet data from Redis
     let deleted: i64 = redis_conn.del(&snippet_key).await?;
 
-    // Perform the SQL deletion
     sqlx::query!(
         "DELETE FROM snippets
          WHERE guild_id = $1 AND name = $2",
