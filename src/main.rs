@@ -2,6 +2,7 @@ mod commands;
 use commands::*;
 mod database;
 mod event_handler;
+mod utils;
 //use sqlx::query;
 
 use poise::serenity_prelude as serenity;
