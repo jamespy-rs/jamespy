@@ -1,4 +1,6 @@
 use bb8_redis::redis::{self, AsyncCommands};
+use poise::futures_util::future::join_all;
+use poise::serenity_prelude::UserId;
 use poise::serenity_prelude::{self as serenity, Channel};
 use sqlx::query;
 
@@ -412,11 +414,12 @@ pub async fn event_handler(
             .unwrap_or_else(|e| {
                 eprintln!("Error fetching snippet data: {:?}", e);
                 Vec::new()
+
             });
 
             for snippet in snippets_data {
                 let guild_id = snippet.guild_id.unwrap_or_default();
-                let snippet_name = &snippet.name;  // Borrow the name
+                let snippet_name = &snippet.name;
 
                 let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
 
@@ -443,6 +446,57 @@ pub async fn event_handler(
                     .hset_multiple(&snippet_key, &snippet_properties)
                     .await?;
             }
+
+        }
+        poise::Event::GuildMemberAddition { new_member } => {
+            let guild_id = new_member.guild_id;
+            let joined_user_id = new_member.user.id;
+            let db_pool = &data.db;
+
+            let query_result = sqlx::query!(
+                "SELECT author_id FROM join_tracks WHERE guild_id = $1 AND user_id = $2",
+                guild_id.0 as i64,
+                UserId(joined_user_id.0 as u64).0 as i64
+            )
+            .fetch_all(db_pool)
+            .await;
+
+
+            match query_result {
+                Ok(rows) => {
+                    let mut author_ids = Vec::new();
+
+                    for row in rows {
+                        let author_id = match row.author_id {
+                            Some(value) => value,
+                            None => 0,
+                        };
+                        author_ids.push(UserId(author_id.try_into().unwrap()));
+                    }
+
+                    let author_futures = author_ids.into_iter().filter_map(|author_id| {
+                        let cache = ctx.cache.clone();
+                        let dm_content = format!(
+                            "{} has joined {}!",
+                            new_member.user.name,
+                            guild_id.name(&ctx.cache).unwrap_or_else(|| "the server".to_string())
+                        );
+
+                        Some(async move {
+                            if let Some(author) = cache.user(author_id) {
+                                if let Err(err) = author.dm(ctx, |m| m.content(dm_content)).await {
+                                    eprintln!("Failed to send DM to author {}: {:?}", author_id, err);
+                                }
+                            }
+                        })
+                    });
+
+                    let _ = join_all(author_futures).await;
+                }
+                Err(err) => {
+                    eprintln!("Failed to retrieve authors tracking user: {:?}", err);
+                }
+            }
         }
 
         // Only say the name changed if the name changed.
@@ -452,7 +506,6 @@ pub async fn event_handler(
         // user join/leave tracking
         // user updates
         // voice events
-        // Implement anti 32 Bit Link measures
         _ => (),
     }
 

@@ -41,8 +41,6 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 
 #[tokio::main]
 async fn main() {
-
-
     let db_pool = init_data().await;
     let redis_pool = init_redis_pool().await;
 
@@ -59,6 +57,9 @@ async fn main() {
             utility::snippets::snippet(),
             utility::snippets::listsnippets(),
             utility::snippets::removesnippet(),
+            utility::tracking::trackuser(),
+            utility::tracking::untrackuser(),
+            utility::tracking::trackedusers(),
             utility::random::choose(),
             ],
         prefix_options: poise::PrefixFrameworkOptions {
