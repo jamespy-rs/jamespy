@@ -16,3 +16,10 @@ openssl = { version = "0.10", features = ["vendored"] } # for cross compiling
 bb8-redis = "0.13.1"
 toml = "0.7.6"
 regex = "1.9.3"
+
+
+[profile.release]
+strip = true
+opt-level = 3
+lto = true
+codegen-units = 1
