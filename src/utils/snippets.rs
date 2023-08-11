@@ -61,3 +61,42 @@ pub fn parse_colour(value: &str) -> Option<Colour> {
         None
     }
 }
+
+pub async fn set_all_snippets(data: &Data) -> Result<(), Box<dyn std::error::Error>> {
+    let snippets_data = sqlx::query!(
+        "SELECT guild_id, name, title, description, image, thumbnail, color FROM snippets"
+    )
+    .fetch_all(&data.db)
+    .await?;
+
+    for snippet in snippets_data {
+        let guild_id = snippet.guild_id.unwrap_or_default();
+        let snippet_name: &String = &snippet.name;
+
+        let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
+
+        let mut redis_conn = data.redis.get().await?;
+
+        let name = snippet_name.to_owned();
+        let title = snippet.title.as_ref().unwrap_or(&"".to_string()).to_owned();
+        let description = snippet.description.as_ref().unwrap_or(&"".to_string()).to_owned();
+        let image = snippet.image.as_ref().unwrap_or(&"".to_string()).to_owned();
+        let thumbnail = snippet.thumbnail.as_ref().unwrap_or(&"".to_string()).to_owned();
+        let color = snippet.color.as_ref().unwrap_or(&"".to_string()).to_owned();
+
+        let snippet_properties = vec![
+            ("name", &name),
+            ("title", &title),
+            ("description", &description),
+            ("image", &image),
+            ("thumbnail", &thumbnail),
+            ("color", &color),
+        ];
+
+        redis_conn
+            .hset_multiple(&snippet_key, &snippet_properties)
+            .await?;
+    }
+
+    Ok(())
+}

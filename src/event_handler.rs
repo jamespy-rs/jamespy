@@ -6,6 +6,9 @@ use sqlx::query;
 
 use crate::Data;
 use crate::Error;
+use crate::utils;
+
+use utils::snippets::*;
 
 const MAX_CACHED_MESSAGES: usize = 250; // Max number of messages cached per channel
 
@@ -402,51 +405,7 @@ pub async fn event_handler(
 
         }
         poise::Event::Ready { data_about_bot: _ } => {
-            let redis_pool = &data.redis;
-            let db_pool = &data.db;
-
-            // Fetch snippet data from the PostgreSQL database
-            let snippets_data = sqlx::query!(
-                "SELECT guild_id, name, title, description, image, thumbnail, color FROM snippets"
-            )
-            .fetch_all(db_pool)
-            .await
-            .unwrap_or_else(|e| {
-                eprintln!("Error fetching snippet data: {:?}", e);
-                Vec::new()
-
-            });
-
-            for snippet in snippets_data {
-                let guild_id = snippet.guild_id.unwrap_or_default();
-                let snippet_name = &snippet.name;
-
-                let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
-
-                let mut redis_conn = redis_pool.get().await.unwrap();
-
-                // I have no idea what is going on
-                let name = snippet_name.to_owned();
-                let title = snippet.title.as_ref().unwrap_or(&"".to_string()).to_owned();
-                let description = snippet.description.as_ref().unwrap_or(&"".to_string()).to_owned();
-                let image = snippet.image.as_ref().unwrap_or(&"".to_string()).to_owned();
-                let thumbnail = snippet.thumbnail.as_ref().unwrap_or(&"".to_string()).to_owned();
-                let color = snippet.color.as_ref().unwrap_or(&"".to_string()).to_owned();
-
-                let snippet_properties = vec![
-                    ("name", &name),
-                    ("title", &title),
-                    ("description", &description),
-                    ("image", &image),
-                    ("thumbnail", &thumbnail),
-                    ("color", &color),
-                ];
-
-                redis_conn
-                    .hset_multiple(&snippet_key, &snippet_properties)
-                    .await?;
-            }
-
+            let _ = set_all_snippets(&data).await;
         }
         poise::Event::GuildMemberAddition { new_member } => {
             let guild_id = new_member.guild_id;
