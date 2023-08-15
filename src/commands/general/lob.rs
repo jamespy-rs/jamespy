@@ -4,7 +4,7 @@ use rand::seq::SliceRandom;
 
 
 /// lob
-#[poise::command(slash_command, prefix_command, category = "Utility", user_cooldown = "5")]
+#[poise::command(slash_command, prefix_command, category = "Utility", channel_cooldown = "8")]
 pub async fn lob(
     ctx: Context<'_>,
 ) -> Result<(), Error> {

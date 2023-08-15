@@ -10,7 +10,7 @@ use crate::utils;
 
 use utils::snippets::*;
 
-const MAX_CACHED_MESSAGES: usize = 250; // Max number of messages cached per channel
+const MAX_CACHED_MESSAGES: usize = 350; // Max number of messages cached per channel
 
 pub async fn receive_or_cache_guild(ctx: &serenity::Context, guild_id: i64, data: &Data) -> Result<String, serenity::Error> {
     let redis_pool = &data.redis;
@@ -106,19 +106,31 @@ pub async fn event_handler(
             let db_pool = &data.db;
             let redis_pool = &data.redis;
 
-            let guild_id = new_message.guild_id.map(|id| id.0 as i64).unwrap_or_default(); // This makes it 0 if no guild is present
+            let guild_id = new_message.guild_id.unwrap_or_default();
 
             let guild_name = if guild_id == 0 {
                 "None".to_string()
             } else {
-                receive_or_cache_guild(ctx, guild_id, data).await?
+                if let Some(guild) = ctx.cache.guild(guild_id) {
+                    guild.name.to_string()
+                } else {
+                    "Unknown".to_string()
+                }
             };
 
-            let channel_name = if guild_id == 0 {
-                new_message.channel_id.to_string()
+
+            let channel_name = if let Some(channel) = ctx.cache.channel(new_message.channel_id) {
+                match &channel {
+                    serenity::model::channel::Channel::Guild(guild_channel) => {
+                        guild_channel.name.clone()
+                    },
+                    _ => "Unknown Channel".to_string(),
+                }
             } else {
-                receive_or_cache_channel(ctx, guild_id, new_message.channel_id.into(), data).await?
+                "Unknown Channel".to_string()
             };
+
+
             // I 100% should handle threads at some point, but I may have to merge the channels & threads set for this to happen without an extra request?
             // I'm not actually sure if this is the case.
 
@@ -145,7 +157,7 @@ pub async fn event_handler(
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
                  VALUES ($1, $2, $3, $4, $5, $6, now())",
-                guild_id,
+                i64::from(guild_id), // It told me to do this.
                 new_message.channel_id.0 as i64,
                 new_message.id.0 as i64,
                 new_message.author.id.0 as i64,
@@ -154,6 +166,7 @@ pub async fn event_handler(
             )
             .execute(&*db_pool)
             .await;
+        // Need to get my bot to react for join tracking.
         }
 
         poise::Event::GuildCreate { guild, is_new: _ } => {
@@ -206,6 +219,8 @@ pub async fn event_handler(
 
         }
         poise::Event::ReactionAdd { add_reaction } => {
+            // Need to track reacts on accela messages.
+
             if let Some(guild_id) = add_reaction.guild_id {
                 let guild_name = receive_or_cache_guild(ctx, guild_id.into(), data).await;
                 let channel_id = add_reaction.channel_id;
@@ -406,6 +421,7 @@ pub async fn event_handler(
         }
         poise::Event::Ready { data_about_bot: _ } => {
             let _ = set_all_snippets(&data).await;
+            // Need to check join tracks.
         }
         poise::Event::GuildMemberAddition { new_member } => {
             let guild_id = new_member.guild_id;

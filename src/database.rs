@@ -38,6 +38,3 @@ pub async fn init_redis_pool() -> RedisPool {
 
     pool
 }
-
-
-

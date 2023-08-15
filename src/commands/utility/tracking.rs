@@ -2,8 +2,8 @@ use crate::{Context, Error, Data};
 use poise::serenity_prelude::{self as serenity, GuildId, UserId};
 use sqlx;
 
-#[poise::command(slash_command, prefix_command, aliases("track-user", "track_user"), guild_only, category = "Utility")]
-pub async fn trackuser(
+#[poise::command(rename = "track-user", slash_command, prefix_command, aliases("track_user", "trackuser"), guild_only, category = "Utility")]
+pub async fn track_user(
     ctx: Context<'_>,
     #[description = "The user that you want to track!"] user: Option<serenity::User>,
 ) -> Result<(), Error> {
@@ -92,8 +92,8 @@ async fn is_user_already_tracking(_ctx: &Context<'_>, guild_id: GuildId, tracked
 }
 
 
-#[poise::command(slash_command, prefix_command, aliases("untrack-user", "untrack_user"), guild_only, category = "Utility")]
-pub async fn untrackuser(
+#[poise::command(rename = "untrack-user", slash_command, prefix_command, aliases("untrackuser", "untrack_user", "remove-track", "delete-track", "del-track"), guild_only, category = "Utility")]
+pub async fn untrack_user(
     ctx: Context<'_>,
     #[description = "The user that you want to untrack!"] user: Option<serenity::User>,
 ) -> Result<(), Error> {
@@ -140,8 +140,8 @@ async fn remove_tracked_user(ctx: &Context<'_>, guild_id: GuildId, tracked_user_
     }
 }
 
-#[poise::command(slash_command, prefix_command, aliases("tracked-users", "tracked_users", "listtracked", "list-tracked"), guild_only, category = "Utility")]
-pub async fn trackedusers(
+#[poise::command(rename = "tracked-users", slash_command, prefix_command, aliases("tracked_users", "listtracked", "list-tracked"), guild_only, category = "Utility")]
+pub async fn tracked_users(
     ctx: Context<'_>,
 ) -> Result<(), Error> {
     let guild_id = ctx.guild_id().unwrap();

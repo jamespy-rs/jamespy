@@ -5,8 +5,8 @@ use crate::{Context, Error, utils};
 
 use utils::snippets::*;
 
-#[poise::command(slash_command, prefix_command, aliases("remove-snippet", "delsnippet", "del-snippet"), guild_only, category = "Utility", required_permissions = "MANAGE_MESSAGES")]
-pub async fn removesnippet(ctx: Context<'_>, snippet_name: String) -> Result<(), Error> {
+#[poise::command(rename = "remove-snippet", slash_command, prefix_command, aliases("delsnippet", "del-snippet"), guild_only, category = "Utility", required_permissions = "MANAGE_MESSAGES")]
+pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<(), Error> {
     let guild_id: i64 = ctx.guild_id().unwrap().0 as i64;
     let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
 
@@ -39,8 +39,8 @@ pub async fn removesnippet(ctx: Context<'_>, snippet_name: String) -> Result<(),
 
 // No idea how to set the actual name of the command so I'm going to change it to setsnippet for now.
 /// set a snippet for everyone to use!
-#[poise::command(slash_command, guild_only, aliases("setsnippet", "set_snippet", "setsnippets", "set_snippets"), category = "Utility", required_permissions = "MANAGE_MESSAGES", user_cooldown = "3")]
-pub async fn setsnippet(
+#[poise::command(rename = "set-snippet", slash_command, guild_only, aliases("setsnippet", "setsnippets", "set_snippets"), category = "Utility", required_permissions = "MANAGE_MESSAGES", user_cooldown = "3")]
+pub async fn set_snippet(
     ctx: Context<'_>,
     #[description = "The name of the snippet"]
     name: String,
@@ -154,8 +154,8 @@ pub async fn snippet(
 
 
 
-#[poise::command(slash_command, prefix_command, aliases("list-snippets", "list_snippets", "list_snippet", "list-snippet"), guild_only, category = "Utility")]
-pub async fn listsnippets(ctx: Context<'_>) -> Result<(), Error> {
+#[poise::command(rename = "list-snippets", slash_command, prefix_command, aliases("list-snippets", "list_snippet", "list-snippet"), guild_only, category = "Utility")]
+pub async fn list_snippets(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = ctx.guild_id().unwrap().0 as i64;
     let snippet_prefix = format!("snippet:{}:", guild_id);
 
