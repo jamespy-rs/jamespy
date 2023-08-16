@@ -76,3 +76,18 @@ pub async fn help(
     .await?;
     Ok(())
 }
+
+
+/// Say something!
+#[poise::command(prefix_command, hide_in_help, owners_only)]
+pub async fn say(
+    ctx: Context<'_>,
+    // Add channel support, potentially unlock to "administrator" or another permission
+    #[description = "What to say"] string: String,
+) -> Result<(), Error> {
+
+
+    ctx.say(string).await?;
+
+    Ok(())
+}
