@@ -52,7 +52,7 @@ pub async fn event_handler(
             let channel_name = get_channel_name(ctx, guild_id, new_message.channel_id).await;
 
             // TODO: colouring!
-            println!("[{}] [#{}] {}: {}", guild_name, channel_name, new_message.author.name, new_message.content);
+            println!("\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[0m", guild_name, channel_name, new_message.author.name, new_message.content);
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
                  VALUES ($1, $2, $3, $4, $5, $6, now())",
@@ -67,12 +67,40 @@ pub async fn event_handler(
             .await;
         // Need to get my bot to react for join tracking.
         }
+        poise::Event::MessageUpdate { old_if_available, new, event } => {
+            match (old_if_available, new) {
+                (Some(old_message), Some(new_message)) => {
+                    if old_message.content != new_message.content {
+                        let guild_id = new_message.guild_id.unwrap_or_default();
+
+                        let guild_name = if guild_id == 0 {
+                            "None".to_string()
+                        } else {
+                            if let Some(guild) = ctx.cache.guild(guild_id) {
+                                guild.name.to_string()
+                            } else {
+                                "Unknown".to_string()
+                            }
+                        };
+                        let channel_name = get_channel_name(ctx, guild_id, new_message.channel_id).await;
+                        println!("\x1B[36m[{}] [#{}] A message by \x1B[0m{}\x1B[36m was edited:", guild_name, channel_name, new_message.author.name);
+                        println!("BEFORE: {}: {}", new_message.author.name, old_message.content);
+                        println!("AFTER: {}: {}\x1B[0m", new_message.author.name, new_message.content);
+                    }
+                },
+                (None, None) => {
+                    println!("A message (ID:{}) was edited but was not in cache", event.id);
+                },
+                _ => {}
+            }
+        }
+
+        // Need message delete and purge.
 
         poise::Event::GuildCreate { guild: _, is_new: _ } => {
             // eeee
 
         }
-
         poise::Event::GuildDelete { incomplete: _, full: _ } => {
             // eeee
         }
@@ -97,12 +125,11 @@ pub async fn event_handler(
             };
 
             println!(
-                "[{}] [#{}] {} added a reaction: {}",
+                "\x1B[95m[{}] [#{}] {} added a reaction: {}\x1B[0m",
                 guild_name, channel_name, user_name, add_reaction.emoji
             );
 
         }
-
         poise::Event::ReactionRemove { removed_reaction } => {
             let guild_id = removed_reaction.guild_id.unwrap_or_default();
             let guild_name = if guild_id == 0 {
@@ -114,8 +141,6 @@ pub async fn event_handler(
                     "Unknown".to_string()
                 }
             };
-
-
             let channel_name = get_channel_name(ctx, guild_id, removed_reaction.channel_id).await;
 
             let user_id = removed_reaction.user_id.unwrap();
@@ -125,7 +150,7 @@ pub async fn event_handler(
             };
 
             println!(
-                "[{}] [#{}] {} removed a reaction: {}",
+                "\x1B[95m[{}] [#{}] {} removed a reaction: {}\x1B[0m",
                 guild_name, channel_name, user_name, removed_reaction.emoji
             );
 
@@ -136,12 +161,12 @@ pub async fn event_handler(
         }
         poise::Event::ChannelCreate { channel } => {
             let guild_name = channel.guild_id.name(ctx).unwrap_or("Unknown Guild".to_string());
-            println!("[{}] #{} was created!", guild_name, channel.name);
+            println!("\x1B[34m[{}] #{} was created!\x1B[0m", guild_name, channel.name);
         }
         // I need to go back to this.
         poise::Event::ChannelDelete { channel } => {
             let guild_name = channel.guild_id.name(ctx).unwrap_or("Unknown Guild".to_string());
-            println!("[{}] #{} was deleted!", guild_name, channel.name);
+            println!("\x1B[34m[{}] #{} was deleted!\x1B[0m", guild_name, channel.name);
         }
         poise::Event::ChannelUpdate { old, new } => {
             // Currently doesn't actually show a change, just announces the new name twice.
@@ -151,7 +176,7 @@ pub async fn event_handler(
             let new_channel_name = new.id().name(ctx).await;
 
                 println!(
-                    "#{}'s name updated to #{}!",
+                    "\x1B[34m#{}'s name updated to #{}!\x1B[0m",
                     old_channel_name.unwrap_or("Unknown Name".to_string()), new_channel_name.unwrap()
                 );
             } else {
@@ -173,7 +198,7 @@ pub async fn event_handler(
                 }
             };
             // Tell which channel it was created in.
-            println!("[{}] Thread #{} was created!", guild_name, thread.name);
+            println!("\x1B[94m[{}] Thread #{} was created!\x1B[0m", guild_name, thread.name);
 
         }
         poise::Event::ThreadDelete { thread } => {
@@ -202,9 +227,9 @@ pub async fn event_handler(
             // Currently it won't know which thread was deleted because the method in which it is checked.
             // Tell which channel it was deleted from.
             if let Some(name) = channel_name {
-                println!("[{}] Thread '{}' was deleted!", guild_name, name);
+                println!("\x1B[94m[{}] Thread '{}' was deleted!\x1B[0m", guild_name, name);
             } else {
-                println!("[{}] Thread with unknown name was deleted!", guild_name);
+                println!("\x1B[94m[{}] Thread with unknown name was deleted!\x1B[0m", guild_name);
             }
         }
 
@@ -214,6 +239,7 @@ pub async fn event_handler(
         }
 
         poise::Event::Ready { data_about_bot: _ } => {
+            ctx.cache.set_max_messages(250);
             let _ = set_all_snippets(&data).await;
             // Need to check join tracks.
         }
@@ -229,8 +255,6 @@ pub async fn event_handler(
             )
             .fetch_all(db_pool)
             .await;
-
-
             match query_result {
                 Ok(rows) => {
                     let mut author_ids = Vec::new();

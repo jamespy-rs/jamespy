@@ -1,5 +1,6 @@
 use std::{fs::File, io::Read};
 
+use poise::serenity_prelude::ChannelId;
 use toml::Value;
 
 use crate::{Context, Error};
@@ -82,12 +83,12 @@ pub async fn help(
 #[poise::command(prefix_command, hide_in_help, owners_only)]
 pub async fn say(
     ctx: Context<'_>,
-    // Add channel support, potentially unlock to "administrator" or another permission
+    #[description = "Channel where the message will be sent"] channel: Option<ChannelId>,
     #[description = "What to say"] string: String,
 ) -> Result<(), Error> {
+    let target_channel = channel.unwrap_or(ctx.channel_id());
 
-
-    ctx.say(string).await?;
+    target_channel.say(&ctx.http(), string).await?;
 
     Ok(())
 }
