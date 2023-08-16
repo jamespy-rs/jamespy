@@ -11,7 +11,6 @@ pub async fn lob(
     let loblist = std::fs::read_to_string("loblist.txt")?;
     let options: Vec<&str> = loblist.lines().collect();
 
-    // Create an instance of OsRng
     let mut rng = OsRng::default();
 
     if let Some(chosen_option) = options.choose(&mut rng) {
