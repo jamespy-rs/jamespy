@@ -1,5 +1,5 @@
 use poise::futures_util::future::join_all;
-use poise::serenity_prelude::{UserId, GuildId, ChannelId};
+use poise::serenity_prelude::{UserId, GuildId, ChannelId, Guild};
 use poise::serenity_prelude::{self as serenity};
 
 use sqlx::query;
@@ -16,7 +16,6 @@ async fn get_channel_name(ctx: &serenity::Context, guild_id: GuildId, channel_id
     if guild_id.0 != 0 && channel_name == "Unknown Channel" {
         let guild_cache = ctx.cache.guild(guild_id).unwrap();
         let threads = &guild_cache.threads;
-
         for thread in threads {
             if thread.id == channel_id.0 {
                 channel_name = thread.name.clone();
@@ -89,7 +88,7 @@ pub async fn event_handler(
                     }
                 },
                 (None, None) => {
-                    println!("A message (ID:{}) was edited but was not in cache", event.id);
+                    println!("\x1B[36mA message (ID:{}) was edited but was not in cache\x1B[0m", event.id);
                 },
                 _ => {}
             }

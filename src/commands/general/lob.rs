@@ -3,7 +3,7 @@ use rand::rngs::OsRng;
 use rand::seq::SliceRandom;
 
 
-/// lob
+/// i lob
 #[poise::command(slash_command, prefix_command, category = "Utility", channel_cooldown = "8")]
 pub async fn lob(
     ctx: Context<'_>,
