@@ -1,8 +1,6 @@
-use bb8_redis::redis::{self, AsyncCommands};
-use openssl::string;
 use poise::futures_util::future::join_all;
-use poise::serenity_prelude::{UserId, channel, CacheHttp, Message, GuildId};
-use poise::serenity_prelude::{self as serenity, Channel};
+use poise::serenity_prelude::{UserId, GuildId, ChannelId};
+use poise::serenity_prelude::{self as serenity};
 
 use sqlx::query;
 
@@ -12,16 +10,15 @@ use crate::utils;
 
 use utils::snippets::*;
 
-
-async fn get_channel_name(ctx: &serenity::Context, guild_id: GuildId, new_message: &Message) -> String {
-    let mut channel_name = new_message.channel_id.name(ctx.cache.clone()).await.unwrap_or("Unknown Channel".to_owned());
+async fn get_channel_name(ctx: &serenity::Context, guild_id: GuildId, channel_id: ChannelId) -> String {
+    let mut channel_name = channel_id.name(ctx).await.unwrap_or("Unknown Channel".to_owned());
 
     if guild_id.0 != 0 && channel_name == "Unknown Channel" {
         let guild_cache = ctx.cache.guild(guild_id).unwrap();
         let threads = &guild_cache.threads;
 
         for thread in threads {
-            if thread.id == new_message.channel_id {
+            if thread.id == channel_id.0 {
                 channel_name = thread.name.clone();
                 break;
             }
@@ -52,9 +49,8 @@ pub async fn event_handler(
                 }
             };
 
-            let channel_name = get_channel_name(ctx, guild_id, new_message).await;
+            let channel_name = get_channel_name(ctx, guild_id, new_message.channel_id).await;
 
-            // Print the message
             // TODO: colouring!
             println!("[{}] [#{}] {}: {}", guild_name, channel_name, new_message.author.name, new_message.content);
             let _ = query!(
@@ -92,19 +88,10 @@ pub async fn event_handler(
                     "Unknown".to_string()
                 }
             };
-            let channel_name = if let Some(channel) = ctx.cache.channel(add_reaction.channel_id) {
-                match &channel {
-                    serenity::model::channel::Channel::Guild(guild_channel) => guild_channel.name.clone(),
-                    _ => "Unknown Channel".to_string(),
-                }
-            } else {
-                "Unknown Channel".to_string()
-            };
-            // If its not in a guild it will return "Unknown Channel". Now I can either check for it or leave it.
+            let channel_name = get_channel_name(ctx, guild_id, add_reaction.channel_id).await;
 
             let user_id = add_reaction.user_id.unwrap();
-            let user_name = match user_id.to_user(&ctx.http).await {
-                // I'm going to phase out the function for caching users probably and use this instead.
+            let user_name = match user_id.to_user(ctx).await {
                 Ok(user) => user.name,
                 Err(_) => "Unknown User".to_string(),
             };
@@ -115,8 +102,6 @@ pub async fn event_handler(
             );
 
         }
-
-
 
         poise::Event::ReactionRemove { removed_reaction } => {
             let guild_id = removed_reaction.guild_id.unwrap_or_default();
@@ -131,19 +116,10 @@ pub async fn event_handler(
             };
 
 
-            let channel_name = if let Some(channel) = ctx.cache.channel(removed_reaction.channel_id) {
-                match &channel {
-                    serenity::model::channel::Channel::Guild(guild_channel) => guild_channel.name.clone(),
-                    _ => "Unknown Channel".to_string(),
-                }
-            } else {
-                "Unknown Channel".to_string()
-            };
-            // If its not in a guild it will return "Unknown Channel". Now I can either check for it or leave it.
+            let channel_name = get_channel_name(ctx, guild_id, removed_reaction.channel_id).await;
 
             let user_id = removed_reaction.user_id.unwrap();
             let user_name = match user_id.to_user(&ctx.http).await {
-                // I'm going to phase out the function for caching users probably and use this instead.
                 Ok(user) => user.name,
                 Err(_) => "Unknown User".to_string(),
             };
@@ -159,155 +135,84 @@ pub async fn event_handler(
             // Will leave it untouched until I have a better codebase.
         }
         poise::Event::ChannelCreate { channel } => {
-            let redis_pool = &data.redis;
-            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
-
-            let guild_id = channel.guild_id.0.to_string();
-            let guild_redis_key = format!("guild:{}", guild_id);
-            let channel_set_key = format!("channel_set:{}", guild_id);
-
-            let guild_name: Option<String> = redis_conn.hget(&guild_redis_key, "name").await.expect("Failed to fetch guild from cache.");
-
-            let guild_name = match guild_name {
-                Some(name) => name,
-                None => "Unknown Guild".to_owned(),
-            };
-
+            let guild_name = channel.guild_id.name(ctx).unwrap_or("Unknown Guild".to_string());
             println!("[{}] #{} was created!", guild_name, channel.name);
-
-            let channel_redis_key = format!("channel:{}", channel.id.0);
-            let _channel_cache_result: Result<(), _> = redis_conn
-                .hset(&channel_redis_key, "name", channel.name.clone())
-                .await;
-
-            let _: redis::RedisResult<()> = redis_conn
-            .sadd(&channel_set_key, channel.id.0.to_string())
-            .await;
         }
         // I need to go back to this.
         poise::Event::ChannelDelete { channel } => {
-            let redis_pool = &data.redis;
-            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
-
-            let channel_redis_key = format!("channel:{}", channel.id.0);
-
-            let _delete_channel_result: Result<(), _> = redis_conn
-                .del(&channel_redis_key)
-                .await;
-
-            let guild_id = channel.guild_id.0.to_string();
-            let channel_set_key = format!("channel_set:{}", guild_id);
-            let _remove_channel_result: Result<(), _> = redis_conn
-                .srem(&channel_set_key, channel.id.0.to_string())
-                .await;
-
-            let message_cache_key = format!("channel:{}:messages", channel.id.0);
-            let _delete_messages_result: Result<(), _> = redis_conn
-                .del(&message_cache_key)
-                .await;
-            // This will also need to delete messages from all threads if the channel has them.
+            let guild_name = channel.guild_id.name(ctx).unwrap_or("Unknown Guild".to_string());
+            println!("[{}] #{} was deleted!", guild_name, channel.name);
         }
-        poise::Event::ChannelUpdate { old: _, new } => {
-            let redis_pool = &data.redis;
-            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
+        poise::Event::ChannelUpdate { old, new } => {
+            // Currently doesn't actually show a change, just announces the new name twice.
+            if let Some(old_channel) = old {
+                let old_channel_name = old_channel.id().name(ctx).await;
 
-            let channel_redis_key = format!("channel:{}", new.id().0);
+            let new_channel_name = new.id().name(ctx).await;
 
-            let old_channel_name: String = redis_conn
-                .hget(&channel_redis_key, "name")
-                .await
-                .unwrap_or_else(|_| String::from("Unknown"));
-
-            let new_channel_name = match &new {
-                Channel::Guild(new_guild_channel) => new_guild_channel.name.clone(),
-                Channel::Category(new_category_channel) => new_category_channel.name.clone(),
-                _ => todo!(),
-            };
-
-            let _channel_cache_result: Result<(), _> = redis_conn
-                .hset(&channel_redis_key, "name", new_channel_name.clone())
-                .await;
-
-            println!(
-                "#{}'s name updated to #{}!",
-                old_channel_name, new_channel_name
-            );
+                println!(
+                    "#{}'s name updated to #{}!",
+                    old_channel_name.unwrap_or("Unknown Name".to_string()), new_channel_name.unwrap()
+                );
+            } else {
+                // Should be unreachable, I just won't "fix" until I actually fix the issue above.
+            }
         }
-
 
         // Will come back for threads when I cache them
         poise::Event::ThreadCreate { thread } => {
-            let redis_pool = &data.redis;
-            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
+            let guild_id = thread.guild_id;
 
-            let guild_id = thread.guild_id.0.to_string();
-            let guild_redis_key = format!("guild:{}", guild_id);
-            let thread_set_key = format!("thread_set:{}", guild_id);
-
-            let guild_name: Option<String> = redis_conn.hget(&guild_redis_key, "name").await.expect("Failed to fetch guild from cache.");
-
-            let guild_name = match guild_name {
-                Some(name) => name,
-                None => "Unknown Guild".to_owned(),
+            let guild_name = if guild_id == 0 {
+                "None".to_string()
+            } else {
+                if let Some(guild) = ctx.cache.guild(guild_id) {
+                    guild.name.to_string()
+                } else {
+                    "Unknown".to_string()
+                }
             };
-
+            // Tell which channel it was created in.
             println!("[{}] Thread #{} was created!", guild_name, thread.name);
 
-            let thread_redis_key = format!("thread:{}", thread.id.0);
-            let _thread_cache_result: Result<(), _> = redis_conn
-                .hset(&thread_redis_key, "name", thread.name.clone())
-                .await;
-
-            let _: redis::RedisResult<()> = redis_conn
-                .sadd(&thread_set_key, thread.id.0.to_string())
-                .await;
         }
-
         poise::Event::ThreadDelete { thread } => {
-            // TODO: do this after cleanup of the rest of the bot is done. (need to delete cached messages related etc etc)
+            let guild_id = thread.guild_id;
+            let guild_cache = ctx.cache.guild(guild_id).unwrap();
+
+            let threads = &guild_cache.threads;
+
+            let mut channel_name = None;
+
+            for thread_cache in threads {
+                if thread_cache.id == thread.id {
+                    channel_name = Some(thread_cache.name.clone());
+                    break;
+                }
+            }
+            let guild_name = if guild_id == 0 {
+                "None".to_string()
+            } else {
+                if let Some(guild) = ctx.cache.guild(guild_id) {
+                    guild.name.to_string()
+                } else {
+                    "Unknown".to_string()
+                }
+            };
+            // Currently it won't know which thread was deleted because the method in which it is checked.
+            // Tell which channel it was deleted from.
+            if let Some(name) = channel_name {
+                println!("[{}] Thread '{}' was deleted!", guild_name, name);
+            } else {
+                println!("[{}] Thread with unknown name was deleted!", guild_name);
+            }
         }
 
-        poise::Event::ThreadUpdate { thread } => {
-            let redis_pool = &data.redis;
-            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
-
-            let thread_redis_key = format!("thread:{}", thread.id.0);
-
-            let old_thread_name: String = redis_conn
-                .hget(&thread_redis_key, "name")
-                .await
-                .unwrap_or_else(|_| String::from("Unknown"));
-
-            let new_thread_name = thread.name.clone();
-
-            let _thread_cache_result: Result<(), _> = redis_conn
-                .hset(&thread_redis_key, "name", new_thread_name.clone())
-                .await;
-
-            println!(
-                "Thread #{}'s name updated to #{}!",
-                old_thread_name, new_thread_name
-            );
-        }
-
-        poise::Event::VoiceStateUpdate { old, new } => {
+        poise::Event::VoiceStateUpdate { old:_ , new: _ } => {
             // Oh this one will be fun..
             // Later me problem!
         }
 
-        poise::Event::GuildMemberUpdate { old_if_available: _, new } => {
-            let redis_pool = &data.redis;
-            let mut redis_conn = redis_pool.get().await.expect("Failed to get Redis connection");
-
-            let user_id = new.user.id.0 as i64;
-
-            let user_key = format!("user:{}", user_id);
-
-            let updated_name = new.user.name.clone();
-            // I assume this works, but I need to do the same for nicknames and AAAAAAAAAAA
-            redis_conn.hset::<_, _, _, ()>(&user_key, "name", &updated_name).await.expect("Failed to update cached user name.");
-
-        }
         poise::Event::Ready { data_about_bot: _ } => {
             let _ = set_all_snippets(&data).await;
             // Need to check join tracks.
