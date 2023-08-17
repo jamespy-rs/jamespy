@@ -27,8 +27,6 @@ async fn get_channel_name(ctx: &serenity::Context, guild_id: GuildId, channel_id
     channel_name
 }
 
-
-
 pub async fn event_handler(
     ctx: &serenity::Context,
     event: &poise::Event<'_>,
@@ -59,7 +57,6 @@ pub async fn event_handler(
 
             let channel_name = get_channel_name(ctx, guild_id, new_message.channel_id).await;
 
-            // TODO: colouring!
             println!("\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[0m", guild_name, channel_name, new_message.author.name, new_message.content);
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
@@ -132,12 +129,8 @@ pub async fn event_handler(
         }
         // need poise::Event::MessageDeleteBulk
 
-        poise::Event::GuildCreate { guild: _, is_new: _ } => {
-            // eeee
-
-        }
-        poise::Event::GuildDelete { incomplete: _, full: _ } => {
-            // eeee
+        poise::Event::GuildCreate { guild, is_new: true } => {
+            println!("\x1B[33mJoined {}!\nNow in {} guild(s)\x1B[0m", guild.name, ctx.cache.guilds().len());
         }
         poise::Event::ReactionAdd { add_reaction } => {
             let user_id = add_reaction.user_id.unwrap();
@@ -206,7 +199,6 @@ pub async fn event_handler(
             let guild_name = channel.guild_id.name(ctx).unwrap_or("Unknown Guild".to_string());
             println!("\x1B[34m[{}] #{} was created!\x1B[0m", guild_name, channel.name);
         }
-        // I need to go back to this.
         poise::Event::ChannelDelete { channel } => {
             let guild_name = channel.guild_id.name(ctx).unwrap_or("Unknown Guild".to_string());
             println!("\x1B[34m[{}] #{} was deleted!\x1B[0m", guild_name, channel.name);
@@ -227,7 +219,6 @@ pub async fn event_handler(
             }
         }
 
-        // Will come back for threads when I cache them
         poise::Event::ThreadCreate { thread } => {
             let guild_id = thread.guild_id;
 
@@ -388,6 +379,8 @@ pub async fn event_handler(
 
 
         // Only say the name changed if the name changed.
+        // bad word detection
+        // james regex
         // user updates
         // voice events
         _ => (),
