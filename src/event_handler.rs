@@ -1,5 +1,5 @@
 use poise::futures_util::future::join_all;
-use poise::serenity_prelude::{UserId, GuildId, ChannelId, Guild};
+use poise::serenity_prelude::{UserId, GuildId, ChannelId};
 use poise::serenity_prelude::{self as serenity};
 
 use sqlx::query;
@@ -247,6 +247,18 @@ pub async fn event_handler(
             let joined_user_id = new_member.user.id;
             let db_pool = &data.db;
 
+            let guild_name = if guild_id == 0 {
+                "None".to_string()
+            } else {
+                if let Some(guild) = ctx.cache.guild(guild_id) {
+                    guild.name.to_string()
+                } else {
+                    "Unknown".to_string()
+                }
+            };
+
+            println!("\x1B[33m[{}] {} (ID:{}) has joined!\x1B[0m", guild_name, new_member.user.name, joined_user_id);
+
             let query_result = sqlx::query!(
                 "SELECT author_id FROM join_tracks WHERE guild_id = $1 AND user_id = $2",
                 guild_id.0 as i64,
@@ -290,10 +302,25 @@ pub async fn event_handler(
                 }
             }
         }
+        poise::Event::GuildMemberRemoval { guild_id, user, member_data_if_available: _ } => {
+            let guild_id = guild_id;
+            let guild_name = if *guild_id == 0 {
+                "None".to_string()
+            } else {
+                if let Some(guild) = ctx.cache.guild(guild_id) {
+                    guild.name.to_string()
+                } else {
+                    "Unknown".to_string()
+                }
+            };
+
+            println!("\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m", guild_name, user.name, user.id);
+            // If the member data is available I guess print some stuff?
+
+        }
 
         // Only say the name changed if the name changed.
-        // Track edits/deletion of messages
-        // user join/leave tracking
+        // Track deletion of messages
         // user updates
         // voice events
         _ => (),
