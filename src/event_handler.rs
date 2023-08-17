@@ -27,14 +27,23 @@ async fn get_channel_name(ctx: &serenity::Context, guild_id: GuildId, channel_id
     channel_name
 }
 
+
+
 pub async fn event_handler(
     ctx: &serenity::Context,
     event: &poise::Event<'_>,
     _ctx_poise: poise::FrameworkContext<'_, Data, Error>,
     data: &Data,
 ) -> Result<(), Error> {
+    let no_log_user: Vec<u64> = vec![432610292342587392, 429656936435286016]; // mudae and rin bot
+    let no_log_channel: Vec<u64> = vec![572899947226333254, 787623037834100737, 697738506944118814, 787389586665504778]; // log channels in gg/osu
     match event {
         poise::Event::Message { new_message } => {
+            if no_log_user.contains(&new_message.author.id.0) || no_log_channel.contains(&new_message.channel_id.0) ||
+            new_message.content.starts_with("$") && new_message.channel_id == 850342078034870302 {
+            return Ok(());
+            // Removes mudae commands in the mudae channel in gg/osu, alongside other criteria above.
+            }
             let db_pool = &data.db;
             let guild_id = new_message.guild_id.unwrap_or_default();
 
@@ -69,6 +78,9 @@ pub async fn event_handler(
         poise::Event::MessageUpdate { old_if_available, new, event } => {
             match (old_if_available, new) {
                 (Some(old_message), Some(new_message)) => {
+                    if new_message.author.bot {
+                        return Ok(());
+                    }
                     if old_message.content != new_message.content {
                         let guild_id = new_message.guild_id.unwrap_or_default();
 
@@ -104,6 +116,11 @@ pub async fn event_handler(
             // eeee
         }
         poise::Event::ReactionAdd { add_reaction } => {
+            let user_id = add_reaction.user_id.unwrap();
+            if ctx.cache.user(user_id).map_or(false, |user| user.bot) {
+                return Ok(());
+                // May merge with the one below.
+            }
             // Need to track reacts on accela messages.
             let guild_id = add_reaction.guild_id.unwrap_or_default();
             let guild_name = if guild_id == 0 {
@@ -117,7 +134,6 @@ pub async fn event_handler(
             };
             let channel_name = get_channel_name(ctx, guild_id, add_reaction.channel_id).await;
 
-            let user_id = add_reaction.user_id.unwrap();
             let user_name = match user_id.to_user(ctx).await {
                 Ok(user) => user.name,
                 Err(_) => "Unknown User".to_string(),
@@ -130,6 +146,11 @@ pub async fn event_handler(
 
         }
         poise::Event::ReactionRemove { removed_reaction } => {
+            let user_id = removed_reaction.user_id.unwrap();
+            if ctx.cache.user(user_id).map_or(false, |user| user.bot) {
+                return Ok(());
+                // May merge with the one below.
+            }
             let guild_id = removed_reaction.guild_id.unwrap_or_default();
             let guild_name = if guild_id == 0 {
                 "None".to_string()
@@ -142,7 +163,6 @@ pub async fn event_handler(
             };
             let channel_name = get_channel_name(ctx, guild_id, removed_reaction.channel_id).await;
 
-            let user_id = removed_reaction.user_id.unwrap();
             let user_name = match user_id.to_user(&ctx.http).await {
                 Ok(user) => user.name,
                 Err(_) => "Unknown User".to_string(),
@@ -238,7 +258,7 @@ pub async fn event_handler(
         }
 
         poise::Event::Ready { data_about_bot: _ } => {
-            ctx.cache.set_max_messages(250);
+            ctx.cache.set_max_messages(350);
             let _ = set_all_snippets(&data).await;
             // Need to check join tracks.
         }
