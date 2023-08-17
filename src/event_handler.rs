@@ -105,8 +105,32 @@ pub async fn event_handler(
                 _ => {}
             }
         }
+        poise::Event::MessageDelete { channel_id, deleted_message_id, guild_id } => {
+            let guild_id = guild_id.unwrap_or_default();
+            let channel_id = channel_id;
 
-        // Need message delete and purge.
+            let guild_name = if guild_id == 0 {
+                "None".to_string()
+            } else {
+                if let Some(guild) = ctx.cache.guild(guild_id) {
+                    guild.name.to_string()
+                } else {
+                    "Unknown".to_string()
+                }
+            };
+
+            let channel_name = get_channel_name(ctx, guild_id, *channel_id).await;
+
+            if let Some(message) = ctx.cache.message(*channel_id, deleted_message_id) {
+                let user_name = message.author.name.clone();
+                let content = message.content.clone();
+                println!("\x1B[91m\x1B[2m[{}] [#{}] A message from \x1B[0m{}\x1B[91m\x1B[2m was deleted: {}\x1B[0m",
+                    guild_name, channel_name, user_name, content);
+            } else {
+                println!("\x1B[91m\x1B[2mA message (ID:{}) was deleted but was not in cache\x1B[0m", deleted_message_id);
+            }
+        }
+        // need poise::Event::MessageDeleteBulk
 
         poise::Event::GuildCreate { guild: _, is_new: _ } => {
             // eeee
@@ -338,9 +362,32 @@ pub async fn event_handler(
             // If the member data is available I guess print some stuff?
 
         }
+        poise::Event::GuildMemberUpdate { old_if_available, new } => {
+            if let Some(old_member) = old_if_available {
+                let guild_id = new.guild_id;
+                let guild_name = if guild_id == 0 {
+                    "None".to_string()
+                } else {
+                    if let Some(guild) = ctx.cache.guild(guild_id) {
+                        guild.name.to_string()
+                    } else {
+                        "Unknown".to_string()
+                    }
+                };
+                let old_nickname = old_member.nick.as_deref().unwrap_or("None");
+                let new_nickname = new.nick.as_deref().unwrap_or("None");
+                if old_nickname != new_nickname {
+                    println!("\x1B[92m[{}] Nickname change: {}: {} -> {}\x1B[0m", guild_name, new.user.name, old_nickname, new_nickname);
+                }
+                if old_member.user.name != new.user.name {
+                    println!("\x1B[92mUsername change: {} -> {}\x1B[0m", old_member.user.name, new.user.name)
+                }
+            }
+            // TODO: bump dependencies when merge happens and show display names.
+        }
+
 
         // Only say the name changed if the name changed.
-        // Track deletion of messages
         // user updates
         // voice events
         _ => (),
