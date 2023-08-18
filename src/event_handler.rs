@@ -430,10 +430,10 @@ pub async fn event_handler(
                 let old_nickname = old_member.nick.as_deref().unwrap_or("None");
                 let new_nickname = new.nick.as_deref().unwrap_or("None");
                 if old_nickname != new_nickname {
-                    println!("\x1B[92m[{}] Nickname change: {}: {} -> {}\x1B[0m", guild_name, new.user.name, old_nickname, new_nickname);
+                    println!("\x1B[92m[{}] Nickname change: {}: {} -> {} (ID:{})\x1B[0m", guild_name, new.user.name, old_nickname, new_nickname, new.user.id);
                 }
                 if old_member.user.name != new.user.name {
-                    println!("\x1B[92mUsername change: {} -> {}\x1B[0m", old_member.user.name, new.user.name)
+                    println!("\x1B[92mUsername change: {} -> {} (ID:{})\x1B[0m", old_member.user.name, new.user.name, new.user.id)
                 }
             }
             // TODO: bump dependencies when merge happens and show display names.
