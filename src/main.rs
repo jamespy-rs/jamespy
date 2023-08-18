@@ -54,6 +54,7 @@ async fn main() {
             meta::help(),
             meta::uptime(),
             meta::say(),
+            meta::ping(),
             general::lob::lob(),
             utility::snippets::set_snippet(),
             utility::snippets::snippet(),

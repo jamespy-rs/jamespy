@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read};
+use std::{fs::File, io::Read, time::Instant};
 
 use poise::serenity_prelude::ChannelId;
 use toml::Value;
@@ -89,6 +89,31 @@ pub async fn say(
     let target_channel = channel.unwrap_or(ctx.channel_id());
 
     target_channel.say(&ctx.http(), string).await?;
+
+    Ok(())
+}
+// Post a link to my source code!
+#[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 10)]
+pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
+    let now = Instant::now();
+    reqwest::get("https://discordapp.com/api/v6/gateway").await?;
+    let get_latency = now.elapsed().as_millis();
+
+    let now = Instant::now();
+    let ping_msg = ctx.say("Calculating...").await?;
+    let post_latency = now.elapsed().as_millis();
+
+    ping_msg
+        .edit(ctx, |b| {
+            b.content("");
+            b.embed(|msg: &mut poise::serenity_prelude::CreateEmbed| {
+                msg.title("Pong!");
+                msg.field("GET Latency", format!("{}ms", get_latency), false);
+                msg.field("POST Latency", format!("{}ms", post_latency), false);
+                msg
+            })
+        })
+        .await?;
 
     Ok(())
 }
