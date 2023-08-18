@@ -57,16 +57,38 @@ pub async fn event_handler(
 
             let channel_name = get_channel_name(ctx, guild_id, new_message.channel_id).await;
 
-            println!("\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[0m", guild_name, channel_name, new_message.author.name, new_message.content);
+            let attachments = new_message.attachments.clone();
+            let attachments_fmt: Option<String> = if !attachments.is_empty() {
+                let attachment_names: Vec<String> = attachments.iter().map(|attachment| attachment.filename.clone()).collect();
+                Some(format!(" <{}>", attachment_names.join(", ")))
+            } else {
+                None
+            };
+
+            let embeds = new_message.embeds.clone();
+            let embeds_fmt: Option<String> = if !embeds.is_empty() {
+                let embed_types: Vec<String> = embeds.iter()
+                    .map(|embed| embed.kind.clone().unwrap_or("Unknown Type".to_string()))
+                    .collect();
+
+                Some(format!(" {{{}}}", embed_types.join(", ")))
+            } else {
+                None
+            };
+
+            // Has a double space when no message content is there but attachments are.
+            println!("\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[36m{}{}\x1B[0m", guild_name, channel_name, new_message.author.name, new_message.content, attachments_fmt.as_deref().unwrap_or(""), embeds_fmt.as_deref().unwrap_or(""));
+
             let _ = query!(
-                "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, timestamp)
-                 VALUES ($1, $2, $3, $4, $5, $6, now())",
+                "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, now())",
                 i64::from(guild_id),
                 new_message.channel_id.0 as i64,
                 new_message.id.0 as i64,
                 new_message.author.id.0 as i64,
                 &new_message.content,
-                "future me problem"
+                attachments_fmt,
+                embeds_fmt
             )
             .execute(&*db_pool)
             .await;
@@ -90,10 +112,29 @@ pub async fn event_handler(
                                 "Unknown".to_string()
                             }
                         };
+                        let attachments = new_message.attachments.clone();
+                        let attachments_fmt: Option<String> = if !attachments.is_empty() {
+                            let attachment_names: Vec<String> = attachments.iter().map(|attachment| attachment.filename.clone()).collect();
+                            Some(format!(" <{}>", attachment_names.join(", ")))
+                        } else {
+                            None
+                        };
+
+                        let embeds = new_message.embeds.clone();
+                        let embeds_fmt: Option<String> = if !embeds.is_empty() {
+                            let embed_types: Vec<String> = embeds.iter()
+                                .map(|embed| embed.kind.clone().unwrap_or("Unknown Type".to_string()))
+                                .collect();
+
+                            Some(format!(" {{{}}}", embed_types.join(", ")))
+                        } else {
+                            None
+                        };
+
                         let channel_name = get_channel_name(ctx, guild_id, new_message.channel_id).await;
                         println!("\x1B[36m[{}] [#{}] A message by \x1B[0m{}\x1B[36m was edited:", guild_name, channel_name, new_message.author.name);
-                        println!("BEFORE: {}: {}", new_message.author.name, old_message.content);
-                        println!("AFTER: {}: {}\x1B[0m", new_message.author.name, new_message.content);
+                        println!("BEFORE: {}: {}", new_message.author.name, old_message.content); // potentially check old attachments in the future.
+                        println!("AFTER: {}: {}{}{}\x1B[0m", new_message.author.name, new_message.content, attachments_fmt.as_deref().unwrap_or(""), embeds_fmt.as_deref().unwrap_or(""));
                     }
                 },
                 (None, None) => {
@@ -121,8 +162,29 @@ pub async fn event_handler(
             if let Some(message) = ctx.cache.message(*channel_id, deleted_message_id) {
                 let user_name = message.author.name.clone();
                 let content = message.content.clone();
-                println!("\x1B[91m\x1B[2m[{}] [#{}] A message from \x1B[0m{}\x1B[91m\x1B[2m was deleted: {}\x1B[0m",
-                    guild_name, channel_name, user_name, content);
+
+                let attachments = message.attachments.clone();
+                let attachments_fmt: Option<String> = if !attachments.is_empty() {
+                    let attachment_names: Vec<String> = attachments.iter().map(|attachment| attachment.filename.clone()).collect();
+                    Some(format!(" <{}>", attachment_names.join(", ")))
+                } else {
+                    None
+                };
+
+                let embeds = message.embeds.clone();
+                let embeds_fmt: Option<String> = if !embeds.is_empty() {
+                    let embed_types: Vec<String> = embeds.iter()
+                        .map(|embed| embed.kind.clone().unwrap_or("Unknown Type".to_string()))
+                        .collect();
+
+                    Some(format!(" {{{}}}", embed_types.join(", ")))
+                } else {
+                    None
+                };
+
+
+                println!("\x1B[91m\x1B[2m[{}] [#{}] A message from \x1B[0m{}\x1B[91m\x1B[2m was deleted: {}{}{}\x1B[0m",
+                    guild_name, channel_name, user_name, content, attachments_fmt.as_deref().unwrap_or(""), embeds_fmt.as_deref().unwrap_or(""));
             } else {
                 println!("\x1B[91m\x1B[2mA message (ID:{}) was deleted but was not in cache\x1B[0m", deleted_message_id);
             }
