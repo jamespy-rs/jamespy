@@ -86,7 +86,7 @@ pub async fn event_handler(
                 new_message.channel_id.0 as i64,
                 new_message.id.0 as i64,
                 new_message.author.id.0 as i64,
-                &new_message.content,
+                new_message.content,
                 attachments_fmt,
                 embeds_fmt
             )
@@ -95,6 +95,7 @@ pub async fn event_handler(
         // Need to get my bot to react for join tracking.
         }
         poise::Event::MessageUpdate { old_if_available, new, event } => {
+            let db_pool = &data.db;
             match (old_if_available, new) {
                 (Some(old_message), Some(new_message)) => {
                     if new_message.author.bot {
@@ -135,6 +136,21 @@ pub async fn event_handler(
                         println!("\x1B[36m[{}] [#{}] A message by \x1B[0m{}\x1B[36m was edited:", guild_name, channel_name, new_message.author.name);
                         println!("BEFORE: {}: {}", new_message.author.name, old_message.content); // potentially check old attachments in the future.
                         println!("AFTER: {}: {}{}{}\x1B[0m", new_message.author.name, new_message.content, attachments_fmt.as_deref().unwrap_or(""), embeds_fmt.as_deref().unwrap_or(""));
+
+                        let _ = query!(
+                            "INSERT INTO msgs_edits (guild_id, channel_id, message_id, user_id, old_content, new_content, attachments, embeds, timestamp)
+                             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())",
+                            i64::from(guild_id),
+                            new_message.channel_id.0 as i64,
+                            new_message.id.0 as i64,
+                            new_message.author.id.0 as i64,
+                            old_message.content,
+                            new_message.content,
+                            attachments_fmt,
+                            embeds_fmt
+                        )
+                        .execute(&*db_pool)
+                        .await;
                     }
                 },
                 (None, None) => {
@@ -144,6 +160,7 @@ pub async fn event_handler(
             }
         }
         poise::Event::MessageDelete { channel_id, deleted_message_id, guild_id } => {
+            let db_pool = &data.db;
             let guild_id = guild_id.unwrap_or_default();
             let channel_id = channel_id;
 
@@ -185,6 +202,20 @@ pub async fn event_handler(
 
                 println!("\x1B[91m\x1B[2m[{}] [#{}] A message from \x1B[0m{}\x1B[91m\x1B[2m was deleted: {}{}{}\x1B[0m",
                     guild_name, channel_name, user_name, content, attachments_fmt.as_deref().unwrap_or(""), embeds_fmt.as_deref().unwrap_or(""));
+
+                    let _ = query!(
+                        "INSERT INTO msgs_deletions (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, now())",
+                        i64::from(guild_id),
+                        message.channel_id.0 as i64,
+                        message.id.0 as i64,
+                        message.author.id.0 as i64,
+                        message.content,
+                        attachments_fmt,
+                        embeds_fmt
+                    )
+                    .execute(&*db_pool)
+                    .await;
             } else {
                 println!("\x1B[91m\x1B[2mA message (ID:{}) was deleted but was not in cache\x1B[0m", deleted_message_id);
             }
@@ -445,6 +476,7 @@ pub async fn event_handler(
         // james regex
         // user updates
         // voice events
+        // assign timestamps from message.
         _ => (),
     }
 
