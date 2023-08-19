@@ -31,22 +31,48 @@ pub async fn save_snippet(_ctx: &Context<'_>, guild_id: i64, data: &Data, snippe
         }
     }
 
-    sqlx::query!(
-        "INSERT INTO snippets (guild_id, name, title, description, image, thumbnail, color)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)",
+    let existing_snippet = sqlx::query!(
+        "SELECT name FROM snippets WHERE guild_id = $1 AND name = $2",
         guild_id,
-        snippet_name,
-        title,
-        description,
-        image,
-        thumbnail,
-        color
+        snippet_name
     )
-    .execute(db_pool)
+    .fetch_optional(db_pool)
     .await?;
+
+    if existing_snippet.is_some() {
+        sqlx::query!(
+            "UPDATE snippets SET title = $1, description = $2, image = $3, thumbnail = $4, color = $5
+             WHERE guild_id = $6 AND name = $7",
+            title,
+            description,
+            image,
+            thumbnail,
+            color,
+            guild_id,
+            snippet_name
+        )
+        .execute(db_pool)
+        .await?;
+    } else {
+        sqlx::query!(
+            "INSERT INTO snippets (guild_id, name, title, description, image, thumbnail, color)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            guild_id,
+            snippet_name,
+            title,
+            description,
+            image,
+            thumbnail,
+            color
+        )
+        .execute(db_pool)
+        .await?;
+    }
 
     Ok(())
 }
+
+
 
 
 pub fn parse_colour(value: &str) -> Option<Colour> {

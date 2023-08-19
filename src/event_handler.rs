@@ -296,21 +296,6 @@ pub async fn event_handler(
             let guild_name = channel.guild_id.name(ctx).unwrap_or("Unknown Guild".to_string());
             println!("\x1B[34m[{}] #{} was deleted!\x1B[0m", guild_name, channel.name);
         }
-        poise::Event::ChannelUpdate { old, new } => {
-            // Currently doesn't actually show a change, just announces the new name twice.
-            if let Some(old_channel) = old {
-                let old_channel_name = old_channel.id().name(ctx).await;
-
-            let new_channel_name = new.id().name(ctx).await;
-
-                println!(
-                    "\x1B[34m#{}'s name updated to #{}!\x1B[0m",
-                    old_channel_name.unwrap_or("Unknown Name".to_string()), new_channel_name.unwrap()
-                );
-            } else {
-                // Should be unreachable, I just won't "fix" until I actually fix the issue above.
-            }
-        }
 
         poise::Event::ThreadCreate { thread } => {
             let guild_id = thread.guild_id;
@@ -470,8 +455,6 @@ pub async fn event_handler(
             // TODO: bump dependencies when merge happens and show display names.
         }
 
-
-        // Only say the name changed if the name changed.
         // bad word detection
         // james regex
         // user updates
