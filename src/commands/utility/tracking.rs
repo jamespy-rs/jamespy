@@ -92,7 +92,7 @@ async fn is_user_already_tracking(_ctx: &Context<'_>, guild_id: GuildId, tracked
 }
 
 
-#[poise::command(rename = "untrack-user", slash_command, prefix_command, aliases("untrackuser", "untrack_user", "remove-track", "delete-track", "del-track"), guild_only, category = "Utility")]
+#[poise::command(rename = "untrack-user", slash_command, prefix_command, aliases("untrackuser", "untrack_user", "remove-track", "delete-track", "del-track", "untrack", "un-track"), guild_only, category = "Utility")]
 pub async fn untrack_user(
     ctx: Context<'_>,
     #[description = "The user that you want to untrack!"] user: Option<serenity::User>,
