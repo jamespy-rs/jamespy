@@ -92,7 +92,8 @@ pub async fn say(
 
     Ok(())
 }
-// Post a link to my source code!
+
+/// pong!
 #[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 10)]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     let now = Instant::now();

@@ -1,7 +1,10 @@
 use poise::futures_util::future::join_all;
 use poise::serenity_prelude::{UserId, GuildId, ChannelId};
-use poise::serenity_prelude::{self as serenity};
+use poise::serenity_prelude::{self as serenity, Colour};
+use lazy_static::lazy_static;
 
+
+use regex::Regex;
 use sqlx::query;
 
 use crate::Data;
@@ -27,6 +30,20 @@ async fn get_channel_name(ctx: &serenity::Context, guild_id: GuildId, channel_id
     channel_name
 }
 
+static REGEX_PATTERNS: [&str; 2] = [
+    r"(?i)\b\w*j\s*\d*\W*?a+\W*\d*\W*?m+\W*\d*\W*?e+\W*\d*\W*?s+\W*\d*\W*?\w*\b",
+    r"(?i)\b\w*b\s*\d*\W*?t+\W*\d*\W*?3+\W*\d*\W*?6+\W*\d*\W*?5+\W*\d*\W*?\w*\b",
+];
+
+lazy_static! {
+    static ref COMPILED_PATTERNS: Vec<Regex> = REGEX_PATTERNS
+        .iter()
+        .map(|pattern| Regex::new(pattern).unwrap())
+        .collect();
+}
+
+
+
 pub async fn event_handler(
     ctx: &serenity::Context,
     event: &poise::Event<'_>,
@@ -37,25 +54,48 @@ pub async fn event_handler(
     let no_log_channel: Vec<u64> = vec![572899947226333254, 787623037834100737, 697738506944118814, 787389586665504778]; // log channels in gg/osu
     match event {
         poise::Event::Message { new_message } => {
-            if no_log_user.contains(&new_message.author.id.0) || no_log_channel.contains(&new_message.channel_id.0) ||
-            new_message.content.starts_with("$") && new_message.channel_id == 850342078034870302 {
-            return Ok(());
-            // Removes mudae commands in the mudae channel in gg/osu, alongside other criteria above.
-            }
-            let db_pool = &data.db;
-            let guild_id = new_message.guild_id.unwrap_or_default();
+        // Removes mudae commands in the mudae channel in gg/osu, alongside other criteria above.
+        if no_log_user.contains(&new_message.author.id.0) || no_log_channel.contains(&new_message.channel_id.0) ||
+        new_message.content.starts_with("$") && new_message.channel_id == 850342078034870302 {
+        return Ok(());
+        }
 
-            let guild_name = if guild_id == 0 {
-                "None".to_string()
+        let db_pool = &data.db;
+        let guild_id = new_message.guild_id.unwrap_or_default();
+
+        let guild_name = if guild_id == 0 {
+            "None".to_string()
+        } else {
+            if let Some(guild) = ctx.cache.guild(guild_id) {
+                guild.name.to_string()
             } else {
-                if let Some(guild) = ctx.cache.guild(guild_id) {
-                    guild.name.to_string()
-                } else {
-                    "Unknown".to_string()
-                }
-            };
+                "Unknown".to_string()
+            }
+        };
 
-            let channel_name = get_channel_name(ctx, guild_id, new_message.channel_id).await;
+        let channel_name = get_channel_name(ctx, guild_id, new_message.channel_id).await;
+
+        let mut any_pattern_matched = false;
+        for pattern in &*COMPILED_PATTERNS {
+            if pattern.is_match(&new_message.content) && new_message.author.id != 158567567487795200 && !new_message.author.bot {
+                any_pattern_matched = true;
+                break;
+            }
+        }
+
+        if any_pattern_matched {
+            let user = UserId(158567567487795200).to_user(ctx).await?;
+            user.dm(ctx, |e| {
+                e.content(format!("In {} <#{}> you were mentioned by {} (ID:{})", guild_name, new_message.channel_id, new_message.author.name, new_message.author.id));
+                e.embed(|e| {
+                    e.title("A pattern was matched!");
+                    e.description(format!("<#{}> by **{}** {}\n\n [Jump to message!]({})", new_message.channel_id, new_message.author.name, new_message.content, new_message.link()));
+                    e.color(Colour::from_rgb(0, 255, 0))
+                })
+            })
+            .await?;
+        }
+
 
             let attachments = new_message.attachments.clone();
             let attachments_fmt: Option<String> = if !attachments.is_empty() {
@@ -428,7 +468,6 @@ pub async fn event_handler(
             };
 
             println!("\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m", guild_name, user.name, user.id);
-            // If the member data is available I guess print some stuff?
 
         }
         poise::Event::GuildMemberUpdate { old_if_available, new } => {
@@ -456,8 +495,6 @@ pub async fn event_handler(
         }
 
         // bad word detection
-        // james regex
-        // user updates
         // voice events
         // assign timestamps from message.
         _ => (),

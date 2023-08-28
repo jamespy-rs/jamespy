@@ -932,6 +932,7 @@ name = "jamespy-rs"
 version = "0.1.0"
 dependencies = [
  "bb8-redis",
+ "lazy_static",
  "openssl",
  "poise",
  "rand",
