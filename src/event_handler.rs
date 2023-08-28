@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use poise::futures_util::future::join_all;
 use poise::serenity_prelude::{UserId, GuildId, ChannelId};
 use poise::serenity_prelude::{self as serenity, Colour};
@@ -34,6 +36,20 @@ static REGEX_PATTERNS: [&str; 2] = [
     r"(?i)\b\w*j\s*\d*\W*?a+\W*\d*\W*?m+\W*\d*\W*?e+\W*\d*\W*?s+\W*\d*\W*?\w*\b",
     r"(?i)\b\w*b\s*\d*\W*?t+\W*\d*\W*?3+\W*\d*\W*?6+\W*\d*\W*?5+\W*\d*\W*?\w*\b",
 ];
+
+
+fn read_words_from_file(filename: &str) -> HashSet<String> {
+    std::fs::read_to_string(filename)
+        .expect("Failed to read the file")
+        .lines()
+        .map(|line| line.trim().to_lowercase())
+        .collect()
+}
+lazy_static! {
+    static ref BADLIST: HashSet<String> = read_words_from_file("badwords.txt");
+    static ref FIXLIST: HashSet<String> = read_words_from_file("fixwords.txt");
+}
+
 
 lazy_static! {
     static ref COMPILED_PATTERNS: Vec<Regex> = REGEX_PATTERNS
@@ -115,9 +131,28 @@ pub async fn event_handler(
             } else {
                 None
             };
+            let messagewords: Vec<String> = new_message.content.to_lowercase().split_whitespace().map(String::from).collect();
+
+            let blacklisted_words: Vec<&String> = messagewords
+                .iter()
+                .filter(|word| {
+                    BADLIST.iter().any(|badword| word.contains(badword) && !FIXLIST.contains(*word))
+                })
+                .collect();
+
+                if !blacklisted_words.is_empty() {
+                    let flagged_words: Vec<String> = blacklisted_words.iter().map(|word| (*word).clone()).collect();
+                    println!(
+                        "Flagged for bad word(s): \x1B[1m\x1B[31m{}\x1B[0m",
+                        flagged_words.join(", ")
+                    );
+                    println!("\x1B[90m[{}] [#{}]\x1B[0m {}: \x1B[1m\x1B[31m{}{}{}\x1B[0m", guild_name, channel_name, new_message.author.name, new_message.content, attachments_fmt.as_deref().unwrap_or(""), embeds_fmt.as_deref().unwrap_or(""));
+                } else {
+                    println!("\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[36m{}{}\x1B[0m", guild_name, channel_name, new_message.author.name, new_message.content, attachments_fmt.as_deref().unwrap_or(""), embeds_fmt.as_deref().unwrap_or(""));
+                }
+
 
             // Has a double space when no message content is there but attachments are.
-            println!("\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[36m{}{}\x1B[0m", guild_name, channel_name, new_message.author.name, new_message.content, attachments_fmt.as_deref().unwrap_or(""), embeds_fmt.as_deref().unwrap_or(""));
 
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
@@ -494,7 +529,6 @@ pub async fn event_handler(
             // TODO: bump dependencies when merge happens and show display names.
         }
 
-        // bad word detection
         // voice events
         // assign timestamps from message.
         _ => (),
