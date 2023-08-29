@@ -1,13 +1,14 @@
 use bb8_redis::redis::AsyncCommands;
-use poise::serenity_prelude::{Colour, CreateEmbed};
+use poise::serenity_prelude::Colour;
 use regex::Regex;
 use crate::{Context, Error, utils};
+use poise::serenity_prelude as serenity;
 
 use utils::snippets::*;
 
 #[poise::command(rename = "remove-snippet", slash_command, prefix_command, aliases("delsnippet", "del-snippet"), guild_only, category = "Utility", required_permissions = "MANAGE_MESSAGES")]
 pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<(), Error> {
-    let guild_id: i64 = ctx.guild_id().unwrap().0 as i64;
+    let guild_id: i64 = ctx.guild_id().unwrap().get() as i64;
     let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
 
     let redis_pool = &ctx.data().redis;
@@ -79,7 +80,7 @@ pub async fn set_snippet(
         }
     }
 
-    let guild_id = ctx.guild_id().unwrap().0 as i64;
+    let guild_id = ctx.guild_id().unwrap().get() as i64;
 
     save_snippet(
         &ctx,
@@ -105,7 +106,7 @@ pub async fn snippet(
     ctx: Context<'_>,
     #[description = "The name of the snippet"] name: String,
 ) -> Result<(), Error> {
-    let guild_id = ctx.guild_id().unwrap().0 as i64;
+    let guild_id = ctx.guild_id().unwrap().get() as i64;
     let snippet_key = format!("snippet:{}:{}", guild_id, name);
 
     let redis_pool = &ctx.data().redis;
@@ -118,45 +119,49 @@ pub async fn snippet(
         return Ok(());
     }
 
-    ctx.send(|e| {
-        e.embed(|e| {
-            let _embed = CreateEmbed::default();
+    let mut embed = serenity::CreateEmbed::default();
 
-            for (key, value) in &snippet_properties {
-                match key.as_str() {
-                    "title" => {
-                        e.title(value);
-                    }
-                    "description" => {
-                        e.description(value.replace("\\n", "\n"));
-                    }
-                    "image" => {
-                        e.image(value);
-                    }
-                    "thumbnail" => {
-                        e.thumbnail(value);
-                    }
-                    "color" => {
-                        if let Some(color) = parse_colour(value) {
-                            e.color(color);
-                        }
-                    }
-                    _ => {}
+    for (key, value) in &snippet_properties {
+        match key.as_str() {
+            "title" => {
+                embed = embed.title(value);
+            }
+            "description" => {
+                embed = embed.description(value.replace("\\n", "\n"));
+            }
+            "image" => {
+                embed = embed.image(value);
+            }
+            "thumbnail" => {
+                embed = embed.thumbnail(value);
+            }
+            "color" => {
+                if let Some(color) = parse_colour(value) {
+                    embed = embed.color(color);
                 }
             }
-            e
-        })
-    })
-    .await?;
+            _ => {}
+        }
+    }
+
+    let reply = poise::CreateReply::default().embed(embed);  // Send the updated embed
+
+    ctx.send(reply).await?;
 
     Ok(())
 }
 
 
 
+
+
+
+
+
+
 #[poise::command(rename = "list-snippets", slash_command, prefix_command, aliases("list-snippets", "list_snippet", "list-snippet"), guild_only, category = "Utility")]
 pub async fn list_snippets(ctx: Context<'_>) -> Result<(), Error> {
-    let guild_id = ctx.guild_id().unwrap().0 as i64;
+    let guild_id = ctx.guild_id().unwrap().get() as i64;
     let snippet_prefix = format!("snippet:{}:", guild_id);
 
     let redis_pool = &ctx.data().redis;
@@ -176,14 +181,17 @@ pub async fn list_snippets(ctx: Context<'_>) -> Result<(), Error> {
 
     let snippet_list = snippet_names.join("\n");
 
-    ctx.send(|e| {
-        e.embed(|e| {
-            e.title("Snippets");
-            e.description(format!("{}", snippet_list));
-            e.color(Colour::from_rgb(0, 255, 0))
-        })
-    })
+    ctx.send(
+        poise::CreateReply::default()
+            .embed(
+                serenity::CreateEmbed::default()
+                    .title("Snippets")
+                    .description(format!("{}", snippet_list))
+                    .color(Colour::from_rgb(0, 255, 0))
+            ),
+    )
     .await?;
+
     Ok(())
 }
 

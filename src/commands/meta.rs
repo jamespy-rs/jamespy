@@ -1,5 +1,6 @@
 use std::{fs::File, io::Read, time::Instant};
 
+use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::ChannelId;
 use toml::Value;
 
@@ -104,17 +105,19 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     let ping_msg = ctx.say("Calculating...").await?;
     let post_latency = now.elapsed().as_millis();
 
-    ping_msg
-        .edit(ctx, |b| {
-            b.content("");
-            b.embed(|msg: &mut poise::serenity_prelude::CreateEmbed| {
-                msg.title("Pong!");
-                msg.field("GET Latency", format!("{}ms", get_latency), false);
-                msg.field("POST Latency", format!("{}ms", post_latency), false);
-                msg
-            })
-        })
-        .await?;
+
+    ping_msg.edit(
+        ctx,
+        poise::CreateReply::default()
+            .content("")
+            .embed(
+                serenity::CreateEmbed::default()
+                    .title("Pong!")
+                    .field("GET Latency", format!("{}ms", get_latency), false)
+                    .field("POST Latency", format!("{}ms", post_latency), false)
+            ),
+    )
+    .await?;
 
     Ok(())
 }

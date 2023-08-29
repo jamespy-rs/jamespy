@@ -3,7 +3,6 @@ use commands::*;
 mod database;
 mod event_handler;
 mod utils;
-//use sqlx::query;
 
 use poise::serenity_prelude as serenity;
 use std::{env::var, time::Duration};
@@ -29,7 +28,7 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
         poise::FrameworkError::Setup { error, .. } => panic!("Failed to start bot: {:?}", error),
-        poise::FrameworkError::Command { error, ctx } => {
+        poise::FrameworkError::Command { error, ctx , .. } => {
             println!("Error in command `{}`: {:?}", ctx.command().name, error,);
         }
         error => {
@@ -86,8 +85,9 @@ async fn main() {
         },
 
         skip_checks_for_owners: false,
-        event_handler: |ctx, event, framework, data| {
-            Box::pin(event_handler::event_handler(ctx, event, framework, data))
+        event_handler: |event: &serenity::FullEvent, framework, data| {
+            Box::pin(
+                event_handler::event_handler(event.clone(), framework, data))
         },
         ..Default::default()
     };

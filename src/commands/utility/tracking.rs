@@ -1,3 +1,5 @@
+use std::num::NonZeroU64;
+
 use crate::{Context, Error, Data};
 use poise::serenity_prelude::{self as serenity, GuildId, UserId};
 use sqlx;
@@ -48,9 +50,9 @@ async fn add_tracked_user(ctx: &Context<'_>, guild_id: GuildId, tracked_user_id:
 
     let query_result = sqlx::query!(
         "INSERT INTO join_tracks (guild_id, author_id, user_id) VALUES ($1, $2, $3)",
-        guild_id.0 as i64,
-        author_id.0 as i64,
-        tracked_user_id.0 as i64
+        guild_id.get() as i64,
+        author_id.get() as i64,
+        tracked_user_id.get() as i64
     )
     .execute(&*db_pool)
     .await;
@@ -75,9 +77,9 @@ async fn is_user_already_tracking(_ctx: &Context<'_>, guild_id: GuildId, tracked
 
     let query_result = sqlx::query!(
         "SELECT COUNT(*) AS count FROM join_tracks WHERE guild_id = $1 AND author_id = $2 AND user_id = $3",
-        guild_id.0 as i64,
-        author_id.0 as i64,
-        tracked_user_id.0 as i64
+        guild_id.get() as i64,
+        author_id.get() as i64,
+        tracked_user_id.get() as i64
     )
     .fetch_one(db_pool)
     .await;
@@ -118,9 +120,9 @@ async fn remove_tracked_user(ctx: &Context<'_>, guild_id: GuildId, tracked_user_
 
     let query_result = sqlx::query!(
         "DELETE FROM join_tracks WHERE guild_id = $1 AND author_id = $2 AND user_id = $3",
-        guild_id.0 as i64,
-        author_id.0 as i64,
-        tracked_user_id.0 as i64
+        guild_id.get() as i64,
+        author_id.get() as i64,
+        tracked_user_id.get() as i64
     )
     .execute(db_pool)
     .await;
@@ -167,8 +169,8 @@ async fn get_tracked_users(ctx: &Context<'_>, guild_id: GuildId, author_id: User
 
     let query_result = sqlx::query!(
         "SELECT user_id FROM join_tracks WHERE guild_id = $1 AND author_id = $2",
-        guild_id.0 as i64,
-        author_id.0 as i64
+        guild_id.get() as i64,
+        author_id.get() as i64
     )
     .fetch_all(db_pool)
     .await;
@@ -178,8 +180,8 @@ async fn get_tracked_users(ctx: &Context<'_>, guild_id: GuildId, author_id: User
             let mut tracked_users = Vec::new();
             for row in rows {
                 if let Some(user_id) = row.user_id {
-                    if let Some(user_name) = fetch_user_name(&ctx, UserId(user_id as u64)).await {
-                        tracked_users.push((user_name, UserId(user_id as u64)));
+                    if let Some(user_name) = fetch_user_name(&ctx, UserId(NonZeroU64::new(user_id as u64).unwrap())).await {
+                        tracked_users.push((user_name, UserId(NonZeroU64::new(user_id as u64).unwrap())));
                     }
                 }
             }

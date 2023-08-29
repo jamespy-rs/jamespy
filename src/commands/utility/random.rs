@@ -2,6 +2,8 @@ use crate::{Context, Error};
 use poise::serenity_prelude::Colour;
 use rand::RngCore;
 use rand::rngs::OsRng;
+use poise::serenity_prelude as serenity;
+use ::serenity::builder::CreateEmbedAuthor;
 
 
 // A choose command, can't use this slash command until i fix the arguments
@@ -19,21 +21,22 @@ pub async fn choose(
     let random_index = rng.next_u32() as usize % choices.len();
     let chosen_option = &choices[random_index];
 
-    ctx.send(|e| {
-        e.embed(|e| {
-            e.description(format!("{}", chosen_option));
-            e.color(Colour::from_rgb(0, 255, 0));
-            e.author(|a| {
-                a.name(format!("{}'s Choice", author.name));
-                a.icon_url(&author.avatar_url().unwrap_or_default());
-                a
-            })
+    let image_url = author.avatar_url().unwrap_or_default();
 
-        })
-    })
+    ctx.send(
+        poise::CreateReply::default()
+            .embed(
+                serenity::CreateEmbed::default()
+                    .author(CreateEmbedAuthor::new(format!("{}'s Choice:", author.name)).icon_url(image_url))
+                    .description(format!("{}", chosen_option))
+                    .color(Colour::from_rgb(0, 255, 0))
+            ),
+    )
     .await?;
 
     Ok(())
 }
 
 // TODO: Add roll command!
+
+
