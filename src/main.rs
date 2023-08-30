@@ -91,25 +91,28 @@ async fn main() {
         ..Default::default()
     };
 
-    poise::Framework::builder()
-        .token(var("JAMESPY_TOKEN").expect("JAMESPY_TOKEN is not set. aborting..."))
-        .setup(move |_ctx, _ready, _framework| {
-            Box::pin(async move {
-                Ok(Data {
-                    db: db_pool.clone(),
-                    redis: redis_pool.clone(),
-                    time_started: std::time::Instant::now(),
-                })
+    let framework = poise::Framework::new(options, move |ctx, ready, framework| {
+        Box::pin(async move {
+            println!("Logged in as {}", ready.user.name);
+            poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+            Ok(Data {
+                db: db_pool.clone(),
+                redis: redis_pool.clone(),
+                time_started: std::time::Instant::now(),
             })
         })
-        .options(options)
-        .intents(
-            serenity::GatewayIntents::non_privileged()
-                | serenity::GatewayIntents::MESSAGE_CONTENT
-                | serenity::GatewayIntents::GUILD_MEMBERS
-                | serenity::GatewayIntents::GUILD_PRESENCES,
-        )
-        .run()
+    });
+
+    let token = var("JAMESPY_TOKEN").expect("Missing `JAMESPY_TOKEN` env var. Aborting...");
+    let intents = serenity::GatewayIntents::non_privileged()
+        | serenity::GatewayIntents::MESSAGE_CONTENT
+        | serenity::GatewayIntents::GUILD_MEMBERS
+        | serenity::GatewayIntents::GUILD_PRESENCES;
+
+    let mut client = serenity::Client::builder(token, intents)
+        .framework(framework)
         .await
         .unwrap();
+
+    client.start().await.unwrap();
 }
