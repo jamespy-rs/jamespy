@@ -6,11 +6,16 @@ use toml::Value;
 
 use crate::{Context, Error};
 
-
 #[poise::command(prefix_command, owners_only, hide_in_help)]
 pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.say("**Bailing out, you are on your own. Good luck.**").await?;
-    ctx.framework().shard_manager().lock().await.shutdown_all().await;
+    ctx.say("**Bailing out, you are on your own. Good luck.**")
+        .await?;
+    ctx.framework()
+        .shard_manager()
+        .lock()
+        .await
+        .shutdown_all()
+        .await;
     Ok(())
 }
 
@@ -57,7 +62,6 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-
 /// Show general help or help to a specific command
 #[poise::command(prefix_command, track_edits, slash_command, category = "Miscellaneous")]
 pub async fn help(
@@ -66,7 +70,6 @@ pub async fn help(
     #[autocomplete = "poise::builtins::autocomplete_command"]
     command: Option<String>,
 ) -> Result<(), Error> {
-
     poise::builtins::help(
         ctx,
         command.as_deref(),
@@ -78,7 +81,6 @@ pub async fn help(
     .await?;
     Ok(())
 }
-
 
 /// Say something!
 #[poise::command(prefix_command, hide_in_help, owners_only)]
@@ -105,19 +107,17 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     let ping_msg = ctx.say("Calculating...").await?;
     let post_latency = now.elapsed().as_millis();
 
-
-    ping_msg.edit(
-        ctx,
-        poise::CreateReply::default()
-            .content("")
-            .embed(
+    ping_msg
+        .edit(
+            ctx,
+            poise::CreateReply::default().content("").embed(
                 serenity::CreateEmbed::default()
                     .title("Pong!")
                     .field("GET Latency", format!("{}ms", get_latency), false)
-                    .field("POST Latency", format!("{}ms", post_latency), false)
+                    .field("POST Latency", format!("{}ms", post_latency), false),
             ),
-    )
-    .await?;
+        )
+        .await?;
 
     Ok(())
 }

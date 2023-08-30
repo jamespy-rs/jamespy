@@ -1,8 +1,14 @@
+use crate::{Context, Data, Error};
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::Colour;
-use crate::{Context, Error, Data};
 
-pub async fn save_snippet(_ctx: &Context<'_>, guild_id: i64, data: &Data, snippet_name: &str, snippet_properties: &[(&str, &str)]) -> Result<(), Error> {
+pub async fn save_snippet(
+    _ctx: &Context<'_>,
+    guild_id: i64,
+    data: &Data,
+    snippet_name: &str,
+    snippet_properties: &[(&str, &str)],
+) -> Result<(), Error> {
     let redis_pool = &data.redis;
     let db_pool = &data.db;
 
@@ -72,9 +78,6 @@ pub async fn save_snippet(_ctx: &Context<'_>, guild_id: i64, data: &Data, snippe
     Ok(())
 }
 
-
-
-
 pub fn parse_colour(value: &str) -> Option<Colour> {
     let valid_colour = regex::Regex::new(r"^(#[0-9A-Fa-f]{6}|[0-9A-Fa-f]{6})$").unwrap();
     if valid_colour.is_match(value) {
@@ -105,9 +108,17 @@ pub async fn set_all_snippets(data: &Data) -> Result<(), Box<dyn std::error::Err
 
         let name = snippet_name.to_owned();
         let title = snippet.title.as_ref().unwrap_or(&"".to_string()).to_owned();
-        let description = snippet.description.as_ref().unwrap_or(&"".to_string()).to_owned();
+        let description = snippet
+            .description
+            .as_ref()
+            .unwrap_or(&"".to_string())
+            .to_owned();
         let image = snippet.image.as_ref().unwrap_or(&"".to_string()).to_owned();
-        let thumbnail = snippet.thumbnail.as_ref().unwrap_or(&"".to_string()).to_owned();
+        let thumbnail = snippet
+            .thumbnail
+            .as_ref()
+            .unwrap_or(&"".to_string())
+            .to_owned();
         let color = snippet.color.as_ref().unwrap_or(&"".to_string()).to_owned();
 
         let snippet_properties = vec![

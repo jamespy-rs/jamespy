@@ -1,10 +1,9 @@
 use crate::{Context, Error};
-use poise::serenity_prelude::Colour;
-use rand::RngCore;
-use rand::rngs::OsRng;
-use poise::serenity_prelude as serenity;
 use ::serenity::builder::CreateEmbedAuthor;
-
+use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::Colour;
+use rand::rngs::OsRng;
+use rand::RngCore;
 
 // A choose command, can't use this slash command until i fix the arguments
 #[poise::command(prefix_command, category = "Utility", user_cooldown = "5")]
@@ -24,13 +23,15 @@ pub async fn choose(
     let image_url = author.avatar_url().unwrap_or_default();
 
     ctx.send(
-        poise::CreateReply::default()
-            .embed(
-                serenity::CreateEmbed::default()
-                    .author(CreateEmbedAuthor::new(format!("{}'s Choice:", author.name)).icon_url(image_url))
-                    .description(format!("{}", chosen_option))
-                    .color(Colour::from_rgb(0, 255, 0))
-            ),
+        poise::CreateReply::default().embed(
+            serenity::CreateEmbed::default()
+                .author(
+                    CreateEmbedAuthor::new(format!("{}'s Choice:", author.name))
+                        .icon_url(image_url),
+                )
+                .description(format!("{}", chosen_option))
+                .color(Colour::from_rgb(0, 255, 0)),
+        ),
     )
     .await?;
 
@@ -38,5 +39,3 @@ pub async fn choose(
 }
 
 // TODO: Add roll command!
-
-

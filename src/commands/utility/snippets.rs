@@ -1,12 +1,20 @@
+use crate::{utils, Context, Error};
 use bb8_redis::redis::AsyncCommands;
+use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::Colour;
 use regex::Regex;
-use crate::{Context, Error, utils};
-use poise::serenity_prelude as serenity;
 
 use utils::snippets::*;
 
-#[poise::command(rename = "remove-snippet", slash_command, prefix_command, aliases("delsnippet", "del-snippet"), guild_only, category = "Utility", required_permissions = "MANAGE_MESSAGES")]
+#[poise::command(
+    rename = "remove-snippet",
+    slash_command,
+    prefix_command,
+    aliases("delsnippet", "del-snippet"),
+    guild_only,
+    category = "Utility",
+    required_permissions = "MANAGE_MESSAGES"
+)]
 pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<(), Error> {
     let guild_id: i64 = ctx.guild_id().unwrap().get() as i64;
     let snippet_key = format!("snippet:{}:{}", guild_id, snippet_name);
@@ -28,42 +36,47 @@ pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<()
     .await?;
 
     if deleted > 0 {
-        ctx.say(format!("Snippet '{}' has been removed.", snippet_name)).await?;
+        ctx.say(format!("Snippet '{}' has been removed.", snippet_name))
+            .await?;
     } else {
-        ctx.say(format!("Snippet '{}' not found.", snippet_name)).await?;
+        ctx.say(format!("Snippet '{}' not found.", snippet_name))
+            .await?;
     }
 
     Ok(())
 }
 
-
-
 // No idea how to set the actual name of the command so I'm going to change it to setsnippet for now.
 /// set a snippet for everyone to use!
-#[poise::command(rename = "set-snippet", slash_command, guild_only, aliases("setsnippet", "setsnippets", "set_snippets"), category = "Utility", required_permissions = "MANAGE_MESSAGES", user_cooldown = "3")]
+#[poise::command(
+    rename = "set-snippet",
+    slash_command,
+    guild_only,
+    aliases("setsnippet", "setsnippets", "set_snippets"),
+    category = "Utility",
+    required_permissions = "MANAGE_MESSAGES",
+    user_cooldown = "3"
+)]
 pub async fn set_snippet(
     ctx: Context<'_>,
-    #[description = "The name of the snippet"]
-    name: String,
-    #[description = "The title of the snippet"]
-    title: Option<String>,
-    #[description = "The description of the snippet"]
-    description: Option<String>,
-    #[description = "The image URL of the snippet"]
-    image: Option<String>,
-    #[description = "The thumbnail URL of the snippet"]
-    thumbnail: Option<String>,
-    #[description = "The color of the snippet"]
-    color: Option<String>,
+    #[description = "The name of the snippet"] name: String,
+    #[description = "The title of the snippet"] title: Option<String>,
+    #[description = "The description of the snippet"] description: Option<String>,
+    #[description = "The image URL of the snippet"] image: Option<String>,
+    #[description = "The thumbnail URL of the snippet"] thumbnail: Option<String>,
+    #[description = "The color of the snippet"] color: Option<String>,
 ) -> Result<(), Error> {
-    let at_least_one_property_set = title.is_some() || description.is_some() || image.is_some() || thumbnail.is_some();
+    let at_least_one_property_set =
+        title.is_some() || description.is_some() || image.is_some() || thumbnail.is_some();
 
     if !at_least_one_property_set {
-        ctx.say("Please provide at least one of title, description, image, or thumbnail.").await?;
+        ctx.say("Please provide at least one of title, description, image, or thumbnail.")
+            .await?;
         return Ok(());
     }
     if name.len() > 32 {
-        ctx.say("Snippet name must be 32 characters or less.").await?;
+        ctx.say("Snippet name must be 32 characters or less.")
+            .await?;
         return Ok(());
     }
     let name_regex = Regex::new(r"^[a-zA-Z0-9\-_.]+$").unwrap(); // enforces only some characters.
@@ -94,7 +107,8 @@ pub async fn set_snippet(
             ("thumbnail", thumbnail.as_deref().unwrap_or_default()),
             ("color", color.as_deref().unwrap_or_default()),
         ],
-    ).await?;
+    )
+    .await?;
 
     ctx.say("Snippet saved successfully!").await?;
 
@@ -144,22 +158,21 @@ pub async fn snippet(
         }
     }
 
-    let reply = poise::CreateReply::default().embed(embed);  // Send the updated embed
+    let reply = poise::CreateReply::default().embed(embed); // Send the updated embed
 
     ctx.send(reply).await?;
 
     Ok(())
 }
 
-
-
-
-
-
-
-
-
-#[poise::command(rename = "list-snippets", slash_command, prefix_command, aliases("list-snippets", "list_snippet", "list-snippet"), guild_only, category = "Utility")]
+#[poise::command(
+    rename = "list-snippets",
+    slash_command,
+    prefix_command,
+    aliases("list-snippets", "list_snippet", "list-snippet"),
+    guild_only,
+    category = "Utility"
+)]
 pub async fn list_snippets(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = ctx.guild_id().unwrap().get() as i64;
     let snippet_prefix = format!("snippet:{}:", guild_id);
@@ -182,16 +195,14 @@ pub async fn list_snippets(ctx: Context<'_>) -> Result<(), Error> {
     let snippet_list = snippet_names.join("\n");
 
     ctx.send(
-        poise::CreateReply::default()
-            .embed(
-                serenity::CreateEmbed::default()
-                    .title("Snippets")
-                    .description(format!("{}", snippet_list))
-                    .color(Colour::from_rgb(0, 255, 0))
-            ),
+        poise::CreateReply::default().embed(
+            serenity::CreateEmbed::default()
+                .title("Snippets")
+                .description(format!("{}", snippet_list))
+                .color(Colour::from_rgb(0, 255, 0)),
+        ),
     )
     .await?;
 
     Ok(())
 }
-

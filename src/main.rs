@@ -4,10 +4,10 @@ mod database;
 mod event_handler;
 mod utils;
 
-use poise::serenity_prelude as serenity;
-use std::{env::var, time::Duration};
 use database::init_data;
 use database::init_redis_pool;
+use poise::serenity_prelude as serenity;
+use std::{env::var, time::Duration};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -28,7 +28,7 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
         poise::FrameworkError::Setup { error, .. } => panic!("Failed to start bot: {:?}", error),
-        poise::FrameworkError::Command { error, ctx , .. } => {
+        poise::FrameworkError::Command { error, ctx, .. } => {
             println!("Error in command `{}`: {:?}", ctx.command().name, error,);
         }
         error => {
@@ -63,7 +63,7 @@ async fn main() {
             utility::tracking::untrack_user(),
             utility::tracking::tracked_users(),
             utility::random::choose(),
-            ],
+        ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
             edit_tracker: Some(poise::EditTracker::for_timespan(Duration::from_secs(600))),
@@ -86,8 +86,7 @@ async fn main() {
 
         skip_checks_for_owners: false,
         event_handler: |event: &serenity::FullEvent, framework, data| {
-            Box::pin(
-                event_handler::event_handler(event.clone(), framework, data))
+            Box::pin(event_handler::event_handler(event.clone(), framework, data))
         },
         ..Default::default()
     };
@@ -105,10 +104,10 @@ async fn main() {
         })
         .options(options)
         .intents(
-            serenity::GatewayIntents::non_privileged() |
-            serenity::GatewayIntents::MESSAGE_CONTENT |
-            serenity::GatewayIntents::GUILD_MEMBERS |
-            serenity::GatewayIntents::GUILD_PRESENCES
+            serenity::GatewayIntents::non_privileged()
+                | serenity::GatewayIntents::MESSAGE_CONTENT
+                | serenity::GatewayIntents::GUILD_MEMBERS
+                | serenity::GatewayIntents::GUILD_PRESENCES,
         )
         .run()
         .await
