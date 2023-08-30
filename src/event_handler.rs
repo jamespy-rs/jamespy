@@ -81,15 +81,15 @@ pub async fn event_handler(
         let ctx_clone = ctx.clone(); // hhhhhhhhh
 
         let guild_name = if guild_id == 0 {
-            "None".to_string()
+            "Unknown".to_owned()
         } else {
-            if let Some(guild) = ctx.cache.guild(guild_id) {
-                println!("{}", guild.name);
-                guild.name.to_string()
-            } else {
-                "Unknown".to_string()
+            match guild_id.name(ctx.clone()) {
+                Some(name) => name,
+                None => "Unknown".to_owned(),
             }
         };
+
+
 
         let channel_name = get_channel_name(&ctx, guild_id, new_message.channel_id).await;
 
@@ -116,7 +116,6 @@ pub async fn event_handler(
             ).await?;
 
         }
-
 
             let attachments = new_message.attachments.clone();
             let attachments_fmt: Option<String> = if !attachments.is_empty() {
@@ -185,12 +184,11 @@ pub async fn event_handler(
                         let guild_id = new_message.guild_id.unwrap_or_default();
 
                         let guild_name = if guild_id == 0 {
-                            "None".to_string()
+                            "Unknown".to_owned()
                         } else {
-                            if let Some(guild) = ctx.cache.guild(guild_id) {
-                                guild.name.to_string()
-                            } else {
-                                "Unknown".to_string()
+                            match guild_id.name(ctx.clone()) {
+                                Some(name) => name,
+                                None => "Unknown".to_owned(),
                             }
                         };
                         let attachments = new_message.attachments.clone();
@@ -245,12 +243,11 @@ pub async fn event_handler(
             let channel_id = channel_id;
 
             let guild_name = if guild_id == 0 {
-                "None".to_string()
+                "Unknown".to_owned()
             } else {
-                if let Some(guild) = ctx.cache.guild(guild_id) {
-                    guild.name.to_string()
-                } else {
-                    "Unknown".to_string()
+                match guild_id.name(ctx.clone()) {
+                    Some(name) => name,
+                    None => "Unknown".to_owned(),
                 }
             };
 
@@ -317,12 +314,11 @@ pub async fn event_handler(
             // Need to track reacts on accela messages.
             let guild_id = add_reaction.guild_id.unwrap_or_default();
             let guild_name = if guild_id == 0 {
-                "None".to_string()
+                "Unknown".to_owned()
             } else {
-                if let Some(guild) = ctx.cache.guild(guild_id) {
-                    guild.name.to_string()
-                } else {
-                    "Unknown".to_string()
+                match guild_id.name(ctx.clone()) {
+                    Some(name) => name,
+                    None => "Unknown".to_owned(),
                 }
             };
             let channel_name = get_channel_name(&ctx, guild_id, add_reaction.channel_id).await;
@@ -346,12 +342,11 @@ pub async fn event_handler(
             }
             let guild_id = removed_reaction.guild_id.unwrap_or_default();
             let guild_name = if guild_id == 0 {
-                "None".to_string()
+                "Unknown".to_owned()
             } else {
-                if let Some(guild) = ctx.cache.guild(guild_id) {
-                    guild.name.to_string()
-                } else {
-                    "Unknown".to_string()
+                match guild_id.name(ctx.clone()) {
+                    Some(name) => name,
+                    None => "Unknown".to_owned(),
                 }
             };
             let channel_name = get_channel_name(&ctx, guild_id, removed_reaction.channel_id).await;
@@ -384,12 +379,11 @@ pub async fn event_handler(
             let guild_id = thread.guild_id;
 
             let guild_name = if guild_id == 0 {
-                "None".to_string()
+                "Unknown".to_owned()
             } else {
-                if let Some(guild) = ctx.cache.guild(guild_id) {
-                    guild.name.to_string()
-                } else {
-                    "Unknown".to_string()
+                match guild_id.name(ctx.clone()) {
+                    Some(name) => name,
+                    None => "Unknown".to_owned(),
                 }
             };
             // Tell which channel it was created in.
@@ -411,12 +405,11 @@ pub async fn event_handler(
                 }
             }
             let guild_name = if guild_id == 0 {
-                "None".to_string()
+                "Unknown".to_owned()
             } else {
-                if let Some(guild) = ctx.cache.guild(guild_id) {
-                    guild.name.to_string()
-                } else {
-                    "Unknown".to_string()
+                match guild_id.name(ctx.clone()) {
+                    Some(name) => name,
+                    None => "Unknown".to_owned(),
                 }
             };
             // Currently it won't know which thread was deleted because the method in which it is checked.
@@ -441,12 +434,11 @@ pub async fn event_handler(
             let joined_user_id = new_member.user.id;
 
             let guild_name = if guild_id == 0 {
-                "None".to_string()
+                "Unknown".to_owned()
             } else {
-                if let Some(guild) = ctx.cache.guild(guild_id) {
-                    guild.name.to_string()
-                } else {
-                    "Unknown".to_string()
+                match guild_id.name(ctx.clone()) {
+                    Some(name) => name,
+                    None => "Unknown".to_owned(),
                 }
             };
             println!("\x1B[33m[{}] {} (ID:{}) has joined!\x1B[0m", guild_name, new_member.user.name, joined_user_id);
@@ -454,12 +446,11 @@ pub async fn event_handler(
         serenity::FullEvent::GuildMemberRemoval { ctx, guild_id, user, member_data_if_available: _ } => {
             let guild_id = guild_id;
             let guild_name = if guild_id == 0 {
-                "None".to_string()
+                "Unknown".to_owned()
             } else {
-                if let Some(guild) = ctx.cache.guild(guild_id) {
-                    guild.name.to_string()
-                } else {
-                    "Unknown".to_string()
+                match guild_id.name(ctx.clone()) {
+                    Some(name) => name,
+                    None => "Unknown".to_owned(),
                 }
             };
 
@@ -471,12 +462,11 @@ pub async fn event_handler(
                 if let Some(new_member) = new {
                     let guild_id = event.guild_id;
                     let guild_name = if guild_id == 0 {
-                        "None".to_string()
+                        "Unknown".to_owned()
                     } else {
-                        if let Some(guild) = ctx.cache.guild(guild_id) {
-                            guild.name.to_string()
-                        } else {
-                            "Unknown".to_string()
+                        match guild_id.name(ctx.clone()) {
+                            Some(name) => name,
+                            None => "Unknown".to_owned(),
                         }
                     };
 
