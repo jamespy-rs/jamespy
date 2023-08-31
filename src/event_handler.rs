@@ -90,8 +90,8 @@ pub async fn event_handler(
 
             let ctx_clone = ctx.clone(); // hhhhhhhhh
 
-            let guild_name = if guild_id == 0 {
-                "Unknown".to_owned()
+            let guild_name = if guild_id == 1 {
+                "None".to_owned()
             } else {
                 match guild_id.name(ctx.clone()) {
                     Some(name) => name,
@@ -241,8 +241,8 @@ pub async fn event_handler(
                     if old_message.content != new_message.content {
                         let guild_id = new_message.guild_id.unwrap_or_default();
 
-                        let guild_name = if guild_id == 0 {
-                            "Unknown".to_owned()
+                        let guild_name = if guild_id == 1 {
+                            "None".to_owned()
                         } else {
                             match guild_id.name(ctx.clone()) {
                                 Some(name) => name,
@@ -327,8 +327,8 @@ pub async fn event_handler(
             let guild_id = guild_id.unwrap_or_default();
             let channel_id = channel_id;
 
-            let guild_name = if guild_id == 0 {
-                "Unknown".to_owned()
+            let guild_name = if guild_id == 1 {
+                "None".to_owned()
             } else {
                 match guild_id.name(ctx.clone()) {
                     Some(name) => name,
@@ -407,8 +407,8 @@ pub async fn event_handler(
             }
             // Need to track reacts on accela messages.
             let guild_id = add_reaction.guild_id.unwrap_or_default();
-            let guild_name = if guild_id == 0 {
-                "Unknown".to_owned()
+            let guild_name = if guild_id == 1 {
+                "None".to_owned()
             } else {
                 match guild_id.name(ctx.clone()) {
                     Some(name) => name,
@@ -437,8 +437,8 @@ pub async fn event_handler(
                 // May merge with the one below.
             }
             let guild_id = removed_reaction.guild_id.unwrap_or_default();
-            let guild_name = if guild_id == 0 {
-                "Unknown".to_owned()
+            let guild_name = if guild_id == 1 {
+                "None".to_owned()
             } else {
                 match guild_id.name(ctx.clone()) {
                     Some(name) => name,
@@ -493,8 +493,8 @@ pub async fn event_handler(
         serenity::FullEvent::ThreadCreate { ctx, thread } => {
             let guild_id = thread.guild_id;
 
-            let guild_name = if guild_id == 0 {
-                "Unknown".to_owned()
+            let guild_name = if guild_id == 1 {
+                "None".to_owned()
             } else {
                 match guild_id.name(ctx.clone()) {
                     Some(name) => name,
@@ -521,8 +521,8 @@ pub async fn event_handler(
                     break;
                 }
             }
-            let guild_name = if guild_id == 0 {
-                "Unknown".to_owned()
+            let guild_name = if guild_id == 1 {
+                "None".to_owned()
             } else {
                 match guild_id.name(ctx.clone()) {
                     Some(name) => name,
@@ -563,8 +563,8 @@ pub async fn event_handler(
             let guild_id = new_member.guild_id;
             let joined_user_id = new_member.user.id;
 
-            let guild_name = if guild_id == 0 {
-                "Unknown".to_owned()
+            let guild_name = if guild_id == 1 {
+                "None".to_owned()
             } else {
                 match guild_id.name(ctx.clone()) {
                     Some(name) => name,
@@ -583,8 +583,8 @@ pub async fn event_handler(
             member_data_if_available: _,
         } => {
             let guild_id = guild_id;
-            let guild_name = if guild_id == 0 {
-                "Unknown".to_owned()
+            let guild_name = if guild_id == 1 {
+                "None".to_owned()
             } else {
                 match guild_id.name(ctx.clone()) {
                     Some(name) => name,
@@ -606,8 +606,8 @@ pub async fn event_handler(
             if let Some(old_member) = old_if_available {
                 if let Some(new_member) = new {
                     let guild_id = event.guild_id;
-                    let guild_name = if guild_id == 0 {
-                        "Unknown".to_owned()
+                    let guild_name = if guild_id == 1 {
+                        "None".to_owned()
                     } else {
                         match guild_id.name(ctx.clone()) {
                             Some(name) => name,
