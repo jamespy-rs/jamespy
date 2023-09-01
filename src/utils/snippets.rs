@@ -2,7 +2,6 @@ use crate::{Context, Data, Error};
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::Colour;
 
-// Check for max of 25
 pub async fn save_snippet(
     _ctx: &Context<'_>,
     guild_id: i64,

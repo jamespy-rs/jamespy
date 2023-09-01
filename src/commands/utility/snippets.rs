@@ -92,7 +92,7 @@ pub async fn set_snippet(
             .await?;
         return Ok(());
     }
-    let name_regex = Regex::new(r"^[a-zA-Z0-9\-_.]+$").unwrap();
+    let name_regex = Regex::new(r"^[a-zA-Z0-9\-_.+]+$").unwrap();
     if !name_regex.is_match(&name) {
         ctx.say("Invalid name format. It should only contain letters (a-z), hyphens (-), underscores (_), and periods (.)").await?;
         return Ok(());
