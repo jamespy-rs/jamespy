@@ -58,7 +58,41 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
         let version = data["package"]["version"].as_str().unwrap();
         version.to_string()
     };
-    ctx.say(version).await?;
+
+    let uptime = std::time::Instant::now() - ctx.data().time_started;
+    let calculation = |a, b| (a / b, a % b);
+
+    let seconds = uptime.as_secs();
+    let (minutes, _seconds) = calculation(seconds, 60);
+    let (hours, minutes) = calculation(minutes, 60);
+    let (days, hours) = calculation(hours, 24);
+    let uptime_string = format!("{}d{}h{}m", days, hours, minutes);
+
+
+    let bot_user = ctx.serenity_context().cache.current_user().clone();
+    let bot_name = bot_user.name.clone();
+    let bot_avatar = bot_user.avatar_url();
+
+    let guild_num = ctx.serenity_context().cache.guilds().len();
+    let channel_num = ctx.serenity_context().cache.guild_channel_count();
+    let user_num = ctx.serenity_context().cache.user_count();
+
+    let mut embed = serenity::CreateEmbed::default()
+        .title(format!("**{} - v{}**", bot_name, version))
+        .description("A general spy bot that only exists to spy! It has no other purpose.")
+        .field("Stats:", format!("Guilds: {}\n Channels: {}\n Users: {}", guild_num, channel_num, user_num), true)
+        .field("Usage stats:", format!("Uptime:\n `{}`", uptime_string), true)
+        .field("Memory stats:", "Not implemented", true);
+        // Add footer
+
+    if let Some(avatar_url) = bot_avatar {
+        embed = embed.thumbnail(avatar_url);
+    }
+
+    let msg = poise::CreateReply::default().embed(embed);
+
+
+    ctx.send(msg).await?;
     Ok(())
 }
 
