@@ -46,7 +46,6 @@ pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<()
     Ok(())
 }
 
-// No idea how to set the actual name of the command so I'm going to change it to setsnippet for now.
 /// set a snippet for everyone to use!
 #[poise::command(
     rename = "set-snippet",
@@ -69,6 +68,20 @@ pub async fn set_snippet(
     let at_least_one_property_set =
         title.is_some() || description.is_some() || image.is_some() || thumbnail.is_some();
 
+        let snippet_prefix = format!("snippet:{}:", ctx.guild_id().unwrap()); // This shouldn't panic as its in a guild, right?
+
+        let redis_pool = &ctx.data().redis;
+        let mut redis_conn = redis_pool.get().await?;
+
+        let snippet_keys: Vec<String> = redis_conn.keys(format!("{}*", snippet_prefix)).await?;
+
+        // this is possible to stop you from overriding snippets if you're at the cap without removing them first, but thats a later me problem.
+        if snippet_keys.len() >= 35 {
+            ctx.say("You already have 35 snippets!").await?;
+            return Ok(())
+        }
+
+
     if !at_least_one_property_set {
         ctx.say("Please provide at least one of title, description, image, or thumbnail.")
             .await?;
@@ -79,7 +92,7 @@ pub async fn set_snippet(
             .await?;
         return Ok(());
     }
-    let name_regex = Regex::new(r"^[a-zA-Z0-9\-_.]+$").unwrap(); // enforces only some characters.
+    let name_regex = Regex::new(r"^[a-zA-Z0-9\-_.]+$").unwrap();
     if !name_regex.is_match(&name) {
         ctx.say("Invalid name format. It should only contain letters (a-z), hyphens (-), underscores (_), and periods (.)").await?;
         return Ok(());
@@ -158,7 +171,7 @@ pub async fn snippet(
         }
     }
 
-    let reply = poise::CreateReply::default().embed(embed); // Send the updated embed
+    let reply = poise::CreateReply::default().embed(embed);
 
     ctx.send(reply).await?;
 

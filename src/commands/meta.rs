@@ -155,3 +155,28 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
+
+
+/// prints all the cached users!
+#[poise::command(rename = "cached-users-raw", prefix_command, category = "Meta", user_cooldown = 30, owners_only, hide_in_help)]
+pub async fn cached_users_raw(ctx: Context<'_>) -> Result<(), Error> {
+    let users = ctx.serenity_context().cache.users();
+    ctx.send(poise::CreateReply::default().attachment(serenity::CreateAttachment::bytes(format!("{:?}", users), format!("filename.txt")))).await?;
+    Ok(())
+}
+
+/// View/set max messages cached per channel
+#[poise::command(rename = "max-messages", prefix_command, category = "Meta", owners_only, hide_in_help)]
+pub async fn max_messages(
+    ctx: Context<'_>,
+    #[description = "What to say"] value: Option<u16>,
+) -> Result<(), Error> {
+    if let Some(val) = value {
+        ctx.say(format!("Max messages cached per channel set: **{}** -> **{}**", ctx.serenity_context().cache.settings().max_messages, val)).await?;
+        ctx.serenity_context().cache.set_max_messages(val.into())
+    } else {
+        ctx.say(format!("Max messages cached per channel is set to: **{}**", ctx.serenity_context().cache.settings().max_messages)).await?;
+
+    }
+    Ok(())
+}
