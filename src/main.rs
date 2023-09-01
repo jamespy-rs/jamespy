@@ -59,9 +59,6 @@ async fn main() {
             utility::snippets::snippet(),
             utility::snippets::list_snippets(),
             utility::snippets::remove_snippet(),
-            utility::tracking::track_user(),
-            utility::tracking::untrack_user(),
-            utility::tracking::tracked_users(),
             utility::random::choose(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {

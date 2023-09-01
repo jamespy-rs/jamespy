@@ -90,7 +90,7 @@ pub async fn event_handler(
             let db_pool = &data.db;
             let guild_id = new_message.guild_id.unwrap_or_default();
 
-            let ctx_clone = ctx.clone(); // hhhhhhhhh
+            let ctx_clone = ctx.clone();
 
             let guild_name = if guild_id == 1 {
                 "None".to_owned()
@@ -226,7 +226,6 @@ pub async fn event_handler(
             )
             .execute(&*db_pool)
             .await;
-            // Need to get my bot to react for join tracking.
         }
         serenity::FullEvent::MessageUpdate {
             ctx,
@@ -413,7 +412,6 @@ pub async fn event_handler(
                 return Ok(());
                 // May merge with the one below.
             }
-            // Need to track reacts on accela messages.
             let guild_id = add_reaction.guild_id.unwrap_or_default();
             let guild_name = if guild_id == 1 {
                 "None".to_owned()
@@ -590,7 +588,6 @@ pub async fn event_handler(
                             new_channel = "Unknown".to_owned();
                         }
                     }
-                    // User switches channel in a guild, it doesn't care what guild currently.
                     println!("\x1B[32m[{}] {}: {} (ID:{}) -> {} (ID:{})\x1B[0m", guild_name, user_name, old_channel, old_channel_id_, new_channel, new_channel_id_)
                 } else {
                     if new.channel_id == None {
@@ -730,13 +727,11 @@ pub async fn event_handler(
                         );
                     }
                     if old_member.user.global_name != new_member.user.global_name {
-                        println!("\x1B[92mDisplay name change: {}: {} -> {}\x1B[0m", old_member.user.name, old_member.user.global_name.unwrap_or("None".to_owned()), new_member.user.global_name.unwrap_or("None".to_owned()))
+                        println!("\x1B[92mDisplay name change: {}: {} -> {} (ID:{})\x1B[0m", old_member.user.name, old_member.user.global_name.unwrap_or("None".to_owned()), new_member.user.global_name.unwrap_or("None".to_owned()), new_member.user.id)
                     }
                 }
-                // TODO: bump dependencies when merge happens and show display names.
             }
         }
-        // join track detection
         _ => (),
     }
 
