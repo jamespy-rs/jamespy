@@ -12,6 +12,8 @@ use crate::utils;
 use crate::Data;
 use crate::Error;
 
+use chrono::NaiveDateTime;
+
 use utils::snippets::*;
 
 async fn get_channel_name(
@@ -208,19 +210,19 @@ pub async fn event_handler(
                     embeds_fmt.as_deref().unwrap_or("")
                 );
             }
-
-            // Has a double space when no message content is there but attachments are.
+            let timestamp: NaiveDateTime = NaiveDateTime::from_timestamp_opt(new_message.timestamp.timestamp(), 0).unwrap();
 
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, now())",
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
                 i64::from(guild_id),
                 new_message.channel_id.get() as i64,
                 new_message.id.get() as i64,
                 new_message.author.id.get() as i64,
                 new_message.content,
                 attachments_fmt,
-                embeds_fmt
+                embeds_fmt,
+                timestamp
             )
             .execute(&*db_pool)
             .await;
@@ -291,10 +293,12 @@ pub async fn event_handler(
                             attachments_fmt.as_deref().unwrap_or(""),
                             embeds_fmt.as_deref().unwrap_or("")
                         );
+                        // We will see if this ever panics.
+                        let timestamp: NaiveDateTime = NaiveDateTime::from_timestamp_opt(new_message.edited_timestamp.unwrap().timestamp(), 0).unwrap();
 
                         let _ = query!(
                             "INSERT INTO msgs_edits (guild_id, channel_id, message_id, user_id, old_content, new_content, attachments, embeds, timestamp)
-                             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())",
+                             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
                             i64::from(guild_id),
                             new_message.channel_id.get() as i64,
                             new_message.id.get() as i64,
@@ -302,7 +306,8 @@ pub async fn event_handler(
                             old_message.content,
                             new_message.content,
                             attachments_fmt,
-                            embeds_fmt
+                            embeds_fmt,
+                            timestamp
                         )
                         .execute(&*db_pool)
                         .await;
@@ -368,16 +373,19 @@ pub async fn event_handler(
                 println!("\x1B[91m\x1B[2m[{}] [#{}] A message from \x1B[0m{}\x1B[91m\x1B[2m was deleted: {}{}{}\x1B[0m",
                     guild_name, channel_name, user_name, content, attachments_fmt.as_deref().unwrap_or(""), embeds_fmt.as_deref().unwrap_or(""));
 
+                let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
+
                 let _ = query!(
                         "INSERT INTO msgs_deletions (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
-                         VALUES ($1, $2, $3, $4, $5, $6, $7, now())",
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
                         i64::from(guild_id),
                         message.channel_id.get() as i64,
                         message.id.get() as i64,
                         message.author.id.get() as i64,
                         message.content,
                         attachments_fmt,
-                        embeds_fmt
+                        embeds_fmt,
+                        timestamp
                     )
                     .execute(&*db_pool)
                     .await;
@@ -608,9 +616,8 @@ pub async fn event_handler(
                         }
                         println!("\x1B[32m[{}] {} left {} (ID:{})\x1B[0m", guild_name, user_name, old_channel, old_channel_id_)
                     } else {
-                        println!("{:?}, {:?}", old.channel_id, new.channel_id);
+                        // mutes, unmutes, deafens, etc are here.
                     }
-                    // mutes, unmutes, deafens, etc are here.
                 }
             } else {
                 let mut guild_name = String::from("Unknown");
@@ -727,7 +734,6 @@ pub async fn event_handler(
             }
         }
         // join track detection
-        // assign timestamps from message.
         _ => (),
     }
 
