@@ -4,6 +4,8 @@ use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::ChannelId;
 use toml::Value;
 
+use crate::event_handler::TRACK;
+
 use crate::{Context, Error};
 
 #[poise::command(prefix_command, owners_only, hide_in_help)]
@@ -179,4 +181,35 @@ pub async fn max_messages(
 
     }
     Ok(())
+}
+
+#[poise::command(prefix_command, category = "Misc", hide_in_help, check = "gavin" )]
+pub async fn toggle(ctx: Context<'_>) -> Result<(), Error> {
+
+    let handle = std::thread::spawn(move || {
+        let mut guard: std::sync::MutexGuard<bool>  = TRACK.lock().unwrap();
+
+        *guard = !*guard;
+
+    });
+
+    handle.join().unwrap();
+
+    let bool_guard = TRACK.lock().unwrap().clone();
+
+    // Use 'cloned_bool' in your message
+    ctx.send(poise::CreateReply::default().content(format!(
+        "Switched toggle status to {} for tracking <@221026934287499264> (ID: 221026934287499264)",
+        bool_guard
+    )))
+    .await?;
+
+    Ok(())
+}
+
+async fn gavin(ctx: Context<'_>) -> Result<bool, Error> {
+    let user_id = ctx.author().id;
+    let gavin = user_id == 646202688148865024 || user_id == 158567567487795200;
+
+    Ok(gavin)
 }

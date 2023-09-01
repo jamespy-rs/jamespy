@@ -56,6 +56,7 @@ async fn main() {
             meta::ping(),
             meta::cached_users_raw(),
             meta::max_messages(),
+            meta::toggle(),
             general::lob::lob(),
             utility::snippets::set_snippet(),
             utility::snippets::snippet(),
