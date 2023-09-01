@@ -721,13 +721,16 @@ pub async fn event_handler(
                             new_nickname,
                             new_member.user.id
                         );
-                    }
+                    };
 
                     if old_member.user.name != new_member.user.name {
                         println!(
                             "\x1B[92mUsername change: {} -> {} (ID:{})\x1B[0m",
                             old_member.user.name, new_member.user.name, new_member.user.id
                         );
+                    }
+                    if old_member.user.global_name != new_member.user.global_name {
+                        println!("\x1B[92mDisplay name change: {}: {} -> {}\x1B[0m", old_member.user.name, old_member.user.global_name.unwrap_or("None".to_owned()), new_member.user.global_name.unwrap_or("None".to_owned()))
                     }
                 }
                 // TODO: bump dependencies when merge happens and show display names.
