@@ -19,6 +19,8 @@ use chrono::NaiveDateTime;
 
 use utils::snippets::*;
 
+use ::serenity::{gateway::ActivityData, all::ActivityType};
+
 async fn get_channel_name(
     ctx: &serenity::Context,
     guild_id: GuildId,
@@ -667,7 +669,14 @@ pub async fn event_handler(
         } => {
             ctx.cache.set_max_messages(350);
             let _ = set_all_snippets(&data).await;
-            // Need to check join tracks.
+
+            let activity_data = ActivityData {
+                name: "you inside your home.".to_string(),
+                kind: ActivityType::Watching,
+                state: None,
+                url: None,
+            };
+            ctx.set_activity(Some(activity_data));
         }
         serenity::FullEvent::GuildMemberAddition { ctx, new_member } => {
             let guild_id = new_member.guild_id;
