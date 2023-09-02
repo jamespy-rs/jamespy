@@ -38,7 +38,7 @@ pub async fn guild_flags(
     Ok(())
 }
 
-#[poise::command(rename = "last-reactions", slash_command, prefix_command, category = "Utility", required_permissions = "MANAGE_MESSAGES", guild_only)]
+#[poise::command(rename = "last-reactions", aliases("lastreactions", "last_reactions"), slash_command, prefix_command, category = "Utility", required_permissions = "MANAGE_MESSAGES", guild_only)]
 pub async fn last_reactions(
     ctx: Context<'_>,
 ) -> Result<(), Error> {
@@ -46,11 +46,8 @@ pub async fn last_reactions(
     let mut redis_conn = redis_pool.get().await?;
     let reaction_key = format!("reactions:{}", ctx.guild_id().unwrap());
 
-    let list_length: i64 = redis_conn.llen(reaction_key.clone()).await?;
+    let reactions: Vec<String> = redis_conn.lrange(reaction_key, 0, 24).await?;
 
-    let start_index = if list_length > 25 { list_length - 25 } else { 0 };
-
-    let reactions: Vec<String> = redis_conn.lrange(reaction_key, start_index.try_into().unwrap(), -1).await?;
 
     let formatted: String = reactions.iter()
         .map(|reaction| {
@@ -75,7 +72,7 @@ pub async fn last_reactions(
                     .unwrap_or_else(|| "Unknown User".to_string());
 
                 format!(
-                    "**{}** {} {} (ID:{})",
+                    "**{}** {} {} Message ID: {}",
                     username,
                     if state == 1 { "added" } else { "removed" },
                     emoji,
