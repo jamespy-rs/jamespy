@@ -6,6 +6,7 @@ use regex::Regex;
 
 use utils::snippets::*;
 
+/// Remove a snippet for this guild.
 #[poise::command(
     rename = "remove-snippet",
     slash_command,
@@ -46,7 +47,7 @@ pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<()
     Ok(())
 }
 
-/// set a snippet for everyone to use!
+/// set a snippet for everyone to use in this guild!
 #[poise::command(
     rename = "set-snippet",
     slash_command,
@@ -128,6 +129,7 @@ pub async fn set_snippet(
     Ok(())
 }
 
+/// Use a guild snippet!
 #[poise::command(slash_command, prefix_command, guild_only, category = "Utility")]
 pub async fn snippet(
     ctx: Context<'_>,
@@ -178,6 +180,7 @@ pub async fn snippet(
     Ok(())
 }
 
+/// List all the snippets the guild has.
 #[poise::command(
     rename = "list-snippets",
     slash_command,

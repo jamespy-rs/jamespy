@@ -7,6 +7,7 @@ use crate::event_handler::TRACK;
 
 use crate::{Context, Error};
 
+/// See how long I've been online for!
 #[poise::command(slash_command, prefix_command, category = "Meta")]
 pub async fn uptime(ctx: Context<'_>) -> Result<(), Error> {
     let uptime = std::time::Instant::now() - ctx.data().time_started;
@@ -34,7 +35,7 @@ pub async fn source(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-// About jamespy!
+/// About jamespy!
 #[poise::command(slash_command, prefix_command, category = "Meta")]
 pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     let version = {
@@ -84,7 +85,7 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-/// Show general help or help to a specific command
+/// Show general help or help to a specific command!
 #[poise::command(prefix_command, track_edits, slash_command, category = "Miscellaneous")]
 pub async fn help(
     ctx: Context<'_>,
@@ -131,7 +132,7 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-
+/// Toggle tracking for a specific user.
 #[poise::command(prefix_command, category = "Misc", hide_in_help, check = "gavin" )]
 pub async fn toggle(ctx: Context<'_>) -> Result<(), Error> {
 
