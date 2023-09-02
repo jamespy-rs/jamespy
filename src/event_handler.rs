@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::num::NonZeroU64;
 use std::sync::Mutex;
 
+use bb8_redis::redis::AsyncCommands;
 use lazy_static::lazy_static;
 use poise::serenity_prelude::{self as serenity, Colour};
 use poise::serenity_prelude::{ChannelId, GuildId, UserId};
@@ -444,6 +445,10 @@ pub async fn event_handler(
             };
             let channel_name = get_channel_name(&ctx, guild_id, add_reaction.channel_id).await;
 
+            let redis_pool = &data.redis;
+            let mut redis_conn = redis_pool.get().await?;
+
+
             let user_name = match user_id.to_user(ctx).await {
                 Ok(user) => user.name,
                 Err(_) => "Unknown User".to_string(),
@@ -453,6 +458,19 @@ pub async fn event_handler(
                 "\x1B[95m[{}] [#{}] {} added a reaction: {}\x1B[0m",
                 guild_name, channel_name, user_name, add_reaction.emoji
             );
+
+            let reaction_key = format!("reactions:{}", guild_id);
+            let reaction_info = (
+                add_reaction.emoji.to_string(),
+                user_id,
+                add_reaction.message_id.get(),
+                1,
+            );
+
+            let reaction_info_json = serde_json::to_string(&reaction_info)?;
+
+            redis_conn.lpush(&reaction_key, reaction_info_json).await?;
+            redis_conn.ltrim(&reaction_key, 0, 249).await?;
         }
         serenity::FullEvent::ReactionRemove {
             ctx,
@@ -474,6 +492,9 @@ pub async fn event_handler(
             };
             let channel_name = get_channel_name(&ctx, guild_id, removed_reaction.channel_id).await;
 
+            let redis_pool = &data.redis;
+            let mut redis_conn = redis_pool.get().await?;
+
             let user_name = match user_id.to_user(&ctx.http).await {
                 Ok(user) => user.name,
                 Err(_) => "Unknown User".to_string(),
@@ -483,6 +504,19 @@ pub async fn event_handler(
                 "\x1B[95m[{}] [#{}] {} removed a reaction: {}\x1B[0m",
                 guild_name, channel_name, user_name, removed_reaction.emoji
             );
+
+            let reaction_key = format!("reactions:{}", guild_id);
+            let reaction_info = (
+                removed_reaction.emoji.to_string(),
+                user_id,
+                removed_reaction.message_id.get(),
+                0,
+            );
+
+            let reaction_info_json = serde_json::to_string(&reaction_info)?;
+
+            redis_conn.lpush(&reaction_key, reaction_info_json).await?;
+            redis_conn.ltrim(&reaction_key, 0, 249).await?;
         }
         serenity::FullEvent::ReactionRemoveAll {
             ctx: _,

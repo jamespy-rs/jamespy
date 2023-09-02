@@ -1,6 +1,6 @@
 [package]
 name = "jamespy-rs"
-version = "0.1.1-rc1"
+version = "0.1.1-rc2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -19,6 +19,7 @@ toml = "0.7.6"
 regex = "1.9.3"
 lazy_static = "1.4.0"
 chrono = "0.4.28"
+serde_json = "1.0.105"
 
 [profile.release]
 strip = true

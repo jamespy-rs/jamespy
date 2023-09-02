@@ -54,6 +54,7 @@ async fn main() {
             owner::online_status(),
             owner::reset_presence(),
             owner::set_activity(),
+            utility::users::last_reactions(),
             meta::source(),
             meta::about(),
             meta::help(),

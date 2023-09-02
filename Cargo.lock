@@ -944,7 +944,7 @@ checksum = "af150ab688ff2122fcef229be89cb50dd66af9e01a4ff320cc137eecc9bacc38"
 
 [[package]]
 name = "jamespy-rs"
-version = "0.1.1-rc1"
+version = "0.1.1-rc2"
 dependencies = [
  "bb8-redis",
  "chrono",
@@ -955,6 +955,7 @@ dependencies = [
  "regex",
  "reqwest",
  "serde",
+ "serde_json",
  "serenity",
  "sqlx",
  "tokio",
