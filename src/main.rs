@@ -66,6 +66,7 @@ async fn main() {
             utility::snippets::list_snippets(),
             utility::snippets::remove_snippet(),
             utility::random::choose(),
+            utility::users::guild_flags()
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
