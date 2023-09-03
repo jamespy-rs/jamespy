@@ -9,6 +9,7 @@ use poise::serenity_prelude::{ChannelId, GuildId, UserId};
 
 use regex::Regex;
 use serenity::all::MessageId;
+use ::serenity::builder::CreateEmbedFooter;
 use serenity::builder::GetMessages;
 use sqlx::query;
 
@@ -149,6 +150,32 @@ pub async fn event_handler(
                 )
                 .await?;
             }
+            if guild_id == 1 && !vec![158567567487795200, ctx.clone().cache.current_user().id.get()].contains(&new_message.author.id.get()) {
+                let user_id = UserId::from(NonZeroU64::new(158567567487795200).unwrap());
+                let user = user_id.to_user(ctx.clone()).await?;
+                user.dm(
+                    &ctx.clone(),
+                    serenity::CreateMessage::default()
+                        .content(format!(
+                            "{} (ID:{} messaged me)",
+                            new_message.author.name,
+                            new_message.author.id
+                        ))
+                        .embed(
+                            serenity::CreateEmbed::default()
+                                .title("I was messaged!")
+                                .description(format!(
+                                    "**{}**: {}",
+                                    new_message.author.name,
+                                    new_message.content
+                                ))
+                                .color(Colour::from_rgb(0, 255, 0)).footer(CreateEmbedFooter::new(format!("{}", new_message.channel_id)))
+
+                        ),
+                )
+                .await?;
+            }
+
 
             // For gavin.
             if *TRACK.lock().unwrap() == true {
