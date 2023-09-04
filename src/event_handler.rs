@@ -157,7 +157,7 @@ pub async fn event_handler(
                     &ctx.clone(),
                     serenity::CreateMessage::default()
                         .content(format!(
-                            "{} (ID:{} messaged me)",
+                            "{} (ID:{}) messaged me",
                             new_message.author.name,
                             new_message.author.id
                         ))
@@ -448,8 +448,9 @@ pub async fn event_handler(
         serenity::FullEvent::GuildCreate { ctx, guild, is_new } => {
             if let Some(true) = is_new {
                 println!(
-                    "\x1B[33mJoined {}!\nNow in {} guild(s)\x1B[0m",
+                    "\x1B[33mJoined {} (ID:{})!\nNow in {} guild(s)\x1B[0m",
                     guild.name,
+                    guild.id,
                     ctx.cache.guilds().len()
                 );
             }
