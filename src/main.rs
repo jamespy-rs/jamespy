@@ -57,6 +57,7 @@ async fn main() {
             owner::presence::reset_presence(),
             owner::presence::set_activity(),
             owner::database::dbstats(),
+            owner::database::sql(),
             utility::users::last_reactions(),
             meta::source(),
             meta::about(),
