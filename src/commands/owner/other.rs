@@ -21,7 +21,7 @@ pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
 pub async fn say(
     ctx: Context<'_>,
     #[description = "Channel where the message will be sent"] channel: Option<ChannelId>,
-    #[description = "What to say"] string: String,
+    #[description = "What to say"] #[rest] string: String,
 ) -> Result<(), Error> {
     let target_channel = channel.unwrap_or(ctx.channel_id());
 

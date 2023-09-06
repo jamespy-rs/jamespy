@@ -58,8 +58,7 @@ ctx: Context<'_>,
     let formatted = format!("Affected {} rows in {}ms", affected_rows, elapsed);
     let message = poise::CreateReply::default().content(formatted);
     ctx.send(message).await?;
+    // add print to make it clear that it was executed.
 
     Ok(())
 }
-
-

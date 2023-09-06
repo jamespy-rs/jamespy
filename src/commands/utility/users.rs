@@ -28,7 +28,6 @@ pub async fn guild_flags(
         outcome.push_str("Member has started onboarding.\n");
     }
 
-    // Send the outcome message
     if !outcome.is_empty() {
         ctx.say(outcome).await?;
     } else {
