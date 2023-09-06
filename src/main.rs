@@ -58,6 +58,7 @@ async fn main() {
             owner::presence::set_activity(),
             owner::database::dbstats(),
             owner::database::sql(),
+            owner::cache::guild_message_cache(),
             utility::users::last_reactions(),
             meta::source(),
             meta::about(),

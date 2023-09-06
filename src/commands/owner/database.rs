@@ -43,7 +43,7 @@ pub async fn sql (
 ctx: Context<'_>,
 #[description = "SQL query"] #[rest] query: String,
 ) -> Result<(), Error> {
-    let sql_query = query;
+    let sql_query = query.clone();
     let db_pool = &ctx.data().db;
 
     let now = std::time::Instant::now();
@@ -58,7 +58,9 @@ ctx: Context<'_>,
     let formatted = format!("Affected {} rows in {}ms", affected_rows, elapsed);
     let message = poise::CreateReply::default().content(formatted);
     ctx.send(message).await?;
+
     // add print to make it clear that it was executed.
+    // Add one for actually showing the output.
 
     Ok(())
 }

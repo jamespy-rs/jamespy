@@ -1,4 +1,5 @@
 use poise::serenity_prelude as serenity;
+use ::serenity::{all::ChannelType, builder::CreateEmbedFooter};
 
 use crate::{Context, Error};
 
@@ -54,6 +55,45 @@ pub async fn cache_stats(
     ctx.send(poise::CreateReply::default().embed(embed)).await?;
     Ok(())
 }
+
+#[poise::command(rename = "guild-message-cache", prefix_command, category = "Cache", guild_only, owners_only, hide_in_help)]
+pub async fn guild_message_cache(
+    ctx: Context<'_>,
+) -> Result<(), Error> {
+    let cache = &ctx.serenity_context().cache;
+
+    let guild_id = ctx.guild_id().unwrap();
+
+    let channels = cache.guild_channels(guild_id).unwrap();
+    let mut channels_with_counts: Vec<(String, usize)> = Vec::new();
+    let mut total_messages_cached = 0;
+
+
+    for channel in channels {
+        if channel.1.kind != ChannelType::Category && channel.1.kind != ChannelType::Voice {
+            if let Some(messages) = cache.channel_messages(channel.0) {
+                let message_count = messages.len();
+                total_messages_cached += message_count;
+                channels_with_counts.push((channel.1.name, message_count));
+            }
+        }
+    }
+
+    channels_with_counts.sort_by(|a, b| b.1.cmp(&a.1));
+
+    let mut channel_string = String::new();
+
+    for (channel_name, message_count) in channels_with_counts {
+        channel_string.push_str(&format!("**#{}: {}**\n", channel_name, message_count));
+    }
+    let embed = serenity::CreateEmbed::default().title("Channels with most cached messages.").description(channel_string)
+    .footer(CreateEmbedFooter::new(format!("Total messages cached in the guild: {}", total_messages_cached)));
+    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    Ok(())
+}
+
+
+
 
 /// prints all the cached users!
 #[poise::command(rename = "cached-users-raw", prefix_command, category = "Cache", owners_only, hide_in_help)]
