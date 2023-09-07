@@ -1,5 +1,5 @@
 use poise::serenity_prelude as serenity;
-use ::serenity::{all::ChannelType, builder::CreateEmbedFooter};
+use ::serenity::{all::{ChannelType, GuildId}, builder::CreateEmbedFooter};
 
 use crate::{Context, Error};
 
@@ -59,10 +59,11 @@ pub async fn cache_stats(
 #[poise::command(rename = "guild-message-cache", prefix_command, category = "Cache", guild_only, owners_only, hide_in_help)]
 pub async fn guild_message_cache(
     ctx: Context<'_>,
+    #[description = "What to say"] guild_id: Option<u64>,
 ) -> Result<(), Error> {
     let cache = &ctx.serenity_context().cache;
 
-    let guild_id = ctx.guild_id().unwrap();
+    let guild_id = guild_id.unwrap_or(ctx.guild_id().unwrap().get());
 
     let channels = cache.guild_channels(guild_id).unwrap();
     let mut channels_with_counts: Vec<(String, usize)> = Vec::new();
