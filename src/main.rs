@@ -49,6 +49,8 @@ async fn main() {
             register(),
             owner::other::shutdown(),
             owner::other::say(),
+            owner::other::dm(),
+            owner::other::react(),
             owner::cache::cached_users_raw(),
             owner::cache::cached_users(),
             owner::cache::max_messages(),
