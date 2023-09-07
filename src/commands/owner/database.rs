@@ -1,4 +1,4 @@
- use poise::serenity_prelude as serenity;
+use poise::serenity_prelude as serenity;
 use ::serenity::builder::CreateEmbedFooter;
 use sqlx::{query, Row};
 use crate::{Context, Error};
@@ -39,28 +39,49 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 #[poise::command(rename = "sql", prefix_command, category = "Database", owners_only, hide_in_help)]
-pub async fn sql (
-ctx: Context<'_>,
-#[description = "SQL query"] #[rest] query: String,
+pub async fn sql(
+    ctx: Context<'_>,
+    #[description = "SQL query"] #[rest] query: String,
 ) -> Result<(), Error> {
     let sql_query = query.clone();
     let db_pool = &ctx.data().db;
 
     let now = std::time::Instant::now();
 
-    let affected_rows = sqlx::query(&sql_query)
-    .fetch_all(db_pool)
-    .await
-    .map(|rows| rows.len())
-    .unwrap_or(0);
+    println!("\x1B[31;40mWARNING: SQL COMMAND WAS TRIGGERED\x1B[0m");
+
+    let result = sqlx::query(&sql_query)
+        .fetch_optional(db_pool)
+        .await;
+
     let elapsed = now.elapsed().as_millis();
 
-    let formatted = format!("Affected {} rows in {}ms", affected_rows, elapsed);
-    let message = poise::CreateReply::default().content(formatted);
-    ctx.send(message).await?;
+    match result {
+        Ok(Some(row)) => {
+            if row.len() == 1 && row.try_get::<i64, _>(0).is_ok() {
+                let count = row.get::<i64, _>(0);
+                let formatted = format!("Counted {} rows in {}ms", count, elapsed);
+                let message = poise::CreateReply::default().content(formatted);
+                ctx.send(message).await?;
 
-    // add print to make it clear that it was executed.
-    // Add one for actually showing the output.
+            } else {
+                let formatted = format!("Query executed successfully iqn {}ms", elapsed);
+                let message = poise::CreateReply::default().content(formatted);
+                ctx.send(message).await?;
+            }
+        }
+        Ok(None) => {
+            let formatted = format!("Query executed successfully in {}ms", elapsed);
+            let message = poise::CreateReply::default().content(formatted);
+            ctx.send(message).await?;
+        }
+        Err(err) => {
+            let error_message = format!("Error executing query: {:?}", err);
+            let message = poise::CreateReply::default().content(error_message);
+            ctx.send(message).await?;
+        }
+    }
 
     Ok(())
 }
+
