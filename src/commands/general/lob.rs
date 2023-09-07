@@ -7,7 +7,7 @@ use rand::seq::SliceRandom;
     slash_command,
     prefix_command,
     category = "Utility",
-    channel_cooldown = "8"
+    channel_cooldown = "5"
 )]
 pub async fn lob(ctx: Context<'_>) -> Result<(), Error> {
     let loblist = std::fs::read_to_string("loblist.txt")?;

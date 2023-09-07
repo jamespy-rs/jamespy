@@ -8,7 +8,7 @@ use crate::event_handler::TRACK;
 use crate::{Context, Error};
 
 /// See how long I've been online for!
-#[poise::command(slash_command, prefix_command, category = "Meta")]
+#[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 3)]
 pub async fn uptime(ctx: Context<'_>) -> Result<(), Error> {
     let uptime = std::time::Instant::now() - ctx.data().time_started;
 
@@ -29,14 +29,14 @@ pub async fn uptime(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 // Post a link to my source code!
-#[poise::command(slash_command, prefix_command, category = "Meta")]
+#[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 3)]
 pub async fn source(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say("<https://github.com/jamesbt365/jamespy-rs>").await?;
     Ok(())
 }
 
 /// About jamespy!
-#[poise::command(slash_command, prefix_command, category = "Meta")]
+#[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 3)]
 pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     let version = {
         let mut file = File::open("Cargo.toml")?;
@@ -86,7 +86,7 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 /// Show general help or help to a specific command!
-#[poise::command(prefix_command, track_edits, slash_command, category = "Miscellaneous")]
+#[poise::command(prefix_command, track_edits, slash_command, category = "Miscellaneous", user_cooldown = 3)]
 pub async fn help(
     ctx: Context<'_>,
     #[description = "Specific command to show help about"]

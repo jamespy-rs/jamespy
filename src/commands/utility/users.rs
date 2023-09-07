@@ -3,7 +3,7 @@ use bb8_redis::redis::AsyncCommands;
 use crate::{Context, Error};
 use poise::serenity_prelude as serenity;
 
-#[poise::command(rename = "guild-flags", aliases("guild_flags", "guildflags"), slash_command, prefix_command, category = "Utility", required_permissions = "MANAGE_MESSAGES")]
+#[poise::command(rename = "guild-flags", aliases("guild_flags", "guildflags"), slash_command, prefix_command, category = "Utility", required_permissions = "MANAGE_MESSAGES", user_cooldown = 4)]
 pub async fn guild_flags(
     ctx: Context<'_>,
     #[description = "The member whose flags are to be checked."] member: Member
@@ -37,7 +37,7 @@ pub async fn guild_flags(
     Ok(())
 }
 
-#[poise::command(rename = "last-reactions", aliases("lastreactions", "last_reactions"), slash_command, prefix_command, category = "Utility", required_permissions = "MANAGE_MESSAGES", guild_only)]
+#[poise::command(rename = "last-reactions", aliases("lastreactions", "last_reactions"), slash_command, prefix_command, category = "Utility", required_permissions = "MANAGE_MESSAGES", guild_only, user_cooldown = 3)]
 pub async fn last_reactions(
     ctx: Context<'_>,
 ) -> Result<(), Error> {

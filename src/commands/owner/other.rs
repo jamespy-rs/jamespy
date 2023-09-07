@@ -3,7 +3,7 @@ use poise::serenity_prelude::{ChannelId, ReactionType};
 
 use crate::{Context, Error};
 
-#[poise::command(prefix_command, owners_only, hide_in_help)]
+#[poise::command(prefix_command, aliases("kys"), owners_only, hide_in_help)]
 pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say("**Bailing out, you are on your own. Good luck.**")
         .await?;

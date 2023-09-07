@@ -14,7 +14,8 @@ use utils::snippets::*;
     aliases("delsnippet", "del-snippet"),
     guild_only,
     category = "Utility",
-    required_permissions = "MANAGE_MESSAGES"
+    required_permissions = "MANAGE_MESSAGES",
+    user_cooldown = 3
 )]
 pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<(), Error> {
     let guild_id: i64 = ctx.guild_id().unwrap().get() as i64;
@@ -130,7 +131,7 @@ pub async fn set_snippet(
 }
 
 /// Use a guild snippet!
-#[poise::command(slash_command, prefix_command, guild_only, category = "Utility")]
+#[poise::command(slash_command, prefix_command, guild_only, category = "Utility", user_cooldown = 3)]
 pub async fn snippet(
     ctx: Context<'_>,
     #[description = "The name of the snippet"] name: String,
@@ -187,7 +188,8 @@ pub async fn snippet(
     prefix_command,
     aliases("list-snippets", "list_snippet", "list-snippet"),
     guild_only,
-    category = "Utility"
+    category = "Utility",
+    user_cooldown = 3
 )]
 pub async fn list_snippets(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = ctx.guild_id().unwrap().get() as i64;
