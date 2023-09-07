@@ -1,5 +1,5 @@
 use poise::serenity_prelude as serenity;
-use ::serenity::{all::{ChannelType, GuildId}, builder::CreateEmbedFooter};
+use poise::serenity_prelude::{ChannelType, CreateEmbedFooter};
 
 use crate::{Context, Error};
 
