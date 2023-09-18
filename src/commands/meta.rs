@@ -3,7 +3,7 @@ use std::{fs::File, io::Read, time::Instant};
 use poise::serenity_prelude as serenity;
 use toml::Value;
 
-use crate::event_handler::TRACK;
+use crate::event_handlers::messages::TRACK;
 
 use crate::{Context, Error};
 

@@ -2,6 +2,7 @@ mod commands;
 use commands::*;
 mod database;
 mod event_handler;
+mod event_handlers;
 mod utils;
 
 use database::init_data;

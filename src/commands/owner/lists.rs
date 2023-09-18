@@ -1,4 +1,4 @@
-use crate::event_handler::{BADLIST, FIXLIST};
+use crate::event_handlers::messages::{BADLIST, FIXLIST};
 use crate::utils::misc::read_words_from_file;
 use crate::{Context, Error};
 
