@@ -7,9 +7,9 @@ use lazy_static::lazy_static;
 use poise::serenity_prelude::{self as serenity, Colour};
 use poise::serenity_prelude::{ChannelId, GuildId, UserId};
 
+use ::serenity::builder::CreateEmbedFooter;
 use regex::Regex;
 use serenity::all::MessageId;
-use ::serenity::builder::CreateEmbedFooter;
 use serenity::builder::GetMessages;
 use sqlx::query;
 
@@ -21,7 +21,7 @@ use chrono::NaiveDateTime;
 
 use utils::snippets::*;
 
-use ::serenity::{gateway::ActivityData, all::ActivityType};
+use ::serenity::{all::ActivityType, gateway::ActivityData};
 
 async fn get_channel_name(
     ctx: &serenity::Context,
@@ -109,7 +109,8 @@ pub async fn event_handler(
                 }
             };
 
-            let channel_name = get_channel_name(&ctx.clone(), guild_id, new_message.channel_id).await;
+            let channel_name =
+                get_channel_name(&ctx.clone(), guild_id, new_message.channel_id).await;
 
             let mut any_pattern_matched = false;
             for pattern in &*COMPILED_PATTERNS {
@@ -150,7 +151,13 @@ pub async fn event_handler(
                 )
                 .await?;
             }
-            if guild_id == 1 && !vec![158567567487795200, ctx.clone().cache.current_user().id.get()].contains(&new_message.author.id.get()) {
+            if guild_id == 1
+                && !vec![
+                    158567567487795200,
+                    ctx.clone().cache.current_user().id.get(),
+                ]
+                .contains(&new_message.author.id.get())
+            {
                 let user_id = UserId::from(NonZeroU64::new(158567567487795200).unwrap());
                 let user = user_id.to_user(ctx.clone()).await?;
                 user.dm(
@@ -158,32 +165,39 @@ pub async fn event_handler(
                     serenity::CreateMessage::default()
                         .content(format!(
                             "{} (ID:{}) messaged me",
-                            new_message.author.name,
-                            new_message.author.id
+                            new_message.author.name, new_message.author.id
                         ))
                         .embed(
                             serenity::CreateEmbed::default()
                                 .title("I was messaged!")
                                 .description(format!(
                                     "**{}**: {}",
-                                    new_message.author.name,
-                                    new_message.content
+                                    new_message.author.name, new_message.content
                                 ))
-                                .color(Colour::from_rgb(0, 255, 0)).footer(CreateEmbedFooter::new(format!("{}", new_message.channel_id)))
-
+                                .color(Colour::from_rgb(0, 255, 0))
+                                .footer(CreateEmbedFooter::new(format!(
+                                    "{}",
+                                    new_message.channel_id
+                                ))),
                         ),
                 )
                 .await?;
             }
 
-
             // For gavin.
             if *TRACK.lock().unwrap() == true {
                 if new_message.author.id.get() == 221026934287499264 {
-                    let builder = GetMessages::new().before(MessageId::new(new_message.id.get())).limit(100);
-                    let messages = new_message.channel_id.messages(ctx.clone(), builder).await?;
+                    let builder = GetMessages::new()
+                        .before(MessageId::new(new_message.id.get()))
+                        .limit(100);
+                    let messages = new_message
+                        .channel_id
+                        .messages(ctx.clone(), builder)
+                        .await?;
 
-                    let user_has_spoken = messages.iter().any(|msg| msg.author.id == 221026934287499264);
+                    let user_has_spoken = messages
+                        .iter()
+                        .any(|msg| msg.author.id == 221026934287499264);
                     if user_has_spoken == false {
                         let user_id = UserId::from(NonZeroU64::new(646202688148865024).unwrap());
                         let user = user_id.to_user(ctx.clone()).await?;
@@ -259,7 +273,8 @@ pub async fn event_handler(
                     embeds_fmt.as_deref().unwrap_or("")
                 );
             }
-            let timestamp: NaiveDateTime = NaiveDateTime::from_timestamp_opt(new_message.timestamp.timestamp(), 0).unwrap();
+            let timestamp: NaiveDateTime =
+                NaiveDateTime::from_timestamp_opt(new_message.timestamp.timestamp(), 0).unwrap();
 
             let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
@@ -342,7 +357,11 @@ pub async fn event_handler(
                             embeds_fmt.as_deref().unwrap_or("")
                         );
                         // We will see if this ever panics.
-                        let timestamp: NaiveDateTime = NaiveDateTime::from_timestamp_opt(new_message.edited_timestamp.unwrap().timestamp(), 0).unwrap();
+                        let timestamp: NaiveDateTime = NaiveDateTime::from_timestamp_opt(
+                            new_message.edited_timestamp.unwrap().timestamp(),
+                            0,
+                        )
+                        .unwrap();
 
                         let _ = query!(
                             "INSERT INTO msgs_edits (guild_id, channel_id, message_id, user_id, old_content, new_content, attachments, embeds, timestamp)
@@ -475,7 +494,6 @@ pub async fn event_handler(
 
             let redis_pool = &data.redis;
             let mut redis_conn = redis_pool.get().await?;
-
 
             let user_name = match user_id.to_user(ctx).await {
                 Ok(user) => user.name,
@@ -632,14 +650,9 @@ pub async fn event_handler(
                 );
             }
         }
-        serenity::FullEvent::VoiceStateUpdate {
-            ctx,
-            old,
-            new,
-        } => {
+        serenity::FullEvent::VoiceStateUpdate { ctx, old, new } => {
             if let Some(old) = old {
                 if old.channel_id != new.channel_id && new.channel_id != None {
-
                     let mut guild_name = String::from("Unknown");
                     let mut user_name = String::from("Unknown User");
                     let mut old_channel = String::from("Unknown");
@@ -648,7 +661,9 @@ pub async fn event_handler(
                     let mut new_channel_id_ = String::from("Unknown");
 
                     if let Some(guild_id) = old.guild_id {
-                        guild_name = guild_id.name(ctx.clone()).unwrap_or_else(|| guild_name.clone());
+                        guild_name = guild_id
+                            .name(ctx.clone())
+                            .unwrap_or_else(|| guild_name.clone());
                     }
                     if let Some(member) = new.member {
                         user_name = member.user.name;
@@ -657,7 +672,6 @@ pub async fn event_handler(
                         old_channel_id_ = old_channel_id.get().to_string();
                         if let Ok(channel_name) = old_channel_id.name(ctx.clone()).await {
                             old_channel = channel_name;
-
                         } else {
                             old_channel = "Unknown".to_owned();
                         }
@@ -666,12 +680,19 @@ pub async fn event_handler(
                         new_channel_id_ = new_channel_id.get().to_string();
                         if let Ok(channel_name) = new_channel_id.name(ctx.clone()).await {
                             new_channel = channel_name;
-
                         } else {
                             new_channel = "Unknown".to_owned();
                         }
                     }
-                    println!("\x1B[32m[{}] {}: {} (ID:{}) -> {} (ID:{})\x1B[0m", guild_name, user_name, old_channel, old_channel_id_, new_channel, new_channel_id_)
+                    println!(
+                        "\x1B[32m[{}] {}: {} (ID:{}) -> {} (ID:{})\x1B[0m",
+                        guild_name,
+                        user_name,
+                        old_channel,
+                        old_channel_id_,
+                        new_channel,
+                        new_channel_id_
+                    )
                 } else {
                     if new.channel_id == None {
                         let mut guild_name = String::from("Unknown");
@@ -680,7 +701,9 @@ pub async fn event_handler(
                         let mut old_channel_id_ = String::from("Unknown");
 
                         if let Some(guild_id) = old.guild_id {
-                            guild_name = guild_id.name(ctx.clone()).unwrap_or_else(|| guild_name.clone());
+                            guild_name = guild_id
+                                .name(ctx.clone())
+                                .unwrap_or_else(|| guild_name.clone());
                         }
                         if let Some(member) = new.member {
                             user_name = member.user.name;
@@ -689,12 +712,14 @@ pub async fn event_handler(
                             old_channel_id_ = old_channel_id.get().to_string();
                             if let Ok(channel_name) = old_channel_id.name(ctx.clone()).await {
                                 old_channel = channel_name;
-
                             } else {
                                 old_channel = "Unknown".to_owned();
                             }
                         }
-                        println!("\x1B[32m[{}] {} left {} (ID:{})\x1B[0m", guild_name, user_name, old_channel, old_channel_id_)
+                        println!(
+                            "\x1B[32m[{}] {} left {} (ID:{})\x1B[0m",
+                            guild_name, user_name, old_channel, old_channel_id_
+                        )
                     } else {
                         // mutes, unmutes, deafens, etc are here.
                     }
@@ -706,7 +731,9 @@ pub async fn event_handler(
                 let mut new_channel_id_ = String::from("Unknown");
 
                 if let Some(guild_id) = new.guild_id {
-                    guild_name = guild_id.name(ctx.clone()).unwrap_or_else(|| guild_name.clone());
+                    guild_name = guild_id
+                        .name(ctx.clone())
+                        .unwrap_or_else(|| guild_name.clone());
                 }
                 if let Some(member) = new.member {
                     user_name = member.user.name;
@@ -715,15 +742,17 @@ pub async fn event_handler(
                     new_channel_id_ = new_channel_id.get().to_string();
                     if let Ok(channel_name) = new_channel_id.name(ctx.clone()).await {
                         new_channel = channel_name;
-
                     } else {
                         new_channel = "Unknown".to_owned();
                     }
                 }
 
-                println!("\x1B[32m[{}] {} joined {} (ID:{})\x1B[0m", guild_name, user_name, new_channel, new_channel_id_);
+                println!(
+                    "\x1B[32m[{}] {} joined {} (ID:{})\x1B[0m",
+                    guild_name, user_name, new_channel, new_channel_id_
+                );
+            }
         }
-    }
 
         serenity::FullEvent::Ready {
             ctx,
@@ -817,7 +846,13 @@ pub async fn event_handler(
                         );
                     }
                     if old_member.user.global_name != new_member.user.global_name {
-                        println!("\x1B[92mDisplay name change: {}: {} -> {} (ID:{})\x1B[0m", old_member.user.name, old_member.user.global_name.unwrap_or("None".to_owned()), new_member.user.global_name.unwrap_or("None".to_owned()), new_member.user.id)
+                        println!(
+                            "\x1B[92mDisplay name change: {}: {} -> {} (ID:{})\x1B[0m",
+                            old_member.user.name,
+                            old_member.user.global_name.unwrap_or("None".to_owned()),
+                            new_member.user.global_name.unwrap_or("None".to_owned()),
+                            new_member.user.id
+                        )
                     }
                 }
             }

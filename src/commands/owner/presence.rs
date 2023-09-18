@@ -1,8 +1,14 @@
-use ::serenity::{gateway::ActivityData, all::ActivityType};
+use ::serenity::{all::ActivityType, gateway::ActivityData};
 
 use crate::{Context, Error};
 
-#[poise::command(rename = "status", prefix_command, category = "Management", owners_only, hide_in_help)]
+#[poise::command(
+    rename = "status",
+    prefix_command,
+    category = "Management",
+    owners_only,
+    hide_in_help
+)]
 pub async fn status(
     ctx: Context<'_>,
     #[description = "What to say"] status_type: String,
@@ -30,24 +36,36 @@ pub async fn status(
         }
     };
 
-    ctx.say(format!("Updating status to: **{}**. (this could take a moment)", new_status)).await?;
+    ctx.say(format!(
+        "Updating status to: **{}**. (this could take a moment)",
+        new_status
+    ))
+    .await?;
 
     Ok(())
 }
 
-
-
-#[poise::command(rename = "reset-presence", prefix_command, category = "Management", owners_only, hide_in_help)]
-pub async fn reset_presence(
-    ctx: Context<'_>,
-) -> Result<(), Error> {
+#[poise::command(
+    rename = "reset-presence",
+    prefix_command,
+    category = "Management",
+    owners_only,
+    hide_in_help
+)]
+pub async fn reset_presence(ctx: Context<'_>) -> Result<(), Error> {
     ctx.serenity_context().reset_presence();
     ctx.say("Resetting the current presence...").await?;
 
     Ok(())
 }
 
-#[poise::command(rename = "set-activity", prefix_command, category = "Management", owners_only, hide_in_help)]
+#[poise::command(
+    rename = "set-activity",
+    prefix_command,
+    category = "Management",
+    owners_only,
+    hide_in_help
+)]
 pub async fn set_activity(
     ctx: Context<'_>,
     #[description = "The activity name"] name: String,

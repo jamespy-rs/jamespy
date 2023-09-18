@@ -31,7 +31,8 @@ pub async fn uptime(ctx: Context<'_>) -> Result<(), Error> {
 // Post a link to my source code!
 #[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 3)]
 pub async fn source(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.say("<https://github.com/jamesbt365/jamespy-rs>").await?;
+    ctx.say("<https://github.com/jamesbt365/jamespy-rs>")
+        .await?;
     Ok(())
 }
 
@@ -57,7 +58,6 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     let (days, hours) = calculation(hours, 24);
     let uptime_string = format!("{}d{}h{}m", days, hours, minutes);
 
-
     let bot_user = ctx.serenity_context().cache.current_user().clone();
     let bot_name = bot_user.name.clone();
     let bot_avatar = bot_user.avatar_url();
@@ -69,10 +69,21 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     let mut embed = serenity::CreateEmbed::default()
         .title(format!("**{} - v{}**", bot_name, version))
         .description("A general spy bot that only exists to spy! It has no other purpose.")
-        .field("Stats:", format!("Guilds: {}\n Channels: {}\n Users: {}", guild_num, channel_num, user_num), true)
-        .field("Usage stats:", format!("Uptime:\n `{}`", uptime_string), true)
+        .field(
+            "Stats:",
+            format!(
+                "Guilds: {}\n Channels: {}\n Users: {}",
+                guild_num, channel_num, user_num
+            ),
+            true,
+        )
+        .field(
+            "Usage stats:",
+            format!("Uptime:\n `{}`", uptime_string),
+            true,
+        )
         .field("Memory stats:", "Not implemented", true);
-        // Add footer
+    // Add footer
 
     if let Some(avatar_url) = bot_avatar {
         embed = embed.thumbnail(avatar_url);
@@ -80,13 +91,18 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
 
     let msg = poise::CreateReply::default().embed(embed);
 
-
     ctx.send(msg).await?;
     Ok(())
 }
 
 /// Show general help or help to a specific command!
-#[poise::command(prefix_command, track_edits, slash_command, category = "Miscellaneous", user_cooldown = 3)]
+#[poise::command(
+    prefix_command,
+    track_edits,
+    slash_command,
+    category = "Miscellaneous",
+    user_cooldown = 3
+)]
 pub async fn help(
     ctx: Context<'_>,
     #[description = "Specific command to show help about"]
@@ -104,7 +120,6 @@ pub async fn help(
     .await?;
     Ok(())
 }
-
 
 /// pong!
 #[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 10)]
@@ -133,14 +148,12 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 /// Toggle tracking for a specific user.
-#[poise::command(prefix_command, category = "Misc", hide_in_help, check = "gavin" )]
+#[poise::command(prefix_command, category = "Misc", hide_in_help, check = "gavin")]
 pub async fn toggle(ctx: Context<'_>) -> Result<(), Error> {
-
     let handle = std::thread::spawn(move || {
-        let mut guard: std::sync::MutexGuard<bool>  = TRACK.lock().unwrap();
+        let mut guard: std::sync::MutexGuard<bool> = TRACK.lock().unwrap();
 
         *guard = !*guard;
-
     });
 
     handle.join().unwrap();

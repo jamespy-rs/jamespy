@@ -16,13 +16,14 @@ pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-
 /// Say something!
 #[poise::command(prefix_command, hide_in_help, owners_only)]
 pub async fn say(
     ctx: Context<'_>,
     #[description = "Channel where the message will be sent"] channel: Option<ChannelId>,
-    #[description = "What to say"] #[rest] string: String,
+    #[description = "What to say"]
+    #[rest]
+    string: String,
 ) -> Result<(), Error> {
     let target_channel = channel.unwrap_or(ctx.channel_id());
 
@@ -41,7 +42,8 @@ pub async fn dm(
     message: String,
 ) -> Result<(), Error> {
     let user = user_id.to_user(&ctx).await?;
-    user.direct_message(ctx, serenity::CreateMessage::default().content(message)).await?;
+    user.direct_message(ctx, serenity::CreateMessage::default().content(message))
+        .await?;
     Ok(())
 }
 
@@ -63,4 +65,3 @@ pub async fn react(
 
     Ok(())
 }
-

@@ -70,19 +70,18 @@ pub async fn set_snippet(
     let at_least_one_property_set =
         title.is_some() || description.is_some() || image.is_some() || thumbnail.is_some();
 
-        let snippet_prefix = format!("snippet:{}:", ctx.guild_id().unwrap()); // This shouldn't panic as its in a guild, right?
+    let snippet_prefix = format!("snippet:{}:", ctx.guild_id().unwrap()); // This shouldn't panic as its in a guild, right?
 
-        let redis_pool = &ctx.data().redis;
-        let mut redis_conn = redis_pool.get().await?;
+    let redis_pool = &ctx.data().redis;
+    let mut redis_conn = redis_pool.get().await?;
 
-        let snippet_keys: Vec<String> = redis_conn.keys(format!("{}*", snippet_prefix)).await?;
+    let snippet_keys: Vec<String> = redis_conn.keys(format!("{}*", snippet_prefix)).await?;
 
-        // this is possible to stop you from overriding snippets if you're at the cap without removing them first, but thats a later me problem.
-        if snippet_keys.len() >= 35 {
-            ctx.say("You already have 35 snippets!").await?;
-            return Ok(())
-        }
-
+    // this is possible to stop you from overriding snippets if you're at the cap without removing them first, but thats a later me problem.
+    if snippet_keys.len() >= 35 {
+        ctx.say("You already have 35 snippets!").await?;
+        return Ok(());
+    }
 
     if !at_least_one_property_set {
         ctx.say("Please provide at least one of title, description, image, or thumbnail.")
@@ -131,7 +130,13 @@ pub async fn set_snippet(
 }
 
 /// Use a guild snippet!
-#[poise::command(slash_command, prefix_command, guild_only, category = "Utility", user_cooldown = 3)]
+#[poise::command(
+    slash_command,
+    prefix_command,
+    guild_only,
+    category = "Utility",
+    user_cooldown = 3
+)]
 pub async fn snippet(
     ctx: Context<'_>,
     #[description = "The name of the snippet"] name: String,
