@@ -1,15 +1,6 @@
-use std::collections::HashSet;
-
 use crate::{Context, Error};
 use crate::event_handler::{BADLIST, FIXLIST};
-
-fn read_words_from_file(filename: &str) -> HashSet<String> {
-    std::fs::read_to_string(filename)
-        .expect("Failed to read the file")
-        .lines()
-        .map(|line| line.trim().to_lowercase())
-        .collect()
-}
+use crate::utils::misc::read_words_from_file;
 
 #[poise::command(
     rename = "update-lists",

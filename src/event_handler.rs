@@ -20,6 +20,7 @@ use crate::Error;
 use chrono::NaiveDateTime;
 
 use utils::snippets::*;
+use utils::misc::read_words_from_file;
 
 use ::serenity::{gateway::ActivityData, all::ActivityType};
 
@@ -54,14 +55,6 @@ static REGEX_PATTERNS: [&str; 2] = [
     r"(?i)\b\w*j\s*\d*\W*?a+\W*\d*\W*?m+\W*\d*\W*?e+\W*\d*\W*?s+\W*\d*\W*?\w*\b",
     r"(?i)\b\w*b\s*\d*\W*?t+\W*\d*\W*?3+\W*\d*\W*?6+\W*\d*\W*?5+\W*\d*\W*?\w*\b",
 ];
-
-fn read_words_from_file(filename: &str) -> HashSet<String> {
-    std::fs::read_to_string(filename)
-        .expect("Failed to read the file")
-        .lines()
-        .map(|line| line.trim().to_lowercase())
-        .collect()
-}
 
 lazy_static! {
     pub static ref BADLIST: Arc<RwLock<HashSet<String>>> = {
