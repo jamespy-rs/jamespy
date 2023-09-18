@@ -61,6 +61,7 @@ async fn main() {
             owner::database::dbstats(),
             owner::database::sql(),
             owner::cache::guild_message_cache(),
+            owner::lists::update_lists(),
             utility::users::last_reactions(),
             meta::source(),
             meta::about(),
