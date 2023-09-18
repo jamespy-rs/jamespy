@@ -1,6 +1,6 @@
-use crate::{Context, Error};
 use crate::event_handler::{BADLIST, FIXLIST};
 use crate::utils::misc::read_words_from_file;
+use crate::{Context, Error};
 
 #[poise::command(
     rename = "update-lists",

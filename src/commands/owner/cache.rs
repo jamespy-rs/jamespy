@@ -1,5 +1,4 @@
-use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::{ChannelType, CreateEmbedFooter};
+use poise::serenity_prelude::{self as serenity, ChannelType, CreateEmbedFooter};
 
 use crate::{Context, Error};
 

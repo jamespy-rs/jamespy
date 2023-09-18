@@ -1,6 +1,5 @@
 use crate::{Context, Error};
-use ::serenity::builder::CreateEmbedFooter;
-use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::{self as serenity, CreateEmbedFooter};
 use sqlx::{query, Row};
 
 #[poise::command(

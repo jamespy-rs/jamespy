@@ -1,4 +1,4 @@
-use ::serenity::{all::ActivityType, gateway::ActivityData};
+use poise::serenity_prelude::{all::ActivityType, gateway::ActivityData};
 
 use crate::{Context, Error};
 

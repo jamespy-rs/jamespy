@@ -1,5 +1,4 @@
-use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::{ChannelId, ReactionType};
+use poise::serenity_prelude::{self as serenity, ChannelId, ReactionType};
 
 use crate::{Context, Error};
 
