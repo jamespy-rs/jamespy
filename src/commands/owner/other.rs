@@ -8,8 +8,6 @@ pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
         .await?;
     ctx.framework()
         .shard_manager()
-        .lock()
-        .await
         .shutdown_all()
         .await;
     Ok(())

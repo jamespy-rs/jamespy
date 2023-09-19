@@ -1,13 +1,13 @@
 [package]
 name = "jamespy-rs"
-version = "0.1.1-rc2"
+version = "0.1.1-rc3"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-poise = { git = "https://github.com/scottbot95/poise.git", branch = "serenity-next" }
-serenity = { git = "https://github.com/serenity-rs/serenity", branch = "next" }
+poise = { git = "https://github.com/serenity-rs/poise.git", branch = "serenity-next" }
+serenity = { git = "https://github.com/serenity-rs/serenity", branch = "current" }
 tokio = { version = "1.29.1", features = ["macros", "signal", "rt-multi-thread"] }
 sqlx = { version = "0.7.1", features = ["macros", "runtime-tokio-rustls", "postgres", "time", "chrono"] }
 rand = "0.8.5"

@@ -1,7 +1,5 @@
 use crate::{Context, Error};
-use ::serenity::builder::CreateEmbedAuthor;
-use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::Colour;
+use poise::serenity_prelude::{self as serenity, Colour, CreateEmbedAuthor};
 use rand::rngs::OsRng;
 use rand::RngCore;
 
@@ -25,10 +23,7 @@ pub async fn choose(
     ctx.send(
         poise::CreateReply::default().embed(
             serenity::CreateEmbed::default()
-                .author(
-                    CreateEmbedAuthor::new(format!("{}'s Choice:", author.name))
-                        .icon_url(image_url),
-                )
+                .author(CreateEmbedAuthor::new(&author.name).icon_url(image_url))
                 .description(format!("{}", chosen_option))
                 .color(Colour::from_rgb(0, 255, 0)),
         ),
