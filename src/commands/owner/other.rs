@@ -6,10 +6,7 @@ use crate::{Context, Error};
 pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say("**Bailing out, you are on your own. Good luck.**")
         .await?;
-    ctx.framework()
-        .shard_manager()
-        .shutdown_all()
-        .await;
+    ctx.framework().shard_manager().shutdown_all().await;
     Ok(())
 }
 

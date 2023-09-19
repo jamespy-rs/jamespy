@@ -1,6 +1,6 @@
-use poise::serenity_prelude::{self as serenity, ChannelType, CreateEmbedFooter};
+use poise::serenity_prelude::{self as serenity, ChannelType};
 
-use crate::{Context, Error};
+use crate::{utils, Context, Error};
 
 /// View/set max messages cached per channel
 #[poise::command(
@@ -89,41 +89,49 @@ pub async fn cache_stats(ctx: Context<'_>) -> Result<(), Error> {
 )]
 pub async fn guild_message_cache(
     ctx: Context<'_>,
-    #[description = "What to say"] guild_id: Option<u64>,
+    #[description = "Which guild to check"] guild_id: Option<u64>,
 ) -> Result<(), Error> {
+    // This still doesn't include threads.
     let cache = &ctx.serenity_context().cache;
-
     let guild_id = guild_id.unwrap_or(ctx.guild_id().unwrap().get());
 
     let channels = cache.guild_channels(guild_id).unwrap();
-    let mut channels_with_counts: Vec<(String, usize)> = Vec::new();
-    let mut total_messages_cached = 0;
+
+    let mut channel_info_vec: Vec<(String, usize)> = Vec::new();
 
     for channel in channels {
         if channel.1.kind != ChannelType::Category && channel.1.kind != ChannelType::Voice {
             if let Some(messages) = cache.channel_messages(channel.0) {
                 let message_count = messages.len();
-                total_messages_cached += message_count;
-                channels_with_counts.push((channel.1.name, message_count));
+                let channel_info = format!("**#{}: {}**\n", channel.1.name, message_count);
+                channel_info_vec.push((channel_info, message_count));
             }
         }
     }
+    channel_info_vec.sort_by(|a, b| b.1.cmp(&a.1));
 
-    channels_with_counts.sort_by(|a, b| b.1.cmp(&a.1));
+    let mut current_page = String::new();
+    let mut total_messages_cached = 0;
+    let mut pages: Vec<String> = Vec::new();
 
-    let mut channel_string = String::new();
+    for (channel_info, message_count) in channel_info_vec {
+        total_messages_cached += message_count;
 
-    for (channel_name, message_count) in channels_with_counts {
-        channel_string.push_str(&format!("**#{}: {}**\n", channel_name, message_count));
+        // Check if adding this channel to the current page exceeds the character limit
+        if current_page.len() + channel_info.len() > 2000 {
+            pages.push(current_page.clone());
+            current_page.clear();
+        }
+
+        current_page.push_str(&channel_info);
     }
-    let embed = serenity::CreateEmbed::default()
-        .title("Channels with most cached messages.")
-        .description(channel_string)
-        .footer(CreateEmbedFooter::new(format!(
-            "Total messages cached in the guild: {}",
-            total_messages_cached
-        )));
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+
+    if !current_page.is_empty() {
+        pages.push(current_page);
+    }
+
+    let pages_ref: Vec<&str> = pages.iter().map(|s| s.as_str()).collect();
+    utils::cache::guild_message_cache_builder(ctx, &pages_ref, total_messages_cached).await?;
     Ok(())
 }
 

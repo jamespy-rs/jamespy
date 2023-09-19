@@ -1,7 +1,7 @@
 use crate::utils::misc::{get_channel_name, read_words_from_file};
-use ::serenity::all::{ChannelId, MessageUpdateEvent};
 use poise::serenity_prelude::{
-    self as serenity, Colour, CreateEmbedFooter, GetMessages, GuildId, Message, MessageId, UserId,
+    self as serenity, ChannelId, Colour, CreateEmbedFooter, GetMessages, GuildId, Message,
+    MessageId, MessageUpdateEvent, UserId,
 };
 
 use crate::{Data, Error};
