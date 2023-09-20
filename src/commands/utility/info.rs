@@ -1,5 +1,5 @@
 use crate::{Context, Error};
-use poise::serenity_prelude::{self as serenity, Role, Permissions};
+use poise::serenity_prelude::{self as serenity, Permissions, Role};
 
 fn bool_converter(b: bool) -> String {
     if b {
@@ -63,18 +63,21 @@ pub async fn role_info(
         Permissions::VIEW_CREATOR_MONETIZATION_ANALYTICS,
     ];
 
-    let formatted_permissions: Vec<String> = permissions.iter().filter_map(|permission| {
-        if show_all_permissions.unwrap_or(false) || key_permissions.contains(&permission) {
-            Some(if key_permissions.contains(&permission) {
-                // Highlight key permissions
-                format!("**{}**", permission)
+    let formatted_permissions: Vec<String> = permissions
+        .iter()
+        .filter_map(|permission| {
+            if show_all_permissions.unwrap_or(false) || key_permissions.contains(&permission) {
+                Some(if key_permissions.contains(&permission) {
+                    // Highlight key permissions
+                    format!("**{}**", permission)
+                } else {
+                    format!("{}", permission)
+                })
             } else {
-                format!("{}", permission)
-            })
-        } else {
-            None
-        }
-    }).collect();
+                None
+            }
+        })
+        .collect();
 
     let permissions_list = formatted_permissions.join(", ");
 
@@ -94,5 +97,3 @@ pub async fn role_info(
     ctx.send(message).await?;
     Ok(())
 }
-
-
