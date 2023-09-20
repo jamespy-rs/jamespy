@@ -21,5 +21,3 @@ pub async fn lob(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
-
-// TODO: Add roll command!

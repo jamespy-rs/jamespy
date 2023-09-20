@@ -63,7 +63,7 @@ async fn main() {
             owner::database::sql(),
             owner::cache::guild_message_cache(),
             owner::lists::update_lists(),
-            utility::users::last_reactions(),
+            owner::lists::unload_lists(),
             meta::source(),
             meta::about(),
             meta::help(),
@@ -77,6 +77,8 @@ async fn main() {
             utility::snippets::remove_snippet(),
             utility::random::choose(),
             utility::users::guild_flags(),
+            utility::users::last_reactions(),
+            utility::info::role_info(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
