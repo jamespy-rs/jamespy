@@ -1,6 +1,7 @@
 use crate::utils::lob::*;
 
 use crate::{Context, Error};
+use poise::serenity_prelude as serenity;
 
 /// i lob
 #[poise::command(
@@ -21,7 +22,7 @@ pub async fn lob(ctx: Context<'_>) -> Result<(), Error> {
 /// reload lob
 #[poise::command(
     rename = "reload-lob",
-    aliases("reloadlob", "reload_lob", "update-lob", "updatelob", "update_lob"),
+    aliases("reloadlob", "reload_lob", "update-lob", "updatelob", "update_lob", "reload-lobs"),
     prefix_command,
     category = "Utility",
     global_cooldown = "5",
@@ -30,7 +31,11 @@ pub async fn lob(ctx: Context<'_>) -> Result<(), Error> {
 )]
 pub async fn reload_lob(ctx: Context<'_>) -> Result<(), Error> {
     let (old_count, new_count) = update_lob().await?;
-    ctx.say(format!("Reloaded lobs.\nOld Count: {}\nNew Count: {}", old_count, new_count)).await?;
+    ctx.say(format!(
+        "Reloaded lobs.\nOld Count: {}\nNew Count: {}",
+        old_count, new_count
+    ))
+    .await?;
     Ok(())
 }
 
@@ -53,10 +58,9 @@ pub async fn no_lob(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     rename = "add-lob",
     aliases("addlob", "add_lob"),
-    slash_command,
     prefix_command,
     category = "Utility",
-    channel_cooldown = "5",
+    global_cooldown = "5",
     check = "trontin"
 )]
 pub async fn new_lob(
@@ -71,10 +75,9 @@ pub async fn new_lob(
 #[poise::command(
     rename = "remove-lob",
     aliases("removelob", "remove_lob"),
-    slash_command,
     prefix_command,
     category = "Utility",
-    channel_cooldown = "5",
+    global_cooldown = "5",
     check = "trontin"
 )]
 pub async fn delete_lob(
@@ -86,13 +89,41 @@ pub async fn delete_lob(
     Ok(())
 }
 
+#[poise::command(
+    rename = "total-lobs",
+    aliases(
+        "totallobs",
+        "total_lobs",
+        "totallob",
+        "total-lob",
+        "total_lob",
+        "count-lobs"
+    ),
+    prefix_command,
+    category = "Utility",
+    user_cooldown = "5",
+    check = "trontin"
+)]
+pub async fn total_lobs(ctx: Context<'_>) -> Result<(), Error> {
+    let count = count_lob()?;
+    ctx.send(
+        poise::CreateReply::default().content(format!("Currently, `{}` lobs are stored.", count)),
+    )
+    .await?;
+    Ok(())
+}
 
-// A check for Trash, so he can refresh the loblist. Includes me because, well I'm me.
-// Also includes a few gg/osu mods because well why not!
-async fn trontin(ctx: Context<'_>) -> Result<bool, Error> {
-    let allowed_users = vec![158567567487795200, 288054604548276235, 291089948709486593, 718513035555242086]; // me, trontin, ruben, cv
-    let user_id = ctx.author().id.get();
-    let trontin = allowed_users.contains(&user_id);
-
-    Ok(trontin)
+#[poise::command(
+    rename = "send-lobs",
+    aliases("sendlobs", "send_lobs", "upload-lobs", "uploadlobs", "upload_lobs"),
+    prefix_command,
+    category = "Utility",
+    user_cooldown = "5",
+    check = "trontin"
+)]
+pub async fn send_lobs(ctx: Context<'_>) -> Result<(), Error> {
+    let attachment = serenity::CreateAttachment::path("loblist.txt").await?;
+    ctx.send(poise::CreateReply::default().attachment(attachment))
+        .await?;
+    Ok(())
 }

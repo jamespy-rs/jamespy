@@ -1,13 +1,13 @@
 use std::collections::HashSet;
-use std::fs::OpenOptions;
 use std::fs::File;
+use std::fs::OpenOptions;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Write;
 use std::sync::{Arc, RwLock};
 
 use crate::utils::misc::read_words_from_file;
-use crate::Error;
+use crate::{Context, Error};
 use lazy_static::lazy_static;
 use rand::seq::SliceRandom;
 
@@ -52,11 +52,11 @@ pub async fn unload_lob() -> Result<(), Error> {
 
 pub async fn add_lob(content: &String) -> Result<(), Error> {
     let loblist = "loblist.txt";
-    let mut file = OpenOptions::new()
-        .append(true)
-        .open(loblist)?;
+    let mut file = OpenOptions::new().append(true).open(loblist)?;
 
-    file.write_all(content.as_bytes())?;
+    let content_with_newline = format!("\n{}", content);
+
+    file.write_all(content_with_newline.as_bytes())?;
     Ok(())
 }
 
@@ -83,4 +83,31 @@ pub async fn remove_lob(target: &str) -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+pub fn count_lob() -> Result<usize, Error> {
+    let file = File::open("loblist.txt")?;
+    let reader = BufReader::new(file);
+
+    let mut count = 0;
+    for _ in reader.lines() {
+        count += 1;
+    }
+
+    Ok(count)
+}
+
+// A check for Trash, so he can refresh the loblist. Includes me because, well I'm me.
+// Also includes a few gg/osu mods because well why not!
+pub async fn trontin(ctx: Context<'_>) -> Result<bool, Error> {
+    let allowed_users = vec![
+        158567567487795200,
+        288054604548276235,
+        291089948709486593,
+        718513035555242086,
+    ]; // me, trontin, ruben, cv
+    let user_id = ctx.author().id.get();
+    let trontin = allowed_users.contains(&user_id);
+
+    Ok(trontin)
 }

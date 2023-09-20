@@ -75,6 +75,8 @@ async fn main() {
             general::lob::no_lob(),
             general::lob::new_lob(),
             general::lob::delete_lob(),
+            general::lob::total_lobs(),
+            general::lob::send_lobs(),
             utility::snippets::set_snippet(),
             utility::snippets::snippet(),
             utility::snippets::list_snippets(),
