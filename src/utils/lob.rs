@@ -54,7 +54,11 @@ pub async fn add_lob(content: &String) -> Result<(), Error> {
     let loblist = "loblist.txt";
     let mut file = OpenOptions::new().append(true).open(loblist)?;
 
-    let content_with_newline = format!("\n{}", content);
+    let content_with_newline = if file.metadata()?.len() > 0 {
+        format!("\n{}", content)
+    } else {
+        content.clone()
+    };
 
     file.write_all(content_with_newline.as_bytes())?;
     Ok(())
@@ -76,7 +80,6 @@ pub async fn remove_lob(target: &str) -> Result<(), Error> {
         }
     }
 
-    // Write the updated lines back to the file
     let mut file = File::create(loblist)?;
     for line in lines {
         writeln!(file, "{}", line)?;

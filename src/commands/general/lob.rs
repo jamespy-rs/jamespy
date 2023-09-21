@@ -22,7 +22,14 @@ pub async fn lob(ctx: Context<'_>) -> Result<(), Error> {
 /// reload lob
 #[poise::command(
     rename = "reload-lob",
-    aliases("reloadlob", "reload_lob", "update-lob", "updatelob", "update_lob", "reload-lobs"),
+    aliases(
+        "reloadlob",
+        "reload_lob",
+        "update-lob",
+        "updatelob",
+        "update_lob",
+        "reload-lobs"
+    ),
     prefix_command,
     category = "Utility",
     global_cooldown = "5",
@@ -65,7 +72,7 @@ pub async fn no_lob(ctx: Context<'_>) -> Result<(), Error> {
 )]
 pub async fn new_lob(
     ctx: Context<'_>,
-    #[description = "new lob"] item: String,
+    #[description = "new lob"] #[rest] item: String,
 ) -> Result<(), Error> {
     add_lob(&item).await?;
     ctx.send(poise::CreateReply::default().content(format!("Added `{}` to loblist!\nChanges will not be applied until bot restart or until reload-lob is called!", item))).await?;
@@ -82,7 +89,7 @@ pub async fn new_lob(
 )]
 pub async fn delete_lob(
     ctx: Context<'_>,
-    #[description = "Lob to remove"] target: String,
+    #[description = "Lob to remove"] #[rest] target: String,
 ) -> Result<(), Error> {
     remove_lob(&target).await?;
     ctx.send(poise::CreateReply::default().content(format!("Removed `{}` from loblist!\nChanges will not be applied until bot restart or until reload-lob is called!", target))).await?;
