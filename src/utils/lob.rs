@@ -59,7 +59,7 @@ pub async fn add_lob(content: &String) -> Result<(), Error> {
     };
 
     file.write_all(content_with_newline.as_bytes())?;
-    
+
     let file_content = std::fs::read_to_string(loblist)?;
     let lines: Vec<&str> = file_content
         .lines()
