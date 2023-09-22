@@ -22,7 +22,9 @@ fn bool_converter(b: bool) -> String {
 pub async fn role_info(
     ctx: Context<'_>,
     #[description = "Role"] role: Role,
-    #[description = "Show all permissions?"] show_all_permissions: Option<bool>,
+    #[description = "Show all permissions? Leaving this off will only show key permissions."]
+    #[rename = "permissions"]
+    show_all_permissions: Option<bool>,
 ) -> Result<(), Error> {
     let role_id = role.id.get().to_string();
     let role_name = role.name;
@@ -38,7 +40,7 @@ pub async fn role_info(
         "Key Permissions".to_string()
     };
 
-    let key_permissions = vec![
+    let key_permissions = [
         Permissions::ADMINISTRATOR,
         Permissions::MANAGE_GUILD,
         Permissions::KICK_MEMBERS,

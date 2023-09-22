@@ -6,7 +6,7 @@ use crate::{utils, Data, Error};
 
 pub async fn ready(ctx: &serenity::Context, data: &Data) -> Result<(), Error> {
     ctx.cache.set_max_messages(350);
-    let _ = set_all_snippets(&data).await;
+    let _ = set_all_snippets(data).await;
 
     let activity_data = ActivityData {
         name: "you inside your home.".to_string(),

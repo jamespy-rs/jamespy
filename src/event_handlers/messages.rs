@@ -57,7 +57,7 @@ pub async fn message(
 ) -> Result<(), Error> {
     if NO_LOG_USER.contains(&new_message.author.id.get())
         || NO_LOG_CHANNEL.contains(&new_message.channel_id.get())
-        || new_message.content.starts_with("$") && new_message.channel_id == 850342078034870302
+        || new_message.content.starts_with('$') && new_message.channel_id == 850342078034870302
     {
         return Ok(());
     }
@@ -116,7 +116,7 @@ pub async fn message(
         .await?;
     }
     if guild_id == 1
-        && !vec![
+        && ![
             158567567487795200,
             ctx.clone().cache.current_user().id.get(),
         ]
@@ -149,36 +149,34 @@ pub async fn message(
     }
 
     // For gavin.
-    if *TRACK.lock().unwrap() == true {
-        if new_message.author.id.get() == 221026934287499264 {
-            let builder = GetMessages::new()
-                .before(MessageId::new(new_message.id.get()))
-                .limit(100);
-            let messages = new_message
-                .channel_id
-                .messages(ctx.clone(), builder)
-                .await?;
+    if *TRACK.lock().unwrap() && new_message.author.id.get() == 221026934287499264 {
+        let builder = GetMessages::new()
+            .before(MessageId::new(new_message.id.get()))
+            .limit(100);
+        let messages = new_message
+            .channel_id
+            .messages(ctx.clone(), builder)
+            .await?;
 
-            let user_has_spoken = messages
-                .iter()
-                .any(|msg| msg.author.id == 221026934287499264);
-            if user_has_spoken == false {
-                let user_id = UserId::from(NonZeroU64::new(646202688148865024).unwrap());
-                let user = user_id.to_user(ctx.clone()).await?;
-                user.dm(
-                    ctx.clone(),
-                    serenity::CreateMessage::default().content(format!(
-                        "<@221026934287499264> (ID:221026934287499264> was spotted in **#{}** {}",
-                        new_message
-                            .channel_id
-                            .name(ctx.clone())
-                            .await
-                            .unwrap_or("I broke".to_owned()),
-                        new_message.link()
-                    )),
-                )
-                .await?;
-            }
+        let user_has_spoken = messages
+            .iter()
+            .any(|msg| msg.author.id == 221026934287499264);
+        if !user_has_spoken {
+            let user_id = UserId::from(NonZeroU64::new(646202688148865024).unwrap());
+            let user = user_id.to_user(ctx.clone()).await?;
+            user.dm(
+                ctx.clone(),
+                serenity::CreateMessage::default().content(format!(
+                    "<@221026934287499264> (ID:221026934287499264> was spotted in **#{}** {}",
+                    new_message
+                        .channel_id
+                        .name(ctx.clone())
+                        .await
+                        .unwrap_or("I broke".to_owned()),
+                    new_message.link()
+                )),
+            )
+            .await?;
         }
     }
 
@@ -270,7 +268,7 @@ pub async fn message(
                 embeds_fmt,
                 timestamp
             )
-            .execute(&*db_pool)
+            .execute(db_pool)
             .await;
 
     Ok(())
@@ -323,7 +321,7 @@ pub async fn message_edit(
                     None
                 };
 
-                let channel_name = get_channel_name(&ctx, guild_id, new_message.channel_id).await;
+                let channel_name = get_channel_name(ctx, guild_id, new_message.channel_id).await;
                 println!(
                     "\x1B[36m[{}] [#{}] A message by \x1B[0m{}\x1B[36m was edited:",
                     guild_name, channel_name, new_message.author.name
@@ -359,7 +357,7 @@ pub async fn message_edit(
                     embeds_fmt,
                     timestamp
                 )
-                .execute(&*db_pool)
+                .execute(db_pool)
                 .await;
             }
         }
@@ -383,7 +381,6 @@ pub async fn message_delete(
 ) -> Result<(), Error> {
     let db_pool = &data.db;
     let guild_id = guild_id.unwrap_or_default();
-    let channel_id = channel_id;
 
     let guild_name = if guild_id == 1 {
         "None".to_owned()
@@ -394,7 +391,7 @@ pub async fn message_delete(
         }
     };
 
-    let channel_name = get_channel_name(&ctx, guild_id, channel_id).await;
+    let channel_name = get_channel_name(ctx, guild_id, channel_id).await;
 
     if let Some(message) = ctx.cache.message(channel_id, deleted_message_id) {
         let user_name = message.author.name.clone();
@@ -440,7 +437,7 @@ pub async fn message_delete(
                 embeds_fmt,
                 timestamp
             )
-            .execute(&*db_pool)
+            .execute(db_pool)
             .await;
     } else {
         println!(

@@ -15,6 +15,7 @@ use utils::snippets::*;
     guild_only,
     category = "Utility",
     required_permissions = "MANAGE_MESSAGES",
+    default_member_permissions = "MANAGE_MESSAGES",
     user_cooldown = 3
 )]
 pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<(), Error> {
@@ -56,6 +57,7 @@ pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<()
     aliases("setsnippet", "setsnippets", "set_snippets"),
     category = "Utility",
     required_permissions = "MANAGE_MESSAGES",
+    default_member_permissions = "MANAGE_MESSAGES",
     user_cooldown = "3"
 )]
 pub async fn set_snippet(

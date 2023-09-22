@@ -1,9 +1,7 @@
 use std::collections::HashSet;
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::io::BufRead;
-use std::io::BufReader;
-use std::io::Write;
+use std::fs::{File, OpenOptions};
+use std::io::{BufRead, BufReader, Write};
+
 use std::sync::{Arc, RwLock};
 
 use crate::utils::misc::read_words_from_file;
@@ -79,7 +77,7 @@ pub async fn remove_lob(target: &str) -> Result<(), Error> {
             }
         }
     }
-
+    // Flush useless blank lines.
     let mut file = File::create(loblist)?;
     for line in lines {
         writeln!(file, "{}", line)?;
@@ -103,7 +101,7 @@ pub fn count_lob() -> Result<usize, Error> {
 // A check for Trash, so he can refresh the loblist. Includes me because, well I'm me.
 // Also includes a few gg/osu mods because well why not!
 pub async fn trontin(ctx: Context<'_>) -> Result<bool, Error> {
-    let allowed_users = vec![
+    let allowed_users = [
         158567567487795200,
         288054604548276235,
         291089948709486593,

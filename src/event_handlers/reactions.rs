@@ -22,7 +22,7 @@ pub async fn reaction_add(
             None => "Unknown".to_owned(),
         }
     };
-    let channel_name = get_channel_name(&ctx, guild_id, add_reaction.channel_id).await;
+    let channel_name = get_channel_name(ctx, guild_id, add_reaction.channel_id).await;
 
     let redis_pool = &data.redis;
     let mut redis_conn = redis_pool.get().await?;
@@ -71,7 +71,7 @@ pub async fn reaction_remove(
             None => "Unknown".to_owned(),
         }
     };
-    let channel_name = get_channel_name(&ctx, guild_id, removed_reaction.channel_id).await;
+    let channel_name = get_channel_name(ctx, guild_id, removed_reaction.channel_id).await;
 
     let redis_pool = &data.redis;
     let mut redis_conn = redis_pool.get().await?;

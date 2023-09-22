@@ -68,11 +68,14 @@ pub async fn no_lob(ctx: Context<'_>) -> Result<(), Error> {
     prefix_command,
     category = "Utility",
     global_cooldown = "5",
+    hide_in_help,
     check = "trontin"
 )]
 pub async fn new_lob(
     ctx: Context<'_>,
-    #[description = "new lob"] #[rest] item: String,
+    #[description = "new lob"]
+    #[rest]
+    item: String,
 ) -> Result<(), Error> {
     add_lob(&item).await?;
     ctx.send(poise::CreateReply::default().content(format!("Added `{}` to loblist!\nChanges will not be applied until bot restart or until reload-lob is called!", item))).await?;
@@ -85,11 +88,14 @@ pub async fn new_lob(
     prefix_command,
     category = "Utility",
     global_cooldown = "5",
+    hide_in_help,
     check = "trontin"
 )]
 pub async fn delete_lob(
     ctx: Context<'_>,
-    #[description = "Lob to remove"] #[rest] target: String,
+    #[description = "Lob to remove"]
+    #[rest]
+    target: String,
 ) -> Result<(), Error> {
     remove_lob(&target).await?;
     ctx.send(poise::CreateReply::default().content(format!("Removed `{}` from loblist!\nChanges will not be applied until bot restart or until reload-lob is called!", target))).await?;
@@ -109,6 +115,7 @@ pub async fn delete_lob(
     prefix_command,
     category = "Utility",
     user_cooldown = "5",
+    hide_in_help,
     check = "trontin"
 )]
 pub async fn total_lobs(ctx: Context<'_>) -> Result<(), Error> {
@@ -126,6 +133,7 @@ pub async fn total_lobs(ctx: Context<'_>) -> Result<(), Error> {
     prefix_command,
     category = "Utility",
     user_cooldown = "5",
+    hide_in_help,
     check = "trontin"
 )]
 pub async fn send_lobs(ctx: Context<'_>) -> Result<(), Error> {

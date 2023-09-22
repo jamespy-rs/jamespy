@@ -46,7 +46,6 @@ pub async fn guild_member_removal(
     guild_id: GuildId,
     user: User,
 ) -> Result<(), Error> {
-    let guild_id = guild_id;
     let guild_name = if guild_id == 1 {
         "None".to_owned()
     } else {

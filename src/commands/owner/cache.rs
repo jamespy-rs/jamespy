@@ -183,11 +183,7 @@ pub async fn cached_users(ctx: Context<'_>) -> Result<(), Error> {
             .discriminator
             .map(|d| d.to_string())
             .unwrap_or_else(|| "0000".to_owned());
-        let global_name = user
-            .global_name
-            .as_ref()
-            .map(|s| s.as_str())
-            .unwrap_or("None");
+        let global_name = user.global_name.as_deref().unwrap_or("None");
         let avatar_url = &user.avatar_url().unwrap_or("None".to_owned());
         let bot = &user.bot;
         let banner_url = &user.banner_url().unwrap_or("None".to_owned());

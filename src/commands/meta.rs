@@ -158,9 +158,8 @@ pub async fn toggle(ctx: Context<'_>) -> Result<(), Error> {
 
     handle.join().unwrap();
 
-    let bool_guard = TRACK.lock().unwrap().clone();
+    let bool_guard = *TRACK.lock().unwrap();
 
-    // Use 'cloned_bool' in your message
     ctx.send(poise::CreateReply::default().content(format!(
         "Switched toggle status to {} for tracking <@221026934287499264> (ID: 221026934287499264)",
         bool_guard

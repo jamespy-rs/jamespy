@@ -14,7 +14,7 @@ pub async fn choose(
         return Ok(());
     }
     let author = ctx.author();
-    let mut rng = OsRng::default();
+    let mut rng = OsRng;
     let random_index = rng.next_u32() as usize % choices.len();
     let chosen_option = &choices[random_index];
 

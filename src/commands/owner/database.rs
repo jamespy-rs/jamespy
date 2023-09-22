@@ -7,7 +7,7 @@ use sqlx::{query, Row};
     aliases("db-stats", "db-info"),
     prefix_command,
     category = "Database",
-    owners_only,
+    check = "dbstat",
     hide_in_help
 )]
 pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
@@ -94,4 +94,13 @@ pub async fn sql(
     }
 
     Ok(())
+}
+
+// kohaku and me, because ranch won't stop asking for a permission to view the stats?
+pub async fn dbstat(ctx: Context<'_>) -> Result<bool, Error> {
+    let allowed_users = [158567567487795200, 286937788258189322];
+    let user_id = ctx.author().id.get();
+    let dbstat = allowed_users.contains(&user_id);
+
+    Ok(dbstat)
 }

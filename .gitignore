@@ -1,2 +1,10 @@
+# IDE
+.vs/
+.vscode/**
+!.vscode/launch.json
+!.vscode/tasks.json
+.idea/
+
+
 /target
 /.sqlx
