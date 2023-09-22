@@ -1,4 +1,4 @@
-use crate::utils::misc::{get_channel_name, read_words_from_file};
+use crate::utils::misc::{get_channel_name, get_guild_name, read_words_from_file};
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GetMessages, GuildId, Message,
     MessageId, MessageUpdateEvent, UserId,
@@ -65,14 +65,7 @@ pub async fn message(
     let db_pool = &data.db;
     let guild_id = new_message.guild_id.unwrap_or_default();
 
-    let guild_name = if guild_id == 1 {
-        "None".to_owned()
-    } else {
-        match guild_id.name(ctx.clone()) {
-            Some(name) => name,
-            None => "Unknown".to_owned(),
-        }
-    };
+    let guild_name = get_guild_name(ctx, guild_id);
 
     let channel_name = get_channel_name(&ctx.clone(), guild_id, new_message.channel_id).await;
 
@@ -289,15 +282,8 @@ pub async fn message_edit(
             }
             if old_message.content != new_message.content {
                 let guild_id = new_message.guild_id.unwrap_or_default();
+                let guild_name = get_guild_name(ctx, guild_id);
 
-                let guild_name = if guild_id == 1 {
-                    "None".to_owned()
-                } else {
-                    match guild_id.name(ctx.clone()) {
-                        Some(name) => name,
-                        None => "Unknown".to_owned(),
-                    }
-                };
                 let attachments = new_message.attachments.clone();
                 let attachments_fmt: Option<String> = if !attachments.is_empty() {
                     let attachment_names: Vec<String> = attachments
@@ -382,14 +368,7 @@ pub async fn message_delete(
     let db_pool = &data.db;
     let guild_id = guild_id.unwrap_or_default();
 
-    let guild_name = if guild_id == 1 {
-        "None".to_owned()
-    } else {
-        match guild_id.name(ctx.clone()) {
-            Some(name) => name,
-            None => "Unknown".to_owned(),
-        }
-    };
+    let guild_name = get_guild_name(ctx, guild_id);
 
     let channel_name = get_channel_name(ctx, guild_id, channel_id).await;
 

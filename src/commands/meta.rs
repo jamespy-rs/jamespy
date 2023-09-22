@@ -10,7 +10,7 @@ use crate::{Context, Error};
 /// See how long I've been online for!
 #[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 3)]
 pub async fn uptime(ctx: Context<'_>) -> Result<(), Error> {
-    let uptime = std::time::Instant::now() - ctx.data().time_started;
+    let uptime = Instant::now() - ctx.data().time_started;
 
     let calculation = |a, b| (a / b, a % b);
 
@@ -49,7 +49,7 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
         version.to_string()
     };
 
-    let uptime = std::time::Instant::now() - ctx.data().time_started;
+    let uptime = Instant::now() - ctx.data().time_started;
     let calculation = |a, b| (a / b, a % b);
 
     let seconds = uptime.as_secs();

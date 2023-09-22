@@ -1,6 +1,6 @@
-use poise::serenity_prelude::{self as serenity, Guild, GuildId, Member, User};
-
+use crate::utils::misc::get_guild_name;
 use crate::Error;
+use poise::serenity_prelude::{self as serenity, Guild, GuildId, Member, User};
 
 pub async fn guild_create(
     ctx: &serenity::Context,
@@ -26,14 +26,7 @@ pub async fn guild_member_addition(
     let guild_id = new_member.guild_id;
     let joined_user_id = new_member.user.id;
 
-    let guild_name = if guild_id == 1 {
-        "None".to_owned()
-    } else {
-        match guild_id.name(ctx.clone()) {
-            Some(name) => name,
-            None => "Unknown".to_owned(),
-        }
-    };
+    let guild_name = get_guild_name(ctx, guild_id);
     println!(
         "\x1B[33m[{}] {} (ID:{}) has joined!\x1B[0m",
         guild_name, new_member.user.name, joined_user_id
@@ -46,14 +39,7 @@ pub async fn guild_member_removal(
     guild_id: GuildId,
     user: User,
 ) -> Result<(), Error> {
-    let guild_name = if guild_id == 1 {
-        "None".to_owned()
-    } else {
-        match guild_id.name(ctx.clone()) {
-            Some(name) => name,
-            None => "Unknown".to_owned(),
-        }
-    };
+    let guild_name = get_guild_name(ctx, guild_id);
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m",

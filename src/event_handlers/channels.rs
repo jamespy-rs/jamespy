@@ -1,6 +1,6 @@
-use poise::serenity_prelude::{self as serenity, GuildChannel, PartialGuildChannel};
-
+use crate::utils::misc::get_guild_name;
 use crate::Error;
+use poise::serenity_prelude::{self as serenity, GuildChannel, PartialGuildChannel};
 
 pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> Result<(), Error> {
     let guild_name = channel
@@ -29,14 +29,7 @@ pub async fn channel_delete(ctx: &serenity::Context, channel: GuildChannel) -> R
 pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Result<(), Error> {
     let guild_id = thread.guild_id;
 
-    let guild_name = if guild_id == 1 {
-        "None".to_owned()
-    } else {
-        match guild_id.name(ctx.clone()) {
-            Some(name) => name,
-            None => "Unknown".to_owned(),
-        }
-    };
+    let guild_name = get_guild_name(ctx, guild_id);
     // Tell which channel it was created in.
     println!(
         "\x1B[94m[{}] Thread #{} was created!\x1B[0m",
@@ -62,14 +55,7 @@ pub async fn thread_delete(
             break;
         }
     }
-    let guild_name = if guild_id == 1 {
-        "None".to_owned()
-    } else {
-        match guild_id.name(ctx.clone()) {
-            Some(name) => name,
-            None => "Unknown".to_owned(),
-        }
-    };
+    let guild_name = get_guild_name(ctx, guild_id);
     // Currently it won't know which thread was deleted because the method in which it is checked.
     // Tell which channel it was deleted from.
     if let Some(name) = channel_name {

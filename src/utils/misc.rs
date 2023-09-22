@@ -32,3 +32,14 @@ pub async fn get_channel_name(
 
     channel_name
 }
+
+pub fn get_guild_name(ctx: &serenity::Context, guild_id: GuildId) -> String {
+    if guild_id == 1 {
+        "None".to_owned()
+    } else {
+        match guild_id.name(ctx) {
+            Some(name) => name,
+            None => "Unknown".to_owned(),
+        }
+    }
+}

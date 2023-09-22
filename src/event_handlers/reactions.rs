@@ -1,7 +1,10 @@
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{self as serenity, Reaction};
 
-use crate::{utils::misc::get_channel_name, Data, Error};
+use crate::{
+    utils::misc::{get_channel_name, get_guild_name},
+    Data, Error,
+};
 
 pub async fn reaction_add(
     ctx: &serenity::Context,
@@ -14,14 +17,8 @@ pub async fn reaction_add(
         // May merge with the one below.
     }
     let guild_id = add_reaction.guild_id.unwrap_or_default();
-    let guild_name = if guild_id == 1 {
-        "None".to_owned()
-    } else {
-        match guild_id.name(ctx.clone()) {
-            Some(name) => name,
-            None => "Unknown".to_owned(),
-        }
-    };
+    let guild_name = get_guild_name(ctx, guild_id);
+
     let channel_name = get_channel_name(ctx, guild_id, add_reaction.channel_id).await;
 
     let redis_pool = &data.redis;
@@ -63,14 +60,7 @@ pub async fn reaction_remove(
         // May merge with the one below.
     }
     let guild_id = removed_reaction.guild_id.unwrap_or_default();
-    let guild_name = if guild_id == 1 {
-        "None".to_owned()
-    } else {
-        match guild_id.name(ctx.clone()) {
-            Some(name) => name,
-            None => "Unknown".to_owned(),
-        }
-    };
+    let guild_name = get_guild_name(ctx, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, removed_reaction.channel_id).await;
 
     let redis_pool = &data.redis;
