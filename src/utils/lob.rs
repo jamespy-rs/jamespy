@@ -59,6 +59,16 @@ pub async fn add_lob(content: &String) -> Result<(), Error> {
     };
 
     file.write_all(content_with_newline.as_bytes())?;
+    
+    let file_content = std::fs::read_to_string(loblist)?;
+    let lines: Vec<&str> = file_content
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect();
+    let updated_content = lines.join("\n");
+
+    std::fs::write(loblist, updated_content)?;
+
     Ok(())
 }
 
@@ -77,7 +87,6 @@ pub async fn remove_lob(target: &str) -> Result<(), Error> {
             }
         }
     }
-    // Flush useless blank lines.
     let mut file = File::create(loblist)?;
     for line in lines {
         writeln!(file, "{}", line)?;
