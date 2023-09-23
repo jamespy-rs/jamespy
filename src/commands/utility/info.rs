@@ -17,6 +17,7 @@ fn bool_converter(b: bool) -> String {
     prefix_command,
     guild_only,
     category = "Utility",
+    track_edits,
     user_cooldown = "5"
 )]
 pub async fn role_info(

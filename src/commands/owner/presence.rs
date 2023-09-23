@@ -7,6 +7,7 @@ use crate::{Context, Error};
     prefix_command,
     category = "Management",
     owners_only,
+    track_edits,
     hide_in_help
 )]
 pub async fn status(
@@ -64,6 +65,7 @@ pub async fn reset_presence(ctx: Context<'_>) -> Result<(), Error> {
     prefix_command,
     category = "Management",
     owners_only,
+    track_edits,
     hide_in_help
 )]
 pub async fn set_activity(

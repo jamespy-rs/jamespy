@@ -62,7 +62,9 @@ pub async fn remove_snippet(ctx: Context<'_>, snippet_name: String) -> Result<()
 )]
 pub async fn set_snippet(
     ctx: Context<'_>,
-    #[description = "The name of the snippet"] name: String,
+    #[description = "The name of the snippet"]
+    #[max_length = 32]
+    name: String,
     #[description = "The title of the snippet"] title: Option<String>,
     #[description = "The description of the snippet"] description: Option<String>,
     #[description = "The image URL of the snippet"] image: Option<String>,
@@ -90,11 +92,7 @@ pub async fn set_snippet(
             .await?;
         return Ok(());
     }
-    if name.len() > 32 {
-        ctx.say("Snippet name must be 32 characters or less.")
-            .await?;
-        return Ok(());
-    }
+
     let name_regex = Regex::new(r"^[a-zA-Z0-9\-_.+]+$").unwrap();
     if !name_regex.is_match(&name) {
         ctx.say("Invalid name format. It should only contain letters (a-z), hyphens (-), underscores (_), and periods (.)").await?;
@@ -135,6 +133,7 @@ pub async fn set_snippet(
 #[poise::command(
     slash_command,
     prefix_command,
+    track_edits,
     guild_only,
     category = "Utility",
     user_cooldown = 3

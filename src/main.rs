@@ -94,18 +94,6 @@ async fn main() {
 
         on_error: |error| Box::pin(on_error(error)),
 
-        pre_command: |ctx| {
-            Box::pin(async move {
-                println!("Executing command {}...", ctx.command().qualified_name);
-            })
-        },
-
-        post_command: |ctx| {
-            Box::pin(async move {
-                println!("Executed command {}!", ctx.command().qualified_name);
-            })
-        },
-
         skip_checks_for_owners: false,
         event_handler: |event: &serenity::FullEvent, framework, data| {
             Box::pin(event_handler::event_handler(event.clone(), framework, data))

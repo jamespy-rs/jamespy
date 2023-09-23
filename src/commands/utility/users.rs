@@ -14,6 +14,8 @@ use serenity::{
     guild_only,
     category = "Utility",
     required_permissions = "MANAGE_MESSAGES",
+    default_member_permissions = "MANAGE_MESSAGES",
+    track_edits,
     user_cooldown = 4
 )]
 pub async fn guild_flags(
@@ -56,6 +58,7 @@ pub async fn guild_flags(
     prefix_command,
     category = "Utility",
     required_permissions = "MANAGE_MESSAGES",
+    default_member_permissions = "MANAGE_MESSAGES",
     guild_only,
     user_cooldown = 3
 )]
