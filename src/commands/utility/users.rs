@@ -11,6 +11,7 @@ use serenity::{
     aliases("guild_flags", "guildflags"),
     slash_command,
     prefix_command,
+    guild_only,
     category = "Utility",
     required_permissions = "MANAGE_MESSAGES",
     user_cooldown = 4
