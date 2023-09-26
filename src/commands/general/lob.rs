@@ -97,8 +97,15 @@ pub async fn delete_lob(
     #[rest]
     target: String,
 ) -> Result<(), Error> {
-    remove_lob(&target).await?;
-    ctx.send(poise::CreateReply::default().content(format!("Removed `{}` from loblist!\nChanges will not be applied until bot restart or until reload-lob is called!", target))).await?;
+    if remove_lob(&target).await? {
+        ctx.send(poise::CreateReply::default().content(format!("Removed `{}` from loblist!\nChanges will not be applied until bot restart or until reload-lob is called!", target))).await?;
+    } else {
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!("`{}` was not found in the loblist.", target)),
+        )
+        .await?;
+    }
     Ok(())
 }
 

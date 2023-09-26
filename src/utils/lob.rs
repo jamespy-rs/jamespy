@@ -72,9 +72,10 @@ pub async fn add_lob(content: &String) -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn remove_lob(target: &str) -> Result<(), Error> {
+pub async fn remove_lob(target: &str) -> Result<bool, Error> {
     let loblist = "loblist.txt";
     let mut lines = Vec::new();
+    let mut line_removed = false;
 
     {
         let file = File::open(loblist)?;
@@ -84,15 +85,20 @@ pub async fn remove_lob(target: &str) -> Result<(), Error> {
             let line = line?;
             if line.trim() != target {
                 lines.push(line);
+            } else {
+                line_removed = true;
             }
         }
     }
-    let mut file = File::create(loblist)?;
-    for line in lines {
-        writeln!(file, "{}", line)?;
+
+    if line_removed {
+        let mut file = File::create(loblist)?;
+        for line in lines {
+            writeln!(file, "{}", line)?;
+        }
     }
 
-    Ok(())
+    Ok(line_removed)
 }
 
 pub fn count_lob() -> Result<usize, Error> {
