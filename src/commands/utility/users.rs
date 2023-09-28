@@ -1,10 +1,6 @@
 use crate::{Context, Error};
 use bb8_redis::redis::AsyncCommands;
-use poise::serenity_prelude as serenity;
-use serenity::{
-    all::{GuildMemberFlags, Member},
-    model::Colour,
-};
+use poise::serenity_prelude::{self as serenity, Colour, GuildMemberFlags, Member, OnlineStatus};
 
 #[poise::command(
     rename = "guild-flags",
@@ -115,6 +111,49 @@ pub async fn last_reactions(ctx: Context<'_>) -> Result<(), Error> {
         ),
     )
     .await?;
+
+    Ok(())
+}
+
+#[poise::command(
+    slash_command,
+    prefix_command,
+    category = "Utility",
+    guild_only,
+    user_cooldown = 3
+)]
+pub async fn statuses(ctx: Context<'_>) -> Result<(), Error> {
+    let guild_id = ctx.guild_id().unwrap();
+
+    let cache = &ctx.cache();
+    let guild = cache.guild(guild_id).unwrap().clone(); // I don't know how to use new stuff.
+
+    let mut status_counts = std::collections::HashMap::new();
+    let mut message = String::new();
+    for presence in &guild.presences {
+        let status = presence.1.status;
+
+        let count = status_counts.entry(status).or_insert(0);
+        *count += 1;
+    }
+
+    for (status, count) in &status_counts {
+        let status_message = match status {
+            OnlineStatus::DoNotDisturb => format!("Do Not Disturb: {}", count),
+            OnlineStatus::Idle => format!("Idle: {}", count),
+            OnlineStatus::Invisible => format!("Invisible: {}", count),
+            OnlineStatus::Offline => format!("Offline: {}", count),
+            OnlineStatus::Online => format!("Online: {}", count),
+            _ => String::new(),
+        };
+
+        // Append the status_message to the message
+        message.push_str(&status_message);
+        message.push('\n');
+    }
+    message.push_str(&guild.presences.len().to_string());
+    ctx.send(poise::CreateReply::default().content(message))
+        .await?;
 
     Ok(())
 }

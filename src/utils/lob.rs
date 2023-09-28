@@ -4,7 +4,6 @@ use std::io::{BufRead, BufReader, Write};
 
 use std::sync::{Arc, RwLock};
 
-use crate::utils::misc::read_words_from_file;
 use crate::{Context, Error};
 use lazy_static::lazy_static;
 use rand::seq::SliceRandom;
@@ -28,14 +27,16 @@ pub fn get_random_lob() -> Option<String> {
 }
 
 pub async fn update_lob() -> Result<(usize, usize), Error> {
-    let new_lob = read_words_from_file("loblist.txt");
+    let new_lob = std::fs::read_to_string("loblist.txt")?;
     let old_count;
-    let new_count = new_lob.len();
+    let new_count;
 
     {
         let mut loblist = LOBLIST.write().unwrap();
+        let lines: HashSet<String> = new_lob.lines().map(|s| s.to_string()).collect();
         old_count = loblist.len();
-        *loblist = new_lob;
+        *loblist = lines;
+        new_count = loblist.len();
     }
 
     Ok((old_count, new_count))

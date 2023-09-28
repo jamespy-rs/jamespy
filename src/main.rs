@@ -84,6 +84,7 @@ async fn main() {
             utility::random::choose(),
             utility::users::guild_flags(),
             utility::users::last_reactions(),
+            utility::users::statuses(),
             utility::info::role_info(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
