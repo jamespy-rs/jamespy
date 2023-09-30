@@ -1,3 +1,4 @@
+use crate::Data;
 use crate::{Context, Error};
 use poise::serenity_prelude::{self as serenity, CreateEmbedFooter};
 use sqlx::{query, Row};
@@ -8,6 +9,7 @@ use sqlx::{query, Row};
     prefix_command,
     category = "Database",
     check = "dbstat",
+    on_error = "owner",
     hide_in_help
 )]
 pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
@@ -49,6 +51,7 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
     prefix_command,
     category = "Database",
     owners_only,
+    on_error = "owner",
     hide_in_help
 )]
 pub async fn sql(
@@ -103,4 +106,17 @@ pub async fn dbstat(ctx: Context<'_>) -> Result<bool, Error> {
     let dbstat = allowed_users.contains(&user_id);
 
     Ok(dbstat)
+}
+
+async fn owner(error: poise::FrameworkError<'_, Data, Error>) {
+    match error {
+        poise::FrameworkError::CommandCheckFailed { error: _, ctx, .. } => {
+            let _ = ctx.say("nuh uh").await;
+        }
+        error => {
+            if let Err(e) = poise::builtins::on_error(error).await {
+                println!("Error while handling error: {}", e)
+            }
+        }
+    }
 }

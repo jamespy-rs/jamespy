@@ -49,6 +49,7 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
         version.to_string()
     };
 
+    let cache = ctx.cache();
     let uptime = Instant::now() - ctx.data().time_started;
     let calculation = |a, b| (a / b, a % b);
 
@@ -58,13 +59,13 @@ pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
     let (days, hours) = calculation(hours, 24);
     let uptime_string = format!("{}d{}h{}m", days, hours, minutes);
 
-    let bot_user = ctx.serenity_context().cache.current_user().clone();
+    let bot_user = cache.current_user().clone();
     let bot_name = bot_user.name.clone();
     let bot_avatar = bot_user.avatar_url();
 
-    let guild_num = ctx.serenity_context().cache.guilds().len();
-    let channel_num = ctx.serenity_context().cache.guild_channel_count();
-    let user_num = ctx.serenity_context().cache.user_count();
+    let guild_num = cache.guilds().len();
+    let channel_num = cache.guild_channel_count();
+    let user_num = cache.user_count();
 
     let mut embed = serenity::CreateEmbed::default()
         .title(format!("**{} - v{}**", bot_name, version))

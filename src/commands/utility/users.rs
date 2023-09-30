@@ -106,7 +106,7 @@ pub async fn last_reactions(ctx: Context<'_>) -> Result<(), Error> {
         poise::CreateReply::default().embed(
             serenity::CreateEmbed::default()
                 .title("Last reaction events")
-                .description(format!("{}", formatted))
+                .description(formatted.to_string())
                 .color(Colour::from_rgb(0, 255, 0)),
         ),
     )

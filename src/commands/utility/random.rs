@@ -3,6 +3,7 @@ use poise::serenity_prelude::{self as serenity, Colour, CreateEmbedAuthor};
 use rand::rngs::OsRng;
 use rand::RngCore;
 
+#[allow(clippy::too_many_arguments)]
 /// Make me decide for you!
 #[poise::command(
     slash_command,
@@ -42,7 +43,7 @@ pub async fn choose(
         poise::CreateReply::default().embed(
             serenity::CreateEmbed::default()
                 .author(CreateEmbedAuthor::new(&author.name).icon_url(image_url))
-                .description(format!("{}", chosen_option))
+                .description(chosen_option.to_string())
                 .color(Colour::from_rgb(0, 255, 0)),
         ),
     )

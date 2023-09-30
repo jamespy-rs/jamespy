@@ -58,7 +58,7 @@ pub async fn reload_lob(ctx: Context<'_>) -> Result<(), Error> {
 )]
 pub async fn no_lob(ctx: Context<'_>) -> Result<(), Error> {
     unload_lob().await?;
-    ctx.say(format!("Unloaded lob!")).await?;
+    ctx.say("Unloaded lob!".to_string()).await?;
     Ok(())
 }
 

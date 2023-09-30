@@ -17,15 +17,15 @@ pub async fn max_messages(
     if let Some(val) = value {
         ctx.say(format!(
             "Max messages cached per channel set: **{}** -> **{}**",
-            ctx.serenity_context().cache.settings().max_messages,
+            ctx.cache().settings().max_messages,
             val
         ))
         .await?;
-        ctx.serenity_context().cache.set_max_messages(val.into())
+        ctx.cache().set_max_messages(val.into())
     } else {
         ctx.say(format!(
             "Max messages cached per channel is set to: **{}**",
-            ctx.serenity_context().cache.settings().max_messages
+            ctx.cache().settings().max_messages
         ))
         .await?;
     }
@@ -92,7 +92,7 @@ pub async fn guild_message_cache(
     #[description = "Which guild to check"] guild_id: Option<u64>,
 ) -> Result<(), Error> {
     // This still doesn't include threads.
-    let cache = &ctx.serenity_context().cache;
+    let cache = &ctx.cache();
     let guild_id = guild_id.unwrap_or(ctx.guild_id().unwrap().get());
 
     let channels = cache.guild_channels(guild_id).unwrap();
@@ -144,14 +144,14 @@ pub async fn guild_message_cache(
     hide_in_help
 )]
 pub async fn cached_users_raw(ctx: Context<'_>) -> Result<(), Error> {
-    let users = ctx.serenity_context().cache.users();
-    let user_count = ctx.serenity_context().cache.user_count();
+    let users = ctx.cache().users();
+    let user_count = ctx.cache().user_count();
     ctx.send(
         poise::CreateReply::default()
             .content(format!("The cache contains **{}** users", user_count))
             .attachment(serenity::CreateAttachment::bytes(
                 format!("{:?}", users),
-                format!("raw_users.txt"),
+                "raw_users.txt".to_string(),
             )),
     )
     .await?;
@@ -167,7 +167,7 @@ pub async fn cached_users_raw(ctx: Context<'_>) -> Result<(), Error> {
     hide_in_help
 )]
 pub async fn cached_users(ctx: Context<'_>) -> Result<(), Error> {
-    let cache = ctx.serenity_context().cache.clone();
+    let cache = ctx.cache().clone();
     let user_count = cache.user_count();
 
     let mut user_info = String::new();
@@ -195,7 +195,7 @@ pub async fn cached_users(ctx: Context<'_>) -> Result<(), Error> {
         ));
     }
     let attachment =
-        serenity::CreateAttachment::bytes(format!("{}", user_info), format!("users.txt"));
+        serenity::CreateAttachment::bytes(user_info.to_string(), "users.txt".to_string());
     ctx.send(
         poise::CreateReply::default()
             .content(format!("The cache contains **{}** users", user_count))

@@ -222,7 +222,7 @@ pub async fn list_snippets(ctx: Context<'_>) -> Result<(), Error> {
         poise::CreateReply::default().embed(
             serenity::CreateEmbed::default()
                 .title("Snippets")
-                .description(format!("{}", snippet_list))
+                .description(snippet_list.to_string())
                 .color(Colour::from_rgb(0, 255, 0)),
         ),
     )
