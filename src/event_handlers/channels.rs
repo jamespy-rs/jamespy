@@ -28,12 +28,17 @@ pub async fn channel_delete(ctx: &serenity::Context, channel: GuildChannel) -> R
 
 pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Result<(), Error> {
     let guild_id = thread.guild_id;
-
     let guild_name = get_guild_name(ctx, guild_id);
-    // Tell which channel it was created in.
+
+    let parent_channel_name = if let Some(parent_id) = thread.parent_id {
+        parent_id.name(ctx).await?
+    } else {
+        "Unknown Channel".to_string()
+    };
+
     println!(
-        "\x1B[94m[{}] Thread #{} was created!\x1B[0m",
-        guild_name, thread.name
+        "\x1B[94m[{}] Thread #{} was created in #{}!\x1B[0m",
+        guild_name, thread.name, parent_channel_name
     );
     Ok(())
 }
@@ -53,7 +58,7 @@ pub async fn thread_delete(
         if let Some(parent_id) = full_thread.parent_id {
             parent_channel_name = parent_id.name(ctx).await?;
         } else {
-            parent_channel_name = "unknown_channel".to_string();
+            parent_channel_name = "Unknown Channel".to_string();
         }
     }
     let guild_name = get_guild_name(ctx, guild_id);
