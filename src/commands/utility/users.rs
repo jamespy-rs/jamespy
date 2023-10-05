@@ -147,7 +147,6 @@ pub async fn statuses(ctx: Context<'_>) -> Result<(), Error> {
             _ => String::new(),
         };
 
-        // Append the status_message to the message
         message.push_str(&status_message);
         message.push('\n');
     }

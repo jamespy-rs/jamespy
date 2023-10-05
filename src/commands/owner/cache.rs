@@ -37,7 +37,7 @@ pub async fn max_messages(
     aliases("cache_stats", "cache_status", "cache-status"),
     prefix_command,
     category = "Cache",
-    owners_only,
+    check = "cachestats",
     hide_in_help
 )]
 pub async fn cache_stats(ctx: Context<'_>) -> Result<(), Error> {
@@ -140,7 +140,7 @@ pub async fn guild_message_cache(
     rename = "cached-users-raw",
     prefix_command,
     category = "Cache",
-    owners_only,
+    check = "cachestats",
     hide_in_help
 )]
 pub async fn cached_users_raw(ctx: Context<'_>) -> Result<(), Error> {
@@ -163,7 +163,7 @@ pub async fn cached_users_raw(ctx: Context<'_>) -> Result<(), Error> {
     rename = "cached-users",
     prefix_command,
     category = "Cache",
-    owners_only,
+    check = "cachestats",
     hide_in_help
 )]
 pub async fn cached_users(ctx: Context<'_>) -> Result<(), Error> {
@@ -204,4 +204,13 @@ pub async fn cached_users(ctx: Context<'_>) -> Result<(), Error> {
     .await?;
 
     Ok(())
+}
+
+// Me and Ruben because idk why he wants this permission.
+pub async fn cachestats(ctx: Context<'_>) -> Result<bool, Error> {
+    let allowed_users = [158567567487795200, 291089948709486593];
+    let user_id = ctx.author().id.get();
+    let cachestats = allowed_users.contains(&user_id);
+
+    Ok(cachestats)
 }

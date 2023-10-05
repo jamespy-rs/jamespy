@@ -41,33 +41,33 @@ pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Res
 pub async fn thread_delete(
     ctx: &serenity::Context,
     thread: PartialGuildChannel,
+    full_thread_data: Option<GuildChannel>,
 ) -> Result<(), Error> {
     let guild_id = thread.guild_id;
-    let guild_cache = ctx.cache.guild(guild_id).unwrap();
+    let mut channel_name = String::new();
+    let mut parent_channel_name: String = String::new();
 
-    let threads = &guild_cache.threads;
+    if let Some(full_thread) = full_thread_data {
+        channel_name = full_thread.name;
 
-    let mut channel_name = None;
-
-    for thread_cache in threads {
-        if thread_cache.id == thread.id {
-            channel_name = Some(thread_cache.name.clone());
-            break;
+        if let Some(parent_id) = full_thread.parent_id {
+            parent_channel_name = parent_id.name(ctx).await?;
+        } else {
+            parent_channel_name = "unknown_channel".to_string();
         }
     }
     let guild_name = get_guild_name(ctx, guild_id);
-    // Currently it won't know which thread was deleted because the method in which it is checked.
-    // Tell which channel it was deleted from.
-    if let Some(name) = channel_name {
+
+    if channel_name.is_empty() {
         println!(
-            "\x1B[94m[{}] Thread '{}' was deleted!\x1B[0m",
-            guild_name, name
-        );
+            "\x1B[94m[{}] An unknown thread was deleted!\x1B[0m",
+            guild_name
+        )
     } else {
         println!(
-            "\x1B[94m[{}] Thread with unknown name was deleted!\x1B[0m",
-            guild_name
-        );
+            "\x1B[94m[{}] Thread #{} was deleted from #{}!\x1B[0m",
+            guild_name, channel_name, parent_channel_name
+        )
     }
     Ok(())
 }
