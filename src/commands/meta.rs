@@ -151,19 +151,17 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 /// Toggle tracking for a specific user.
 #[poise::command(prefix_command, category = "Misc", hide_in_help, check = "gavin")]
 pub async fn toggle(ctx: Context<'_>) -> Result<(), Error> {
-    let handle = std::thread::spawn(move || {
-        let mut guard: std::sync::MutexGuard<bool> = TRACK.lock().unwrap();
+    let current_value;
 
-        *guard = !*guard;
-    });
-
-    handle.join().unwrap();
-
-    let bool_guard = *TRACK.lock().unwrap();
+    {
+        let mut write_lock = TRACK.write().unwrap();
+        *write_lock = !*write_lock;
+        current_value = *write_lock;
+    }
 
     ctx.send(poise::CreateReply::default().content(format!(
         "Switched toggle status to {} for tracking <@221026934287499264> (ID: 221026934287499264)",
-        bool_guard
+        current_value
     )))
     .await?;
 

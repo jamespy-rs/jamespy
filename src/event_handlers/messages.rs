@@ -10,7 +10,7 @@ use chrono::NaiveDateTime;
 use std::{
     collections::HashSet,
     num::NonZeroU64,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, RwLock},
 };
 
 use lazy_static::lazy_static;
@@ -47,7 +47,7 @@ lazy_static! {
         Arc::new(RwLock::new(words))
     };
 
-    pub static ref TRACK: Mutex<bool> = Mutex::new(true);
+    pub static ref TRACK: RwLock<bool> = RwLock::new(true);
 }
 
 pub async fn message(
@@ -142,7 +142,7 @@ pub async fn message(
     }
 
     // For gavin.
-    if *TRACK.lock().unwrap() && new_message.author.id.get() == 221026934287499264 {
+    if *TRACK.read().unwrap() && new_message.author.id.get() == 221026934287499264 {
         let builder = GetMessages::new()
             .before(MessageId::new(new_message.id.get()))
             .limit(100);
