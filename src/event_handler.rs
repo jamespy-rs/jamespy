@@ -1,6 +1,5 @@
-use poise::serenity_prelude::{self as serenity};
-
 use crate::{event_handlers, Data, Error};
+use poise::serenity_prelude as serenity;
 
 pub async fn event_handler(
     event: serenity::FullEvent,
@@ -59,6 +58,9 @@ pub async fn event_handler(
         }
         serenity::FullEvent::ChannelCreate { ctx, channel } => {
             event_handlers::channels::channel_create(&ctx, channel).await?;
+        }
+        serenity::FullEvent::ChannelUpdate { ctx, old, new } => {
+            event_handlers::channels::channel_update(&ctx, old, new).await?;
         }
         serenity::FullEvent::ChannelDelete {
             ctx,

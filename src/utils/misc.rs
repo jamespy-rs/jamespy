@@ -1,4 +1,6 @@
-use poise::serenity_prelude::{self as serenity, ChannelId, GuildId};
+use poise::serenity_prelude::{
+    self as serenity, AutoArchiveDuration, ChannelId, ChannelType, GuildId,
+};
 use std::collections::HashSet;
 
 pub fn read_words_from_file(filename: &str) -> HashSet<String> {
@@ -41,5 +43,36 @@ pub fn get_guild_name(ctx: &serenity::Context, guild_id: GuildId) -> String {
             Some(name) => name,
             None => "Unknown".to_owned(),
         }
+    }
+}
+
+pub fn channel_type_to_string(channel_type: ChannelType) -> String {
+    match channel_type {
+        ChannelType::Text => String::from("Text"),
+        ChannelType::Private => String::from("Private"),
+        ChannelType::Voice => String::from("Voice"),
+        ChannelType::GroupDm => String::from("GroupDm"),
+        ChannelType::Category => String::from("Category"),
+        ChannelType::News => String::from("News"),
+        ChannelType::NewsThread => String::from("NewsThread"),
+        ChannelType::PublicThread => String::from("PublicThread"),
+        ChannelType::PrivateThread => String::from("PrivateThread"),
+        ChannelType::Stage => String::from("Stage"),
+        ChannelType::Directory => String::from("Directory"),
+        ChannelType::Forum => String::from("Forum"),
+        ChannelType::Unknown(u) => format!("Unknown({})", u),
+        _ => String::from("?"),
+    }
+}
+
+pub fn auto_archive_duration_to_string(duration: AutoArchiveDuration) -> String {
+    match duration {
+        AutoArchiveDuration::None => String::from("None"),
+        AutoArchiveDuration::OneHour => String::from("1 hour"),
+        AutoArchiveDuration::OneDay => String::from("1 day"),
+        AutoArchiveDuration::ThreeDays => String::from("3 days"),
+        AutoArchiveDuration::OneWeek => String::from("1 week"),
+        AutoArchiveDuration::Unknown(u) => format!("Unknown({})", u),
+        _ => String::from("?"),
     }
 }
