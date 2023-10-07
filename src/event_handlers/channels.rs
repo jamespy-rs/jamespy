@@ -1,8 +1,11 @@
-use crate::utils::misc::{auto_archive_duration_to_string, channel_type_to_string, get_guild_name};
+use crate::utils::misc::{
+    auto_archive_duration_to_string, channel_type_to_string, forum_layout_to_string,
+    get_guild_name, sort_order_to_string,
+};
 use crate::utils::permissions::get_permission_changes;
 use crate::Error;
 use poise::serenity_prelude::{
-    self as serenity, Channel, ForumEmoji, GuildChannel, PartialGuildChannel,
+    self as serenity, Channel, ChannelFlags, ForumEmoji, GuildChannel, PartialGuildChannel,
 };
 
 pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> Result<(), Error> {
@@ -94,16 +97,19 @@ pub async fn channel_update(
                     }
                 }
             }
+
+            // If both the old and new topic are the same, it shouldn't print.
             match (old.topic, new.topic) {
                 (Some(old_value), Some(new_value)) if old_value != new_value => {
                     diff.push_str(&format!("Topic: {} -> {}\n", old_value, new_value));
                 }
-                (None, Some(new_value)) => {
+                (None, Some(new_value)) if !new_value.is_empty() => {
                     diff.push_str(&format!("Topic: None -> {}\n", new_value));
                 }
-                (Some(old_value), None) => {
+                (Some(old_value), None) if !old_value.is_empty() => {
                     diff.push_str(&format!("Topic: {} -> None\n", old_value));
                 }
+                (None, None) => {}
                 _ => {}
             }
 
@@ -123,6 +129,19 @@ pub async fn channel_update(
             match (old.rate_limit_per_user, new.rate_limit_per_user) {
                 (Some(old_value), Some(new_value)) if old_value != new_value => {
                     diff.push_str(&format!("Slowmode: {}s -> {}s\n", old_value, new_value));
+                }
+                _ => {}
+            }
+
+            match (
+                old.default_thread_rate_limit_per_user,
+                new.default_thread_rate_limit_per_user,
+            ) {
+                (Some(old_value), Some(new_value)) if old_value != new_value => {
+                    diff.push_str(&format!(
+                        "Default Thread Slowmode: {}s -> {}s\n",
+                        old_value, new_value
+                    ));
                 }
                 _ => {}
             }
@@ -160,10 +179,64 @@ pub async fn channel_update(
                 _ => {}
             }
 
-            // available_tags
-            // channelflags
-            // default_sort_order
-            // default_forum_layout
+            if old.flags.contains(ChannelFlags::REQUIRE_TAG)
+                != new.flags.contains(ChannelFlags::REQUIRE_TAG)
+            {
+                if new.flags.contains(ChannelFlags::REQUIRE_TAG) {
+                    diff.push_str("REQUIRE_TAG was enabled!");
+                } else {
+                    diff.push_str("REQUIRE_TAG was disabled!");
+                }
+            }
+
+            match (old.default_forum_layout, new.default_forum_layout) {
+                (Some(old_value), Some(new_value)) if old_value != new_value => {
+                    diff.push_str(&format!(
+                        "Default Forum Layout: {} -> {}\n",
+                        forum_layout_to_string(old_value),
+                        forum_layout_to_string(new_value)
+                    ));
+                }
+                (None, Some(new_value)) => {
+                    diff.push_str(&format!(
+                        "Default Forum Layout: None -> {}\n",
+                        forum_layout_to_string(new_value)
+                    ));
+                }
+                (Some(old_value), None) => {
+                    diff.push_str(&format!(
+                        "Default Forum Layout: {} -> None\n",
+                        forum_layout_to_string(old_value)
+                    ));
+                }
+                (None, None) => {}
+                _ => {}
+            }
+
+            match (old.default_sort_order, new.default_sort_order) {
+                (Some(old_value), Some(new_value)) if old_value != new_value => {
+                    diff.push_str(&format!(
+                        "Default Forum Layout: {} -> {}\n",
+                        sort_order_to_string(old_value),
+                        sort_order_to_string(new_value)
+                    ));
+                }
+                (None, Some(new_value)) => {
+                    diff.push_str(&format!(
+                        "Default Forum Layout: None -> {}\n",
+                        sort_order_to_string(new_value)
+                    ));
+                }
+                (Some(old_value), None) => {
+                    diff.push_str(&format!(
+                        "Default Forum Layout: {} -> None\n",
+                        sort_order_to_string(old_value)
+                    ));
+                }
+                (None, None) => {}
+                _ => {}
+            }
+            // Forum tags doesn't implement what i want, I refuse to do it until this is matched.
         }
     }
     diff = diff.trim_end_matches('\n').to_string();

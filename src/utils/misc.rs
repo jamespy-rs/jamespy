@@ -1,5 +1,6 @@
 use poise::serenity_prelude::{
-    self as serenity, AutoArchiveDuration, ChannelId, ChannelType, GuildId,
+    self as serenity, AutoArchiveDuration, ChannelId, ChannelType, ForumLayoutType, GuildId,
+    SortOrder,
 };
 use std::collections::HashSet;
 
@@ -73,6 +74,25 @@ pub fn auto_archive_duration_to_string(duration: AutoArchiveDuration) -> String 
         AutoArchiveDuration::ThreeDays => String::from("3 days"),
         AutoArchiveDuration::OneWeek => String::from("1 week"),
         AutoArchiveDuration::Unknown(u) => format!("Unknown({})", u),
+        _ => String::from("?"),
+    }
+}
+
+pub fn forum_layout_to_string(layout_type: ForumLayoutType) -> String {
+    match layout_type {
+        ForumLayoutType::NotSet => String::from("Not Set"),
+        ForumLayoutType::ListView => String::from("List View"),
+        ForumLayoutType::GalleryView => String::from("Gallery View"),
+        ForumLayoutType::Unknown(u) => format!("Unknown({})", u),
+        _ => String::from("?"),
+    }
+}
+
+pub fn sort_order_to_string(sort_order: SortOrder) -> String {
+    match sort_order {
+        SortOrder::LatestActivity => String::from("Latest Activity"),
+        SortOrder::CreationDate => String::from("Creation Date"),
+        SortOrder::Unknown(u) => format!("Unknown({})", u),
         _ => String::from("?"),
     }
 }
