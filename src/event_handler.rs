@@ -72,6 +72,9 @@ pub async fn event_handler(
         serenity::FullEvent::ThreadCreate { ctx, thread } => {
             event_handlers::channels::thread_create(&ctx, thread).await?;
         }
+        serenity::FullEvent::ThreadUpdate { ctx, old, new } => {
+            event_handlers::channels::thread_update(&ctx, old, new).await?;
+        }
         serenity::FullEvent::ThreadDelete {
             ctx,
             thread,

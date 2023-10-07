@@ -7,6 +7,7 @@ use crate::Error;
 use poise::serenity_prelude::{
     self as serenity, Channel, ChannelFlags, ForumEmoji, GuildChannel, PartialGuildChannel,
 };
+use serenity::all::ChannelType;
 
 pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> Result<(), Error> {
     // Show channel kind.
@@ -182,10 +183,9 @@ pub async fn channel_update(
             if old.flags.contains(ChannelFlags::REQUIRE_TAG)
                 != new.flags.contains(ChannelFlags::REQUIRE_TAG)
             {
-                if new.flags.contains(ChannelFlags::REQUIRE_TAG) {
-                    diff.push_str("REQUIRE_TAG was enabled!");
-                } else {
-                    diff.push_str("REQUIRE_TAG was disabled!");
+                match new.flags.contains(ChannelFlags::REQUIRE_TAG) {
+                    true => diff.push_str("REQUIRE_TAG was enabled!"),
+                    false => diff.push_str("REQUIRE_TAG was disabled!"),
                 }
             }
 
@@ -277,6 +277,86 @@ pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Res
         "\x1B[94m[{}] Thread #{} was created in #{}!\x1B[0m",
         guild_name, thread.name, parent_channel_name
     );
+    Ok(())
+}
+
+pub async fn thread_update(
+    ctx: &serenity::Context,
+    old: Option<GuildChannel>,
+    new: GuildChannel,
+) -> Result<(), Error> {
+    let guild_id = new.guild_id;
+    let guild_name = get_guild_name(ctx, guild_id);
+    let kind = channel_type_to_string(new.kind);
+    let mut diff = String::new();
+
+    let parent_channel_name = if let Some(parent_id) = new.parent_id {
+        parent_id.name(ctx).await?
+    } else {
+        "Unknown Channel".to_string()
+    };
+
+    if let Some(old) = old {
+        if old.name != new.name {
+            diff.push_str(&format!("Name: {} -> {}\n", old.name, new.name))
+        }
+
+        match (old.rate_limit_per_user, new.rate_limit_per_user) {
+            (Some(old_value), Some(new_value)) if old_value != new_value => {
+                diff.push_str(&format!("Slowmode: {}s -> {}s\n", old_value, new_value));
+            }
+            _ => {}
+        }
+
+        if old.flags.contains(ChannelFlags::PINNED) != new.flags.contains(ChannelFlags::PINNED) {
+            match new.flags.contains(ChannelFlags::PINNED) {
+                true => diff.push_str("Pinned: true"),
+                false => diff.push_str("Pinned: false"),
+            }
+        }
+
+        if let (Some(old_metadata), Some(new_metadata)) = (old.thread_metadata, new.thread_metadata)
+        {
+            if old.kind == ChannelType::PrivateThread {
+                match (old_metadata.invitable, new_metadata.invitable) {
+                    (true, false) => diff.push_str("Invitable: false\n"),
+                    (false, true) => diff.push_str("Invitable: true\n"),
+                    _ => {}
+                }
+            }
+
+            match (old_metadata.archived, new_metadata.archived) {
+                (true, false) => diff.push_str("Archived: false\n"),
+                (false, true) => diff.push_str("Archived: true\n"),
+                _ => {}
+            }
+            match (old_metadata.locked, new_metadata.locked) {
+                (true, false) => diff.push_str("Locked: false\n"),
+                (false, true) => diff.push_str("Locked: true\n"),
+                _ => {}
+            }
+
+            if old_metadata.auto_archive_duration != new_metadata.auto_archive_duration {
+                let old_duration =
+                    auto_archive_duration_to_string(old_metadata.auto_archive_duration);
+                let new_duration =
+                    auto_archive_duration_to_string(new_metadata.auto_archive_duration);
+                diff.push_str(&format!(
+                    "Archive Duration: {} -> {}\n",
+                    old_duration, new_duration
+                ));
+            }
+        }
+    }
+
+    diff = diff.trim_end_matches('\n').to_string();
+    if !diff.is_empty() {
+        println!(
+            "\x1B[94m[{}] #{} in {} was updated! ({})\x1B[0m\n{}",
+            guild_name, new.name, parent_channel_name, kind, diff
+        );
+    }
+
     Ok(())
 }
 

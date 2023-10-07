@@ -186,12 +186,11 @@ pub async fn cached_users(ctx: Context<'_>) -> Result<(), Error> {
         let global_name = user.global_name.as_deref().unwrap_or("None");
         let avatar_url = &user.avatar_url().unwrap_or("None".to_owned());
         let bot = &user.bot;
-        let banner_url = &user.banner_url().unwrap_or("None".to_owned());
         let public_flags = &user.public_flags.unwrap_or_default();
 
         user_info.push_str(&format!(
-            "ID: {}\nNAME: {}\nDISCRIMINATOR: {}\nDISPLAY NAME: {}\nAVATAR_URL: {}\nBANNER_URL: {}\nBOT: {}\nFLAGS: {:?}\n----------\n",
-            user_id, user_name, discriminator, global_name, avatar_url, banner_url, bot, public_flags
+            "ID: {}\nNAME: {}\nDISCRIMINATOR: {}\nDISPLAY NAME: {}\nAVATAR_URL: {}\nBOT: {}\nFLAGS: {:?}\n----------\n",
+            user_id, user_name, discriminator, global_name, avatar_url, bot, public_flags
         ));
     }
     let attachment =
