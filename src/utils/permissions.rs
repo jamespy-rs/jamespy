@@ -1,3 +1,4 @@
+use crate::utils::misc::overwrite_to_string;
 use poise::serenity_prelude::{Context, PermissionOverwriteType, Permissions};
 
 pub async fn get_permission_changes(
@@ -8,7 +9,7 @@ pub async fn get_permission_changes(
     new_deny: Permissions,
     kind: PermissionOverwriteType,
 ) -> String {
-    let kind_string = match kind {
+    let name = match kind {
         PermissionOverwriteType::Member(user_id) => match user_id.to_user(ctx).await {
             Ok(user) => user.name,
             Err(_) => String::from("Unknown User"),
@@ -20,16 +21,35 @@ pub async fn get_permission_changes(
         _ => String::from("Unknown"),
     };
 
-    let mut changes_str = format!("Permission override for {} changed!\n", kind_string);
-    changes_str.push_str("allow:\n");
-    changes_str.push_str(&get_permission_changes_detail(old_allow, new_allow));
-    changes_str.push_str("deny:\n");
-    changes_str.push_str(&get_permission_changes_detail(old_deny, new_deny));
+    let mut changes_str = String::new();
+    let kind_string = overwrite_to_string(kind);
+    if old_allow != new_allow || old_deny != new_deny {
+        changes_str.push_str(&format!(
+            "Permission override for {} ({}) changed!\n",
+            name, kind_string
+        ));
+        let allow_changes_detail = get_permission_changes_detail(old_allow, new_allow, true);
+        let deny_changes_detail = get_permission_changes_detail(old_deny, new_deny, false);
+
+        if !allow_changes_detail.is_empty() {
+            changes_str.push_str("allow:\n");
+            changes_str.push_str(&allow_changes_detail);
+        }
+
+        if !deny_changes_detail.is_empty() {
+            changes_str.push_str("deny:\n");
+            changes_str.push_str(&deny_changes_detail);
+        }
+    }
+
     changes_str
 }
 
-pub fn get_permission_changes_detail(old: Permissions, new: Permissions) -> String {
+pub fn get_permission_changes_detail(old: Permissions, new: Permissions, allow: bool) -> String {
     let mut changes_str = String::new();
+    let added_color = if allow { "\x1B[92m" } else { "\x1B[31m" };
+    let removed_color = if allow { "\x1B[31m" } else { "\x1B[92m" };
+
     let added_perms: Vec<String> = {
         let mut added = Vec::new();
         for permission in Permissions::all().iter() {
@@ -54,13 +74,13 @@ pub fn get_permission_changes_detail(old: Permissions, new: Permissions) -> Stri
 
     if !added_perms.is_empty() {
         for perm in &added_perms {
-            changes_str.push_str(&format!("\x1B[92m+ {}\n\x1B[0m", perm));
+            changes_str.push_str(&format!("{}+ {}\n\x1B[0m", added_color, perm));
         }
     }
 
     if !removed_perms.is_empty() {
         for perm in &removed_perms {
-            changes_str.push_str(&format!("\x1B[31m- {}\n\x1B[0m", perm));
+            changes_str.push_str(&format!("{}- {}\n\x1B[0m", removed_color, perm));
         }
     }
 

@@ -1,6 +1,6 @@
 use poise::serenity_prelude::{
     self as serenity, AutoArchiveDuration, ChannelId, ChannelType, ForumLayoutType, GuildId,
-    SortOrder,
+    PermissionOverwriteType, SortOrder,
 };
 use std::collections::HashSet;
 
@@ -62,6 +62,14 @@ pub fn channel_type_to_string(channel_type: ChannelType) -> String {
         ChannelType::Directory => String::from("Directory"),
         ChannelType::Forum => String::from("Forum"),
         ChannelType::Unknown(u) => format!("Unknown({})", u),
+        _ => String::from("?"),
+    }
+}
+
+pub fn overwrite_to_string(overwrite: PermissionOverwriteType) -> String {
+    match overwrite {
+        PermissionOverwriteType::Member(_) => String::from("Member"),
+        PermissionOverwriteType::Role(_) => String::from("Role"),
         _ => String::from("?"),
     }
 }

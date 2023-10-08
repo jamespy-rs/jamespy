@@ -15,9 +15,10 @@ pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> R
         .guild_id
         .name(ctx)
         .unwrap_or("Unknown Guild".to_string());
+    let kind = channel_type_to_string(channel.kind);
     println!(
-        "\x1B[34m[{}] #{} was created!\x1B[0m",
-        guild_name, channel.name
+        "\x1B[34m[{}] #{} ({}) was created!\x1B[0m",
+        guild_name, channel.name, kind
     );
     Ok(())
 }
@@ -250,22 +251,22 @@ pub async fn channel_update(
 }
 
 pub async fn channel_delete(ctx: &serenity::Context, channel: GuildChannel) -> Result<(), Error> {
-    // show channel kind.
+    let kind = channel_type_to_string(channel.kind);
     let guild_name = channel
         .guild_id
         .name(ctx)
         .unwrap_or("Unknown Guild".to_string());
     println!(
-        "\x1B[34m[{}] #{} was deleted!\x1B[0m",
-        guild_name, channel.name
+        "\x1B[34m[{}] #{} ({}) was deleted!\x1B[0m",
+        guild_name, channel.name, kind
     );
     Ok(())
 }
 
 pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Result<(), Error> {
-    // show thread kind?
     let guild_id = thread.guild_id;
     let guild_name = get_guild_name(ctx, guild_id);
+    let kind = channel_type_to_string(thread.kind);
 
     let parent_channel_name = if let Some(parent_id) = thread.parent_id {
         parent_id.name(ctx).await?
@@ -274,8 +275,8 @@ pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Res
     };
 
     println!(
-        "\x1B[94m[{}] Thread #{} was created in #{}!\x1B[0m",
-        guild_name, thread.name, parent_channel_name
+        "\x1B[94m[{}] Thread #{} ({}) was created in #{}!\x1B[0m",
+        guild_name, thread.name, kind, parent_channel_name
     );
     Ok(())
 }
@@ -365,13 +366,14 @@ pub async fn thread_delete(
     thread: PartialGuildChannel,
     full_thread_data: Option<GuildChannel>,
 ) -> Result<(), Error> {
-    // show thread kind?
     let guild_id = thread.guild_id;
     let mut channel_name = String::new();
     let mut parent_channel_name: String = String::new();
+    let mut kind = String::new();
 
     if let Some(full_thread) = full_thread_data {
         channel_name = full_thread.name;
+        kind = channel_type_to_string(full_thread.kind);
 
         if let Some(parent_id) = full_thread.parent_id {
             parent_channel_name = parent_id.name(ctx).await?;
@@ -388,8 +390,8 @@ pub async fn thread_delete(
         )
     } else {
         println!(
-            "\x1B[94m[{}] Thread #{} was deleted from #{}!\x1B[0m",
-            guild_name, channel_name, parent_channel_name
+            "\x1B[94m[{}] Thread #{} ({}) was deleted from #{}!\x1B[0m",
+            guild_name, channel_name, kind, parent_channel_name
         )
     }
     Ok(())
