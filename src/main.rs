@@ -64,6 +64,7 @@ async fn main() {
             owner::cache::guild_message_cache(),
             owner::lists::update_lists(),
             owner::lists::unload_lists(),
+            owner::glow::glow(),
             meta::source(),
             meta::about(),
             meta::help(),

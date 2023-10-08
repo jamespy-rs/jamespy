@@ -34,6 +34,16 @@ pub async fn guild_member_update(
                 );
             };
 
+            if old_member.user.avatar != new_member.user.avatar {
+                super::glow::avatar_change(ctx, &old_member, &new_member).await?;
+            }
+            if old_member.avatar != new_member.avatar {
+                super::glow::guild_avatar_change(ctx, &old_member, &new_member).await?;
+            }
+            if old_member.user.banner != new_member.user.banner {
+                super::glow::banner_change(ctx, &old_member, &new_member).await?;
+            }
+
             if old_member.user.name != new_member.user.name {
                 println!(
                     "\x1B[92mUsername change: {} -> {} (ID:{})\x1B[0m",

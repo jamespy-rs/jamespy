@@ -5,12 +5,11 @@ use crate::utils::misc::{
 use crate::utils::permissions::get_permission_changes;
 use crate::Error;
 use poise::serenity_prelude::{
-    self as serenity, Channel, ChannelFlags, ForumEmoji, GuildChannel, PartialGuildChannel,
+    self as serenity, Channel, ChannelFlags, ChannelType, ForumEmoji, GuildChannel,
+    PartialGuildChannel,
 };
-use serenity::all::ChannelType;
 
 pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> Result<(), Error> {
-    // Show channel kind.
     let guild_name = channel
         .guild_id
         .name(ctx)
