@@ -32,10 +32,11 @@ pub async fn guild_member_update(
                     new_nickname,
                     new_member.user.id
                 );
+                super::glow::nickname_change(ctx, &old_member, &new_member).await?;
             };
 
             if old_member.user.avatar != new_member.user.avatar {
-                super::glow::avatar_change(ctx, &old_member, &new_member).await?;
+                super::glow::avatar_change(ctx, &old_member.clone(), &new_member).await?;
             }
             if old_member.avatar != new_member.avatar {
                 super::glow::guild_avatar_change(ctx, &old_member, &new_member).await?;
@@ -49,15 +50,25 @@ pub async fn guild_member_update(
                     "\x1B[92mUsername change: {} -> {} (ID:{})\x1B[0m",
                     old_member.user.name, new_member.user.name, new_member.user.id
                 );
+                super::glow::username_change(ctx, &old_member, &new_member).await?;
             }
             if old_member.user.global_name != new_member.user.global_name {
                 println!(
                     "\x1B[92mDisplay name change: {}: {} -> {} (ID:{})\x1B[0m",
                     old_member.user.name,
-                    old_member.user.global_name.unwrap_or("None".to_owned()),
-                    new_member.user.global_name.unwrap_or("None".to_owned()),
+                    old_member
+                        .clone()
+                        .user
+                        .global_name
+                        .unwrap_or("None".to_owned()),
+                    new_member
+                        .clone()
+                        .user
+                        .global_name
+                        .unwrap_or("None".to_owned()),
                     new_member.user.id
-                )
+                );
+                super::glow::globalname_change(ctx, &old_member, &new_member).await?;
             }
         }
     }
