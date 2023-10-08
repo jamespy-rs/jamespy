@@ -10,8 +10,26 @@ use crate::{Context, Error};
     owners_only,
     subcommands("toggle", "set_channel", "reset", "enable_here")
 )]
-pub async fn glow(_ctx: Context<'_>) -> Result<(), Error> {
-    // toggle, set-channel, reset, enable-here
+pub async fn glow(ctx: Context<'_>) -> Result<(), Error> {
+    let (action, channel_id) = {
+        let config = CONFIG.read().unwrap();
+        (config.action, config.channel_id)
+    };
+    let channel_name;
+    let channelid;
+    if let Some(channel) = channel_id {
+        channel_name = channel.name(ctx).await?;
+        channelid = channel.get();
+    } else {
+        channel_name = "None".to_string();
+        channelid = 0;
+    }
+    let message = format!(
+        "Enabled:{}\nChannel: {} (ID:{})",
+        action, channel_name, channelid
+    );
+    ctx.say(message).await?;
+
     Ok(())
 }
 
