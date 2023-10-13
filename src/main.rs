@@ -65,6 +65,7 @@ async fn main() {
             owner::lists::update_lists(),
             owner::lists::unload_lists(),
             owner::glow::glow(),
+            owner::current_user::jamespy(),
             meta::source(),
             meta::about(),
             meta::help(),
@@ -86,6 +87,7 @@ async fn main() {
             utility::users::guild_flags(),
             utility::users::last_reactions(),
             utility::users::statuses(),
+            utility::users::playing(),
             utility::info::role_info(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {

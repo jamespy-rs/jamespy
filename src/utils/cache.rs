@@ -65,3 +65,75 @@ pub async fn guild_message_cache_builder<U, E>(
 
     Ok(())
 }
+
+pub async fn presence_builder<U, E>(
+    ctx: Context<'_, U, E>,
+    pages: Vec<Vec<(&str, u32)>>,
+    total_members: usize,
+    total_games: usize,
+) -> Result<(), serenity::Error> {
+    let ctx_id = ctx.id();
+    let prev_button_id = format!("{}prev", ctx_id);
+    let next_button_id = format!("{}next", ctx_id);
+
+    let mut current_page = 0;
+    let footer = format!(
+        "{} members are playing {} games right now.",
+        total_members, total_games
+    );
+    ctx.send(
+        poise::CreateReply::default()
+            .embed(
+                serenity::CreateEmbed::default()
+                    .title("Top games being played right now:")
+                    .description(format_pages(&pages[current_page]))
+                    .footer(CreateEmbedFooter::new(footer.clone())),
+            )
+            .components(vec![serenity::CreateActionRow::Buttons(vec![
+                serenity::CreateButton::new(&prev_button_id).emoji('◀'),
+                serenity::CreateButton::new(&next_button_id).emoji('▶'),
+            ])]),
+    )
+    .await?;
+
+    while let Some(press) = serenity::ComponentInteractionCollector::new(ctx)
+        .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
+        .timeout(std::time::Duration::from_secs(60))
+        .await
+    {
+        if press.data.custom_id == next_button_id {
+            current_page += 1;
+            if current_page >= pages.len() {
+                current_page = 0;
+            }
+        } else if press.data.custom_id == prev_button_id {
+            current_page = current_page.checked_sub(1).unwrap_or(pages.len() - 1);
+        } else {
+            continue;
+        }
+
+        press
+            .create_response(
+                ctx.serenity_context(),
+                serenity::CreateInteractionResponse::UpdateMessage(
+                    serenity::CreateInteractionResponseMessage::default().embed(
+                        serenity::CreateEmbed::default()
+                            .title("Top games being played right now:")
+                            .description(format_pages(&pages[current_page]))
+                            .footer(CreateEmbedFooter::new(footer.clone())),
+                    ),
+                ),
+            )
+            .await?;
+    }
+
+    Ok(())
+}
+
+fn format_pages(pages: &[(&str, u32)]) -> String {
+    pages
+        .iter()
+        .map(|(name, count)| format!("{}: {}", name, count))
+        .collect::<Vec<String>>()
+        .join("\n")
+}

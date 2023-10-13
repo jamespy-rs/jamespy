@@ -1,6 +1,9 @@
 use crate::{Context, Error};
 use bb8_redis::redis::AsyncCommands;
-use poise::serenity_prelude::{self as serenity, Colour, GuildMemberFlags, Member, OnlineStatus};
+use poise::serenity_prelude::{
+    self as serenity, ActivityType, Colour, GuildMemberFlags, Member, OnlineStatus,
+};
+use std::collections::HashMap;
 
 #[poise::command(
     rename = "guild-flags",
@@ -120,7 +123,7 @@ pub async fn last_reactions(ctx: Context<'_>) -> Result<(), Error> {
     prefix_command,
     category = "Utility",
     guild_only,
-    user_cooldown = 3
+    user_cooldown = 15
 )]
 pub async fn statuses(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = ctx.guild_id().unwrap();
@@ -128,7 +131,7 @@ pub async fn statuses(ctx: Context<'_>) -> Result<(), Error> {
     let cache = &ctx.cache();
     let guild = cache.guild(guild_id).unwrap().clone(); // I don't know how to use new stuff.
 
-    let mut status_counts = std::collections::HashMap::new();
+    let mut status_counts = HashMap::new();
     let mut message = String::new();
     for presence in &guild.presences {
         let status = presence.1.status;
@@ -153,6 +156,60 @@ pub async fn statuses(ctx: Context<'_>) -> Result<(), Error> {
     message.push_str(&guild.presences.len().to_string());
     ctx.send(poise::CreateReply::default().content(message))
         .await?;
+
+    Ok(())
+}
+
+/// See what games people are playing!
+#[poise::command(
+    slash_command,
+    prefix_command,
+    category = "Utility",
+    guild_only,
+    user_cooldown = 15
+)]
+pub async fn playing(ctx: Context<'_>) -> Result<(), Error> {
+    let guild_id = ctx.guild_id().unwrap();
+
+    let cache = &ctx.cache();
+    let guild = cache.guild(guild_id).unwrap().clone();
+
+    let total_members = guild
+        .presences
+        .values()
+        .filter(|presence| {
+            presence
+                .activities
+                .iter()
+                .any(|activity| activity.kind == ActivityType::Playing)
+        })
+        .count();
+
+    let mut activity_counts: HashMap<&str, u32> = HashMap::new();
+    for presence in guild.presences.values() {
+        for activity in &presence.activities {
+            if activity.kind == ActivityType::Playing {
+                let name = &activity.name;
+                let count = activity_counts.entry(name.as_str()).or_insert(0);
+                *count += 1;
+            }
+        }
+    }
+
+    let total_games: usize = activity_counts.values().len();
+
+    let mut vec: Vec<(&&str, &u32)> = activity_counts.iter().collect();
+    vec.sort_by(|a, b| b.1.cmp(a.1));
+
+    let pages: Vec<Vec<(&str, u32)>> = vec
+        .iter()
+        .map(|&(name, count)| (*name, *count))
+        .collect::<Vec<(&str, u32)>>()
+        .chunks(15)
+        .map(|chunk| chunk.to_vec())
+        .collect();
+
+    crate::utils::cache::presence_builder(ctx, pages, total_members, total_games).await?;
 
     Ok(())
 }
