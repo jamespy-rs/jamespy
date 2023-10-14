@@ -10,4 +10,4 @@
 /.sqlx
 
 
-config.toml
+config/config.toml

@@ -39,11 +39,11 @@ lazy_static! {
     .collect();
 
     pub static ref BADLIST: Arc<RwLock<HashSet<String>>> = {
-        let words = read_words_from_file("badwords.txt");
+        let words = read_words_from_file("data/badwords.txt");
         Arc::new(RwLock::new(words))
     };
     pub static ref FIXLIST: Arc<RwLock<HashSet<String>>> = {
-        let words = read_words_from_file("fixwords.txt");
+        let words = read_words_from_file("data/fixwords.txt");
         Arc::new(RwLock::new(words))
     };
 

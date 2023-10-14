@@ -10,7 +10,7 @@ use rand::seq::SliceRandom;
 
 lazy_static! {
     pub static ref LOBLIST: Arc<RwLock<HashSet<String>>> = {
-        let data = std::fs::read_to_string("loblist.txt").unwrap_or_else(|_| String::new());
+        let data = std::fs::read_to_string("data/loblist.txt").unwrap_or_else(|_| String::new());
         let words: HashSet<String> = data.lines().map(String::from).collect();
 
         Arc::new(RwLock::new(words))
@@ -27,7 +27,7 @@ pub fn get_random_lob() -> Option<String> {
 }
 
 pub async fn update_lob() -> Result<(usize, usize), Error> {
-    let new_lob = std::fs::read_to_string("loblist.txt")?;
+    let new_lob = std::fs::read_to_string("data/loblist.txt")?;
     let old_count;
     let new_count;
 
@@ -50,7 +50,7 @@ pub async fn unload_lob() -> Result<(), Error> {
 }
 
 pub async fn add_lob(content: &String) -> Result<(), Error> {
-    let loblist = "loblist.txt";
+    let loblist = "data/loblist.txt";
     let mut file = OpenOptions::new().append(true).open(loblist)?;
 
     let content_with_newline = if file.metadata()?.len() > 0 {
@@ -74,7 +74,7 @@ pub async fn add_lob(content: &String) -> Result<(), Error> {
 }
 
 pub async fn remove_lob(target: &str) -> Result<bool, Error> {
-    let loblist = "loblist.txt";
+    let loblist = "data/loblist.txt";
     let mut lines = Vec::new();
     let mut line_removed = false;
 
@@ -103,7 +103,7 @@ pub async fn remove_lob(target: &str) -> Result<bool, Error> {
 }
 
 pub fn count_lob() -> Result<usize, Error> {
-    let file = File::open("loblist.txt")?;
+    let file = File::open("data/loblist.txt")?;
     let reader = BufReader::new(file);
 
     let mut count = 0;

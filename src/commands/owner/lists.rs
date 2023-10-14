@@ -28,8 +28,8 @@ pub async fn update_lists(
     ctx: Context<'_>,
     #[description = "What list to unload"] choice: Option<Lists>,
 ) -> Result<(), Error> {
-    let new_bad_words = read_words_from_file("badwords.txt");
-    let new_fix_words = read_words_from_file("fixwords.txt");
+    let new_bad_words = read_words_from_file("data/badwords.txt");
+    let new_fix_words = read_words_from_file("data/fixwords.txt");
 
     let updated_list_description = match choice {
         Some(Lists::Badlist) => {

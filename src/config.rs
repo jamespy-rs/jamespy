@@ -35,7 +35,7 @@ impl Default for JamespyConfig {
 pub fn load_config() {
     let default_config = JamespyConfig::new();
 
-    let config_result = fs::read_to_string("config.toml");
+    let config_result = fs::read_to_string("config/config.toml");
     match config_result {
         Ok(config_file) => {
             if let Ok(config) = toml::from_str::<JamespyConfig>(&config_file) {
