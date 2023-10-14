@@ -1,28 +1,7 @@
+use crate::config::CONFIG;
 use crate::utils::misc::get_guild_name;
 use crate::Error;
-use lazy_static::lazy_static;
-use poise::serenity_prelude::{self as serenity, ChannelId};
-use serenity::all::Member;
-use std::sync::RwLock;
-
-#[derive(Clone)]
-pub struct GlowConfig {
-    pub action: bool,
-    pub channel_id: Option<ChannelId>,
-}
-
-impl GlowConfig {
-    pub fn new() -> Self {
-        GlowConfig {
-            action: false,
-            channel_id: None,
-        }
-    }
-}
-
-lazy_static! {
-    pub static ref CONFIG: RwLock<GlowConfig> = RwLock::new(GlowConfig::new());
-}
+use poise::serenity_prelude::{self as serenity, Member};
 
 pub async fn avatar_change(
     ctx: &serenity::Context,
@@ -30,7 +9,7 @@ pub async fn avatar_change(
     new: &Member,
 ) -> Result<(), Error> {
     let (action, channel_id) = {
-        let config = CONFIG.read().unwrap();
+        let config = CONFIG.read().unwrap().glow;
         (config.action, config.channel_id)
     };
 
@@ -75,7 +54,7 @@ pub async fn guild_avatar_change(
     new: &Member,
 ) -> Result<(), Error> {
     let (action, channel_id) = {
-        let config = CONFIG.read().unwrap();
+        let config = CONFIG.read().unwrap().glow;
         (config.action, config.channel_id)
     };
     if action {
@@ -120,7 +99,7 @@ pub async fn banner_change(
     new: &Member,
 ) -> Result<(), Error> {
     let (action, channel_id) = {
-        let config = CONFIG.read().unwrap();
+        let config = CONFIG.read().unwrap().glow;
         (config.action, config.channel_id)
     };
     if action {
@@ -164,7 +143,7 @@ pub async fn username_change(
     new: &Member,
 ) -> Result<(), Error> {
     let (action, channel_id) = {
-        let config = CONFIG.read().unwrap();
+        let config = CONFIG.read().unwrap().glow;
         (config.action, config.channel_id)
     };
     if action {
@@ -191,7 +170,7 @@ pub async fn globalname_change(
     new: &Member,
 ) -> Result<(), Error> {
     let (action, channel_id) = {
-        let config = CONFIG.read().unwrap();
+        let config = CONFIG.read().unwrap().glow;
         (config.action, config.channel_id)
     };
     if action {
@@ -235,7 +214,7 @@ pub async fn nickname_change(
     new: &Member,
 ) -> Result<(), Error> {
     let (action, channel_id) = {
-        let config = CONFIG.read().unwrap();
+        let config = CONFIG.read().unwrap().glow;
         (config.action, config.channel_id)
     };
     if action {

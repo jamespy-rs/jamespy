@@ -1,4 +1,7 @@
-use poise::serenity_prelude::{self as serenity, CreateEmbedFooter};
+use poise::serenity_prelude::{
+    self as serenity, ComponentInteractionCollector, CreateActionRow, CreateEmbedFooter,
+    CreateInteractionResponse,
+};
 use poise::Context;
 
 // The function that constructs the paginated messages for the guild_message_cache command.
@@ -25,14 +28,14 @@ pub async fn guild_message_cache_builder<U, E>(
                     .description(pages[current_page])
                     .footer(CreateEmbedFooter::new(footer_text.clone())),
             )
-            .components(vec![serenity::CreateActionRow::Buttons(vec![
+            .components(vec![CreateActionRow::Buttons(vec![
                 serenity::CreateButton::new(&prev_button_id).emoji('◀'),
                 serenity::CreateButton::new(&next_button_id).emoji('▶'),
             ])]),
     )
     .await?;
 
-    while let Some(press) = serenity::ComponentInteractionCollector::new(ctx)
+    while let Some(press) = ComponentInteractionCollector::new(ctx)
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
         .timeout(std::time::Duration::from_secs(60))
         .await
@@ -51,7 +54,7 @@ pub async fn guild_message_cache_builder<U, E>(
         press
             .create_response(
                 ctx.serenity_context(),
-                serenity::CreateInteractionResponse::UpdateMessage(
+                CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::default().embed(
                         serenity::CreateEmbed::default()
                             .title("Channels with most cached messages:")
@@ -76,29 +79,27 @@ pub async fn presence_builder<U, E>(
     let prev_button_id = format!("{}prev", ctx_id);
     let next_button_id = format!("{}next", ctx_id);
 
+    let sctx = ctx.serenity_context();
+
     let mut current_page = 0;
     let footer = format!(
         "{} members are playing {} games right now.",
         total_members, total_games
     );
+
     ctx.send(
         poise::CreateReply::default()
-            .embed(
-                serenity::CreateEmbed::default()
-                    .title("Top games being played right now:")
-                    .description(format_pages(&pages[current_page]))
-                    .footer(CreateEmbedFooter::new(footer.clone())),
-            )
-            .components(vec![serenity::CreateActionRow::Buttons(vec![
+            .embed(create_presence_embed(current_page, &footer, &pages))
+            .components(vec![CreateActionRow::Buttons(vec![
                 serenity::CreateButton::new(&prev_button_id).emoji('◀'),
                 serenity::CreateButton::new(&next_button_id).emoji('▶'),
             ])]),
     )
     .await?;
 
-    while let Some(press) = serenity::ComponentInteractionCollector::new(ctx)
+    while let Some(press) = ComponentInteractionCollector::new(ctx)
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
-        .timeout(std::time::Duration::from_secs(60))
+        .timeout(std::time::Duration::from_secs(180))
         .await
     {
         if press.data.custom_id == next_button_id {
@@ -114,20 +115,29 @@ pub async fn presence_builder<U, E>(
 
         press
             .create_response(
-                ctx.serenity_context(),
-                serenity::CreateInteractionResponse::UpdateMessage(
-                    serenity::CreateInteractionResponseMessage::default().embed(
-                        serenity::CreateEmbed::default()
-                            .title("Top games being played right now:")
-                            .description(format_pages(&pages[current_page]))
-                            .footer(CreateEmbedFooter::new(footer.clone())),
-                    ),
+                sctx,
+                CreateInteractionResponse::UpdateMessage(
+                    serenity::CreateInteractionResponseMessage::default()
+                        .embed(create_presence_embed(current_page, &footer, &pages)),
                 ),
             )
             .await?;
     }
+    println!("timeout");
 
     Ok(())
+}
+
+// This is split to make the code more pleasant
+fn create_presence_embed(
+    current_page: usize,
+    footer_text: &str,
+    pages: &[Vec<(&str, u32)>],
+) -> serenity::CreateEmbed {
+    serenity::CreateEmbed::default()
+        .title("Top games being played right now:")
+        .description(format_pages(&pages[current_page]))
+        .footer(CreateEmbedFooter::new(footer_text.to_string()))
 }
 
 fn format_pages(pages: &[(&str, u32)]) -> String {

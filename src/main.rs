@@ -5,6 +5,8 @@ mod event_handler;
 mod event_handlers;
 mod utils;
 
+mod config;
+
 use database::init_data;
 use database::init_redis_pool;
 use poise::serenity_prelude as serenity;
@@ -44,6 +46,7 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 async fn main() {
     let db_pool = init_data().await;
     let redis_pool = init_redis_pool().await;
+    config::load_config();
 
     let options = poise::FrameworkOptions {
         commands: vec![

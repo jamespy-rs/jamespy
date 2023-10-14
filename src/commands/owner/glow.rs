@@ -1,6 +1,6 @@
 use poise::serenity_prelude::ChannelId;
 
-use crate::event_handlers::glow::CONFIG;
+use crate::config::CONFIG;
 use crate::{Context, Error};
 
 #[poise::command(
@@ -11,8 +11,10 @@ use crate::{Context, Error};
     subcommands("toggle", "set_channel", "reset", "enable_here")
 )]
 pub async fn glow(ctx: Context<'_>) -> Result<(), Error> {
+    // disable command, and reset command should take from the file defaults.
+
     let (action, channel_id) = {
-        let config = CONFIG.read().unwrap();
+        let config = CONFIG.read().unwrap().glow;
         (config.action, config.channel_id)
     };
     let channel_name;
@@ -39,7 +41,7 @@ pub async fn toggle(ctx: Context<'_>) -> Result<(), Error> {
     let current_channel;
     let mut glowie = String::new();
     {
-        let mut write_lock = CONFIG.write().unwrap();
+        let mut write_lock = CONFIG.write().unwrap().glow;
         write_lock.action = !write_lock.action;
         current_value = write_lock.action;
         current_channel = write_lock.channel_id;
@@ -81,7 +83,7 @@ pub async fn set_channel(
     }
 
     {
-        let mut write_lock = CONFIG.write().unwrap();
+        let mut write_lock = CONFIG.write().unwrap().glow;
         write_lock.channel_id = Some(new_channel);
     }
 
@@ -98,7 +100,7 @@ pub async fn set_channel(
 #[poise::command(prefix_command, category = "Glow", hide_in_help, owners_only)]
 pub async fn reset(ctx: Context<'_>) -> Result<(), Error> {
     {
-        let mut write_lock = CONFIG.write().unwrap();
+        let mut write_lock = CONFIG.write().unwrap().glow;
         write_lock.action = false;
         write_lock.channel_id = None;
     }
@@ -119,7 +121,7 @@ pub async fn reset(ctx: Context<'_>) -> Result<(), Error> {
 pub async fn enable_here(ctx: Context<'_>) -> Result<(), Error> {
     let new_channel = ctx.channel_id();
     {
-        let mut write_lock = CONFIG.write().unwrap();
+        let mut write_lock = CONFIG.write().unwrap().glow;
         write_lock.action = true;
         write_lock.channel_id = Some(new_channel);
     }
