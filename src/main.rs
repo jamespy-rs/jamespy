@@ -75,6 +75,7 @@ async fn main() {
             meta::uptime(),
             meta::ping(),
             meta::toggle(),
+            meta::channel(),
             general::lob::lob(),
             general::lob::reload_lob(),
             general::lob::no_lob(),

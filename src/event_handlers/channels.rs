@@ -5,9 +5,30 @@ use crate::utils::misc::{
 use crate::utils::permissions::get_permission_changes;
 use crate::Error;
 use poise::serenity_prelude::{
-    self as serenity, Channel, ChannelFlags, ChannelType, ForumEmoji, GuildChannel,
-    PartialGuildChannel,
+    self as serenity, Channel, ChannelFlags, ChannelId, ChannelType, ForumEmoji, GuildChannel,
+    GuildId, PartialGuildChannel, UserId,
 };
+use regex::Regex;
+use std::thread;
+use std::time::Duration;
+
+use lazy_static::lazy_static;
+
+static REGEX_PATTERNS: [&str; 2] = [
+    r"(?i)(child porn|childporn|cporn|cum|cumming|cumshot|cumslut|cunnie|cunny|ejaculated|ejaculating|ejaculation|jizz|jizzed|jizzing|keep yourself safe|kill urself|kill your self|kill yourself|killyour self|kys|lolicon|nhentai.net|pornhub.com|r34|rape|raped|raping|rule 34|rule34|rule34.xxx|semen|shota|shotacon|sperm|stab urself|stab yourself|trannie|trannies|tranny|xnxx.com)(\b)",
+    r"(?i)(nigger|nigga|niggor|nggr|niggr|fag|faggot|fagot|nibba|nibber|njgga|njgger|nigge)(\b|(s|es|ies))",
+];
+
+lazy_static! {
+    static ref COMPILED_PATTERNS: Vec<Regex> = REGEX_PATTERNS
+    .iter()
+    .map(|pattern| Regex::new(pattern).unwrap())
+    .collect();
+
+}
+
+
+
 
 pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> Result<(), Error> {
     let guild_name = channel
@@ -393,5 +414,120 @@ pub async fn thread_delete(
             guild_name, channel_name, kind, parent_channel_name
         )
     }
+    Ok(())
+}
+
+pub async fn voice_channel_status_update(
+    ctx: &serenity::Context,
+    old: Option<String>,
+    status: Option<String>,
+    id: ChannelId,
+    guild_id: GuildId,
+) -> Result<(), Error> {
+    let old_field: Option<String>;
+    let new_field: Option<String>;
+    match (old, status.clone()) {
+        (None, None) => {
+            old_field = None;
+            new_field = None;
+            add(&ctx, id, guild_id, old_field, new_field, status).await?;
+        }
+        (Some(old), Some(status)) => {
+            old_field = Some(old);
+            new_field = Some(status.clone());
+            add(&ctx, id, guild_id, old_field, new_field, Some(status)).await?;
+        }
+        (None, Some(status)) => {
+            old_field = None;
+            new_field = Some(status.clone());
+            add(&ctx, id, guild_id, old_field, new_field, Some(status)).await?;
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+pub async fn add(
+    ctx: &serenity::Context,
+    id: ChannelId,
+    guild_id: GuildId,
+    old_field: Option<String>,
+    new_field: Option<String>,
+    status: Option<String>
+) -> Result<(), Error> {
+
+    thread::sleep(Duration::from_secs(3));
+    let logs = guild_id
+        .audit_logs(&ctx, Some(192), None, None, Some(5))
+        .await?;
+    let mut user_id = UserId::new(1);
+    for log in &logs.entries {
+        if let Some(log_options) = &log.options {
+            if let Some(log_status) = status.as_ref().map(|s| s.as_str()) {
+                if &log_options.status == log_status && log_options.channel_id == Some(id) {
+                    user_id = log.user_id;
+                    break;
+                }
+            }
+        }
+    }
+
+    if user_id.get() != 1 {
+        let user: serenity::User = user_id.to_user(&ctx).await.unwrap();
+        let author_title = format!("{} changed a channel status", user.name);
+        let author = serenity::CreateEmbedAuthor::new(author_title)
+            .icon_url(user.avatar_url().unwrap_or_default());
+        let footer = serenity::CreateEmbedFooter::new(format!(
+            "User ID: {} • Please check user manually in audit log.",
+            user.id.get()
+        ));
+
+
+        let mut any_pattern_matched = false;
+        if let Some(value) = &new_field {
+            for pattern in &*COMPILED_PATTERNS {
+                if pattern.is_match(value) {
+                    any_pattern_matched = true;
+                    break;
+                }
+            }
+        }
+
+        let embed = serenity::CreateEmbed::default()
+            .field("Channel", format!("<#{}>", id.get()), true)
+            .field(
+                "Old",
+                if let Some(value) = old_field.as_deref().filter(|s| !s.is_empty()) {
+                    value
+                } else {
+                    "None"
+                },
+                true,
+            )
+            .field(
+                "New",
+                if let Some(value) = new_field.as_deref().filter(|s| !s.is_empty()) {
+                    value
+                } else {
+                    "None"
+                },
+                true,
+            )
+            .author(author)
+            .footer(footer);
+
+            if !any_pattern_matched {
+                let channel = ChannelId::new(1163544192866336808);
+                channel.send_message(ctx, serenity::CreateMessage::default().embed(embed)).await?;
+            } else {
+                let channel = ChannelId::new(1163544192866336808);
+                let channel2 = ChannelId::new(158484765136125952);
+                channel.send_message(ctx, serenity::CreateMessage::default().embed(embed.clone())).await?;
+                channel2.send_message(ctx, serenity::CreateMessage::default().content("**Blacklisted word in status!**").embed(embed)).await?;
+            }
+
+
+    }
+
     Ok(())
 }

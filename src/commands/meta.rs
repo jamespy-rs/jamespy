@@ -1,6 +1,7 @@
 use std::{fs::File, io::Read, time::Instant};
 
 use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::GuildChannel;
 use toml::Value;
 
 use crate::event_handlers::messages::TRACK;
@@ -173,4 +174,13 @@ async fn gavin(ctx: Context<'_>) -> Result<bool, Error> {
     let gavin = user_id == 646202688148865024 || user_id == 158567567487795200;
 
     Ok(gavin)
+}
+
+/// Channel
+#[poise::command(prefix_command, owners_only, category = "Misc", hide_in_help)]
+pub async fn channel(ctx: Context<'_>, channel: GuildChannel) -> Result<(), Error> {
+    let channel_str = format!("{:?}", channel);
+    ctx.say(channel_str).await?;
+
+    Ok(())
 }

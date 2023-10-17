@@ -85,6 +85,20 @@ pub async fn event_handler(
         serenity::FullEvent::VoiceStateUpdate { ctx, old, new } => {
             event_handlers::voice::voice_state_update(&ctx, old, new).await?;
         }
+        serenity::FullEvent::VoiceChannelStatusUpdate {
+            ctx,
+            old,
+            status,
+            id,
+            guild_id,
+        } => {
+            if guild_id == 98226572468690944 {
+                event_handlers::channels::voice_channel_status_update(
+                    &ctx, old, status, id, guild_id,
+                )
+                .await?;
+            }
+        }
         serenity::FullEvent::Ready {
             ctx,
             data_about_bot: _,

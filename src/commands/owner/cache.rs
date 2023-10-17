@@ -167,7 +167,7 @@ pub async fn cached_users_raw(ctx: Context<'_>) -> Result<(), Error> {
     hide_in_help
 )]
 pub async fn cached_users(ctx: Context<'_>) -> Result<(), Error> {
-    let cache = ctx.cache().clone();
+    let cache = ctx.cache();
     let user_count = cache.user_count();
 
     let mut user_info = String::new();

@@ -1,4 +1,4 @@
-use poise::serenity_prelude::{self as serenity, Attachment, CreateAttachment, EditProfile};
+use poise::serenity_prelude::{Attachment, CreateAttachment, EditProfile};
 
 use crate::{Context, Error};
 
