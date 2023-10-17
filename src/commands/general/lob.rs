@@ -144,7 +144,7 @@ pub async fn total_lobs(ctx: Context<'_>) -> Result<(), Error> {
     check = "trontin"
 )]
 pub async fn send_lobs(ctx: Context<'_>) -> Result<(), Error> {
-    let attachment = serenity::CreateAttachment::path("loblist.txt").await?;
+    let attachment = serenity::CreateAttachment::path("data/loblist.txt").await?;
     ctx.send(poise::CreateReply::default().attachment(attachment))
         .await?;
     Ok(())
