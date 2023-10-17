@@ -5,3 +5,4 @@ pub mod glow;
 pub mod lists;
 pub mod other;
 pub mod presence;
+pub mod vcstatus;

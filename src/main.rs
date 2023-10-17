@@ -68,6 +68,7 @@ async fn main() {
             owner::lists::update_lists(),
             owner::lists::unload_lists(),
             owner::glow::glow(),
+            owner::vcstatus::vcstatus(),
             owner::current_user::jamespy(),
             meta::source(),
             meta::about(),

@@ -8,27 +8,11 @@ use poise::serenity_prelude::{
     self as serenity, Channel, ChannelFlags, ChannelId, ChannelType, ForumEmoji, GuildChannel,
     GuildId, PartialGuildChannel, UserId,
 };
-use regex::Regex;
+
 use std::thread;
 use std::time::Duration;
 
-use lazy_static::lazy_static;
-
-static REGEX_PATTERNS: [&str; 2] = [
-    r"(?i)(child porn|childporn|cporn|cum|cumming|cumshot|cumslut|cunnie|cunny|ejaculated|ejaculating|ejaculation|jizz|jizzed|jizzing|keep yourself safe|kill urself|kill your self|kill yourself|killyour self|kys|lolicon|nhentai.net|pornhub.com|r34|rape|raped|raping|rule 34|rule34|rule34.xxx|semen|shota|shotacon|sperm|stab urself|stab yourself|trannie|trannies|tranny|xnxx.com)(\b)",
-    r"(?i)(nigger|nigga|niggor|nggr|niggr|fag|faggot|fagot|nibba|nibber|njgga|njgger|nigge)(\b|(s|es|ies))",
-];
-
-lazy_static! {
-    static ref COMPILED_PATTERNS: Vec<Regex> = REGEX_PATTERNS
-    .iter()
-    .map(|pattern| Regex::new(pattern).unwrap())
-    .collect();
-
-}
-
-
-
+use crate::config::CONFIG;
 
 pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> Result<(), Error> {
     let guild_name = channel
@@ -424,25 +408,31 @@ pub async fn voice_channel_status_update(
     id: ChannelId,
     guild_id: GuildId,
 ) -> Result<(), Error> {
-    let old_field: Option<String>;
-    let new_field: Option<String>;
-    match (old, status.clone()) {
-        (None, None) => {
-            old_field = None;
-            new_field = None;
-            add(&ctx, id, guild_id, old_field, new_field, status).await?;
+    let vcstatus = {
+        let config = CONFIG.read().unwrap();
+        config.vcstatus.clone()
+    };
+    if vcstatus.action {
+        let old_field: Option<String>;
+        let new_field: Option<String>;
+        match (old, status.clone()) {
+            (None, None) => {
+                old_field = None;
+                new_field = None;
+                add(&ctx, id, guild_id, old_field, new_field, status).await?;
+            }
+            (Some(old), Some(status)) => {
+                old_field = Some(old);
+                new_field = Some(status.clone());
+                add(&ctx, id, guild_id, old_field, new_field, Some(status)).await?;
+            }
+            (None, Some(status)) => {
+                old_field = None;
+                new_field = Some(status.clone());
+                add(&ctx, id, guild_id, old_field, new_field, Some(status)).await?;
+            }
+            _ => {}
         }
-        (Some(old), Some(status)) => {
-            old_field = Some(old);
-            new_field = Some(status.clone());
-            add(&ctx, id, guild_id, old_field, new_field, Some(status)).await?;
-        }
-        (None, Some(status)) => {
-            old_field = None;
-            new_field = Some(status.clone());
-            add(&ctx, id, guild_id, old_field, new_field, Some(status)).await?;
-        }
-        _ => {}
     }
     Ok(())
 }
@@ -453,10 +443,9 @@ pub async fn add(
     guild_id: GuildId,
     old_field: Option<String>,
     new_field: Option<String>,
-    status: Option<String>
+    status: Option<String>,
 ) -> Result<(), Error> {
-
-    thread::sleep(Duration::from_secs(3));
+    thread::sleep(Duration::from_secs(2));
     let logs = guild_id
         .audit_logs(&ctx, Some(192), None, None, Some(5))
         .await?;
@@ -482,13 +471,19 @@ pub async fn add(
             user.id.get()
         ));
 
+        let vcstatus = {
+            let config = CONFIG.read().unwrap();
+            config.vcstatus.clone()
+        };
 
         let mut any_pattern_matched = false;
-        if let Some(value) = &new_field {
-            for pattern in &*COMPILED_PATTERNS {
-                if pattern.is_match(value) {
-                    any_pattern_matched = true;
-                    break;
+        if let Some(regex_patterns) = &vcstatus.regex_patterns {
+            if let Some(value) = &new_field {
+                for pattern in regex_patterns {
+                    if pattern.is_match(value) {
+                        any_pattern_matched = true;
+                        break;
+                    }
                 }
             }
         }
@@ -516,17 +511,30 @@ pub async fn add(
             .author(author)
             .footer(footer);
 
+        if let Some(post) = vcstatus.post_channel {
             if !any_pattern_matched {
-                let channel = ChannelId::new(1163544192866336808);
-                channel.send_message(ctx, serenity::CreateMessage::default().embed(embed)).await?;
+                post.send_message(ctx, serenity::CreateMessage::default().embed(embed))
+                    .await?;
             } else {
-                let channel = ChannelId::new(1163544192866336808);
-                let channel2 = ChannelId::new(158484765136125952);
-                channel.send_message(ctx, serenity::CreateMessage::default().embed(embed.clone())).await?;
-                channel2.send_message(ctx, serenity::CreateMessage::default().content("**Blacklisted word in status!**").embed(embed)).await?;
+                if let Some(announce) = vcstatus.announce_channel {
+                    post.send_message(
+                        ctx,
+                        serenity::CreateMessage::default()
+                            .content("**Blacklisted word in status!**")
+                            .embed(embed.clone()),
+                    )
+                    .await?;
+                    announce
+                        .send_message(
+                            ctx,
+                            serenity::CreateMessage::default()
+                                .content("**Blacklisted word in status!**")
+                                .embed(embed),
+                        )
+                        .await?;
+                }
             }
-
-
+        }
     }
 
     Ok(())
