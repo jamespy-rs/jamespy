@@ -2,7 +2,7 @@ use poise::serenity_prelude::{
     self as serenity, ComponentInteractionCollector, CreateActionRow, CreateEmbedFooter,
     CreateInteractionResponse,
 };
-use poise::Context;
+use poise::{Context, CreateReply};
 
 // The function that constructs the paginated messages for the guild_message_cache command.
 pub async fn guild_message_cache_builder<U, E>(
@@ -20,20 +20,21 @@ pub async fn guild_message_cache_builder<U, E>(
         total_messages_cached
     );
 
-    ctx.send(
-        poise::CreateReply::default()
-            .embed(
-                serenity::CreateEmbed::default()
-                    .title("Channels with most cached messages:")
-                    .description(pages[current_page])
-                    .footer(CreateEmbedFooter::new(footer_text.clone())),
-            )
-            .components(vec![CreateActionRow::Buttons(vec![
-                serenity::CreateButton::new(&prev_button_id).emoji('◀'),
-                serenity::CreateButton::new(&next_button_id).emoji('▶'),
-            ])]),
-    )
-    .await?;
+    let msg = ctx
+        .send(
+            poise::CreateReply::default()
+                .embed(
+                    serenity::CreateEmbed::default()
+                        .title("Channels with most cached messages:")
+                        .description(pages[current_page])
+                        .footer(CreateEmbedFooter::new(footer_text.clone())),
+                )
+                .components(vec![CreateActionRow::Buttons(vec![
+                    serenity::CreateButton::new(&prev_button_id).emoji('◀'),
+                    serenity::CreateButton::new(&next_button_id).emoji('▶'),
+                ])]),
+        )
+        .await?;
 
     while let Some(press) = ComponentInteractionCollector::new(ctx)
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
@@ -65,6 +66,18 @@ pub async fn guild_message_cache_builder<U, E>(
             )
             .await?;
     }
+    msg.edit(
+        ctx,
+        CreateReply::default()
+            .embed(
+                serenity::CreateEmbed::default()
+                    .title("Channels with most cached messages:")
+                    .description(pages[current_page])
+                    .footer(CreateEmbedFooter::new(footer_text.clone())),
+            )
+            .components(vec![]),
+    )
+    .await?;
 
     Ok(())
 }
@@ -87,15 +100,16 @@ pub async fn presence_builder<U, E>(
         total_members, total_games
     );
 
-    ctx.send(
-        poise::CreateReply::default()
-            .embed(create_presence_embed(current_page, &footer, &pages))
-            .components(vec![CreateActionRow::Buttons(vec![
-                serenity::CreateButton::new(&prev_button_id).emoji('◀'),
-                serenity::CreateButton::new(&next_button_id).emoji('▶'),
-            ])]),
-    )
-    .await?;
+    let msg = ctx
+        .send(
+            poise::CreateReply::default()
+                .embed(create_presence_embed(current_page, &footer, &pages))
+                .components(vec![CreateActionRow::Buttons(vec![
+                    serenity::CreateButton::new(&prev_button_id).emoji('◀'),
+                    serenity::CreateButton::new(&next_button_id).emoji('▶'),
+                ])]),
+        )
+        .await?;
 
     while let Some(press) = ComponentInteractionCollector::new(ctx)
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
@@ -123,7 +137,13 @@ pub async fn presence_builder<U, E>(
             )
             .await?;
     }
-    println!("timeout");
+    msg.edit(
+        ctx,
+        CreateReply::default()
+            .embed(create_presence_embed(current_page, &footer, &pages))
+            .components(vec![]),
+    )
+    .await?;
 
     Ok(())
 }

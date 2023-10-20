@@ -9,7 +9,6 @@ use poise::serenity_prelude::{
     GuildId, PartialGuildChannel, UserId,
 };
 
-use std::thread;
 use std::time::Duration;
 
 use crate::config::CONFIG;
@@ -419,17 +418,17 @@ pub async fn voice_channel_status_update(
             (None, None) => {
                 old_field = None;
                 new_field = None;
-                add(&ctx, id, guild_id, old_field, new_field, status).await?;
+                add(ctx, id, guild_id, old_field, new_field, status).await?;
             }
             (Some(old), Some(status)) => {
                 old_field = Some(old);
                 new_field = Some(status.clone());
-                add(&ctx, id, guild_id, old_field, new_field, Some(status)).await?;
+                add(ctx, id, guild_id, old_field, new_field, Some(status)).await?;
             }
             (None, Some(status)) => {
                 old_field = None;
                 new_field = Some(status.clone());
-                add(&ctx, id, guild_id, old_field, new_field, Some(status)).await?;
+                add(ctx, id, guild_id, old_field, new_field, Some(status)).await?;
             }
             _ => {}
         }
@@ -445,15 +444,17 @@ pub async fn add(
     new_field: Option<String>,
     status: Option<String>,
 ) -> Result<(), Error> {
-    thread::sleep(Duration::from_secs(2));
+    tokio::time::sleep(Duration::from_secs(2)).await;
     let logs = guild_id
         .audit_logs(&ctx, Some(192), None, None, Some(5))
         .await?;
     let mut user_id = UserId::new(1);
     for log in &logs.entries {
-        if let Some(log_options) = &log.options {
-            if let Some(log_status) = status.as_ref().map(|s| s.as_str()) {
-                if &log_options.status == log_status && log_options.channel_id == Some(id) {
+        if let Some(options) = &log.options {
+            if let Some(status_str) = options.status.clone().map(String::from) {
+                if status_str == *status.as_deref().unwrap_or_default()
+                    && options.channel_id == Some(id)
+                {
                     user_id = log.user_id;
                     break;
                 }
@@ -515,24 +516,22 @@ pub async fn add(
             if !any_pattern_matched {
                 post.send_message(ctx, serenity::CreateMessage::default().embed(embed))
                     .await?;
-            } else {
-                if let Some(announce) = vcstatus.announce_channel {
-                    post.send_message(
+            } else if let Some(announce) = vcstatus.announce_channel {
+                post.send_message(
+                    ctx,
+                    serenity::CreateMessage::default()
+                        .content("**Blacklisted word in status!**")
+                        .embed(embed.clone()),
+                )
+                .await?;
+                announce
+                    .send_message(
                         ctx,
                         serenity::CreateMessage::default()
                             .content("**Blacklisted word in status!**")
-                            .embed(embed.clone()),
+                            .embed(embed),
                     )
                     .await?;
-                    announce
-                        .send_message(
-                            ctx,
-                            serenity::CreateMessage::default()
-                                .content("**Blacklisted word in status!**")
-                                .embed(embed),
-                        )
-                        .await?;
-                }
             }
         }
     }

@@ -1,10 +1,12 @@
+use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::{fs::File, io::Read, time::Instant};
 
-use poise::serenity_prelude as serenity;
-use poise::serenity_prelude::GuildChannel;
+use futures_channel::mpsc::UnboundedSender;
+use futures_util::SinkExt;
+use poise::serenity_prelude::{self as serenity};
+use tokio_tungstenite::tungstenite::Message;
 use toml::Value;
-
-use crate::event_handlers::messages::TRACK;
 
 use crate::{Context, Error};
 
@@ -149,38 +151,30 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-/// Toggle tracking for a specific user.
-#[poise::command(prefix_command, category = "Misc", hide_in_help, check = "gavin")]
-pub async fn toggle(ctx: Context<'_>) -> Result<(), Error> {
-    let current_value;
+use crate::PEER_MAP;
 
+#[poise::command(prefix_command, owners_only, category = "Misc", hide_in_help)]
+pub async fn send(_ctx: Context<'_>, #[rest] message_str: String) -> Result<(), Error> {
+    let peers;
     {
-        let mut write_lock = TRACK.write().unwrap();
-        *write_lock = !*write_lock;
-        current_value = *write_lock;
+        let peer_map_lock = PEER_MAP.lock().unwrap();
+        peers = peer_map_lock.clone();
     }
 
-    ctx.send(poise::CreateReply::default().content(format!(
-        "Switched toggle status to {} for tracking <@221026934287499264> (ID: 221026934287499264)",
-        current_value
-    )))
-    .await?;
-
+    let message = Message::Text(message_str);
+    broadcast_message(peers, message).await;
     Ok(())
 }
 
-async fn gavin(ctx: Context<'_>) -> Result<bool, Error> {
-    let user_id = ctx.author().id;
-    let gavin = user_id == 646202688148865024 || user_id == 158567567487795200;
+pub async fn broadcast_message(
+    peers: HashMap<SocketAddr, UnboundedSender<Message>>,
+    message: Message,
+) {
+    for (_, mut ws_sink) in peers.iter() {
+        let cloned_msg = message.clone();
 
-    Ok(gavin)
-}
-
-/// Channel
-#[poise::command(prefix_command, owners_only, category = "Misc", hide_in_help)]
-pub async fn channel(ctx: Context<'_>, channel: GuildChannel) -> Result<(), Error> {
-    let channel_str = format!("{:?}", channel);
-    ctx.say(channel_str).await?;
-
-    Ok(())
+        if let Err(err) = ws_sink.send(cloned_msg).await {
+            println!("Error sending message to peer: {:?}", err);
+        }
+    }
 }

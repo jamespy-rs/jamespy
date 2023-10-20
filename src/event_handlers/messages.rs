@@ -1,18 +1,21 @@
 use crate::utils::misc::{get_channel_name, get_guild_name, read_words_from_file};
 use poise::serenity_prelude::{
-    self as serenity, ChannelId, Colour, CreateEmbedFooter, GetMessages, GuildId, Message,
-    MessageId, MessageUpdateEvent, UserId,
+    self as serenity, ChannelId, Colour, CreateEmbedFooter, CreateMessage, GuildId, Message,
+    MessageId, MessageUpdateEvent, Timestamp, UserId,
 };
+use serde::Serialize;
+use tokio_tungstenite::tungstenite;
 
 use crate::{Data, Error};
 
 use chrono::NaiveDateTime;
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     num::NonZeroU64,
     sync::{Arc, RwLock},
 };
 
+use crate::PEER_MAP;
 use lazy_static::lazy_static;
 use regex::Regex;
 use sqlx::query;
@@ -21,6 +24,11 @@ static REGEX_PATTERNS: [&str; 2] = [
     r"(?i)\b\w*j\s*\d*\W*?a+\W*\d*\W*?m+\W*\d*\W*?e+\W*\d*\W*?s+\W*\d*\W*?\w*\b",
     r"(?i)\b\w*b\s*\d*\W*?t+\W*\d*\W*?3+\W*\d*\W*?6+\W*\d*\W*?5+\W*\d*\W*?\w*\b",
 ];
+
+#[derive(Serialize, Debug)]
+enum WebSocketEvent {
+    NewMessage { message: Message, guild_name: String, channel_name: String },
+}
 
 lazy_static! {
     // These are the channels in gg/osu specified for logging, I don't want to show these.
@@ -46,8 +54,6 @@ lazy_static! {
         let words = read_words_from_file("data/fixwords.txt");
         Arc::new(RwLock::new(words))
     };
-
-    pub static ref TRACK: RwLock<bool> = RwLock::new(true);
 }
 
 pub async fn message(
@@ -60,6 +66,43 @@ pub async fn message(
         || new_message.content.starts_with('$') && new_message.channel_id == 850342078034870302
     {
         return Ok(());
+    }
+    // mania
+    if new_message.channel_id == 426392414429773835 {
+        let mut cloned_messages = HashMap::new();
+        if let Some(channel_messages) = ctx.cache.channel_messages(new_message.channel_id) {
+            cloned_messages = channel_messages.clone();
+        }
+
+        let user_id = new_message.author.id;
+        let mut found_match = false;
+        let mut iter = cloned_messages.values().peekable();
+
+        while let Some(message) = iter.next() {
+            if iter.peek().is_none() {
+                break;
+            }
+            if message.author.id == user_id {
+                found_match = true;
+                break;
+            }
+        }
+
+        if !found_match
+            && (Timestamp::now().timestamp() - new_message.author.created_at().timestamp())
+                <= 604800
+        {
+            ChannelId::new(1164619284518010890)
+                .send_message(
+                    ctx,
+                    CreateMessage::default().content(format!(
+                        "New user <@{}> spotted talking in <#426392414429773835>! {}",
+                        new_message.author.id,
+                        new_message.link()
+                    )),
+                )
+                .await?;
+        }
     }
 
     let db_pool = &data.db;
@@ -141,38 +184,6 @@ pub async fn message(
         .await?;
     }
 
-    // For gavin.
-    if *TRACK.read().unwrap() && new_message.author.id.get() == 221026934287499264 {
-        let builder = GetMessages::new()
-            .before(MessageId::new(new_message.id.get()))
-            .limit(100);
-        let messages = new_message
-            .channel_id
-            .messages(ctx.clone(), builder)
-            .await?;
-
-        let user_has_spoken = messages
-            .iter()
-            .any(|msg| msg.author.id == 221026934287499264);
-        if !user_has_spoken {
-            let user_id = UserId::from(NonZeroU64::new(646202688148865024).unwrap());
-            let user = user_id.to_user(ctx.clone()).await?;
-            user.dm(
-                ctx.clone(),
-                serenity::CreateMessage::default().content(format!(
-                    "<@221026934287499264> (ID:221026934287499264> was spotted in **#{}** {}",
-                    new_message
-                        .channel_id
-                        .name(ctx.clone())
-                        .await
-                        .unwrap_or("I broke".to_owned()),
-                    new_message.link()
-                )),
-            )
-            .await?;
-        }
-    }
-
     let attachments = new_message.attachments.clone();
     let attachments_fmt: Option<String> = if !attachments.is_empty() {
         let attachment_names: Vec<String> = attachments
@@ -248,6 +259,23 @@ pub async fn message(
     }
     let timestamp: NaiveDateTime =
         NaiveDateTime::from_timestamp_opt(new_message.timestamp.timestamp(), 0).unwrap();
+
+    let new_message_event = WebSocketEvent::NewMessage {
+        message: new_message.clone(),
+        guild_name,
+        channel_name
+    };
+
+    let message = serde_json::to_string(&new_message_event).unwrap();
+    let peers;
+    {
+        let peer_map_lock = PEER_MAP.lock().unwrap();
+        peers = peer_map_lock.clone();
+    }
+
+    let message = tungstenite::protocol::Message::Text(message);
+
+    crate::commands::meta::broadcast_message(peers, message).await;
 
     let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)

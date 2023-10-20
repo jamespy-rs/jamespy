@@ -4,13 +4,37 @@ mod database;
 mod event_handler;
 mod event_handlers;
 mod utils;
+mod websocket;
 
 mod config;
 
+use ::serenity::futures::channel::mpsc::UnboundedSender;
 use database::init_data;
 use database::init_redis_pool;
 use poise::serenity_prelude as serenity;
+use std::net::SocketAddr;
+use tokio::net::TcpListener;
+//use websocket::handle_connection;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::Mutex;
 use std::{env::var, time::Duration};
+
+use std::env;
+
+use futures_channel::mpsc::unbounded;
+use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
+
+use tokio::net::TcpStream;
+use tokio_tungstenite::tungstenite::protocol::Message;
+
+type Tx = UnboundedSender<Message>;
+type PeerMap = Arc<Mutex<HashMap<SocketAddr, Tx>>>;
+
+use lazy_static::lazy_static;
+lazy_static! {
+    pub static ref PEER_MAP: PeerMap = Arc::new(Mutex::new(HashMap::new()));
+}
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -42,11 +66,68 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     }
 }
 
+async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, addr: SocketAddr) {
+    println!("Incoming TCP connection from: {}", addr);
+
+    let ws_stream = tokio_tungstenite::accept_async(raw_stream)
+        .await
+        .expect("Error during the websocket handshake occurred");
+    println!("WebSocket connection established: {}", addr);
+
+    // Insert the write part of this peer to the peer map.
+    let (tx, rx) = unbounded();
+    peer_map.lock().unwrap().insert(addr, tx);
+
+    let (outgoing, incoming) = ws_stream.split();
+
+    let broadcast_incoming = incoming.try_for_each(|msg| {
+        println!(
+            "Received a message from {}: {}",
+            addr,
+            msg.to_text().unwrap()
+        );
+        let peers = peer_map.lock().unwrap();
+
+        // We want to broadcast the message to everyone except ourselves.
+        let broadcast_recipients = peers
+            .iter()
+            .filter(|(peer_addr, _)| peer_addr != &&addr)
+            .map(|(_, ws_sink)| ws_sink);
+
+        for recp in broadcast_recipients {
+            recp.unbounded_send(msg.clone()).unwrap();
+        }
+
+        future::ok(())
+    });
+
+    let receive_from_others = rx.map(Ok).forward(outgoing);
+
+    pin_mut!(broadcast_incoming, receive_from_others);
+    future::select(broadcast_incoming, receive_from_others).await;
+
+    println!("{} disconnected", &addr);
+    peer_map.lock().unwrap().remove(&addr);
+}
+
 #[tokio::main]
 async fn main() {
     let db_pool = init_data().await;
     let redis_pool = init_redis_pool().await;
     config::load_config();
+    let addr = env::args()
+        .nth(1)
+        .unwrap_or_else(|| "127.0.0.1:8080".to_string());
+
+    let try_socket = TcpListener::bind(&addr).await;
+    let listener = try_socket.expect("Failed to bind");
+    println!("Listening on: {}", addr);
+
+    tokio::spawn(async move {
+        while let Ok((stream, addr)) = listener.accept().await {
+            tokio::spawn(handle_connection(PEER_MAP.clone(), stream, addr));
+        }
+    });
 
     let options = poise::FrameworkOptions {
         commands: vec![
@@ -75,8 +156,7 @@ async fn main() {
             meta::help(),
             meta::uptime(),
             meta::ping(),
-            meta::toggle(),
-            meta::channel(),
+            meta::send(),
             general::lob::lob(),
             general::lob::reload_lob(),
             general::lob::no_lob(),

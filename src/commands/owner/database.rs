@@ -79,7 +79,7 @@ pub async fn sql(
                 let message = poise::CreateReply::default().content(formatted);
                 ctx.send(message).await?;
             } else {
-                let formatted = format!("Query executed successfully iqn {}ms", elapsed);
+                let formatted = format!("Query executed successfully in {}ms", elapsed);
                 let message = poise::CreateReply::default().content(formatted);
                 ctx.send(message).await?;
             }
