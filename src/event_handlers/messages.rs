@@ -15,7 +15,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use crate::PEER_MAP;
+use crate::websocket::PEER_MAP;
 use lazy_static::lazy_static;
 use regex::Regex;
 use sqlx::query;

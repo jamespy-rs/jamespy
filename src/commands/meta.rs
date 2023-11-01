@@ -151,7 +151,7 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-use crate::PEER_MAP;
+use crate::websocket::PEER_MAP;
 
 #[poise::command(prefix_command, owners_only, category = "Misc", hide_in_help)]
 pub async fn send(_ctx: Context<'_>, #[rest] message_str: String) -> Result<(), Error> {

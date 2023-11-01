@@ -6,10 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-poise = { git = "https://github.com/serenity-rs/poise.git", branch = "serenity-next" }
-serenity = { git = "https://github.com/serenity-rs/serenity", branch = "next", features =  ["temp_cache"] }
+#poise = { git = "https://github.com/serenity-rs/poise.git", branch = "serenity-next" }
+poise = { path = "../poise" }
+#serenity = { git = "https://github.com/serenity-rs/serenity", branch = "next", features =  ["temp_cache"] }
 tokio = { version = "1.33.0", features = ["macros", "signal", "rt-multi-thread", "net", "io-util"] }
-tokio-tungstenite = "0.20"
+tokio-tungstenite = { version = "0.20", features = ["rustls-tls-native-roots"] }
 futures-util = { version = "0.3.28", default-features = false, features = ["sink", "std"] }
 futures-channel = "0.3.28"
 sqlx = { version = "0.7.1", features = ["macros", "runtime-tokio-rustls", "postgres", "time", "chrono"] }
@@ -23,6 +24,9 @@ regex = "1.9.3"
 lazy_static = "1.4.0"
 chrono = "0.4.28"
 serde_json = "1.0.105"
+
+#[patch.'https://github.com/serenity-rs/serenity']
+#serenity = { git = 'https://github.com//serenity-rs/serenity', branch = 'next' }
 
 
 [profile.release]
