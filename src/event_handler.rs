@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+
 use crate::{config::CONFIG, event_handlers, Data, Error};
-use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::{self as serenity, ChannelId, CreateEmbedAuthor};
+use serenity::model::guild::audit_log::Action;
 
 pub async fn event_handler(
     event: serenity::FullEvent,
@@ -130,6 +133,76 @@ pub async fn event_handler(
             event,
         } => {
             event_handlers::users::guild_member_update(&ctx, old_if_available, new, event).await?;
+        }
+        serenity::FullEvent::GuildAuditLogEntryCreate {
+            ctx,
+            entry,
+            guild_id,
+        } => {
+            if guild_id == 98226572468690944 {
+                if let Action::AutoMod(serenity::AutoModAction::FlagToChannel) = &entry.action {
+                    if let Some(reason) = entry.reason {
+                        if reason.starts_with("Voice Channel Status") {
+                            let (user_name, avatar_url) = match entry.user_id.to_user(&ctx).await {
+                                Ok(user) => {
+                                    (user.name.clone(), user.avatar_url().unwrap_or_default())
+                                }
+                                Err(_) => (
+                                    "Unknown User".to_string(),
+                                    String::from("https://cdn.discordapp.com/embed/avatars/0.png"),
+                                ),
+                            };
+
+                            let mut status = "Unknown (check <#697738506944118814>)".to_string();
+                            let mut cloned_messages = HashMap::new();
+                            if let Some(channel_messages) =
+                                ctx.cache.channel_messages(697738506944118814)
+                            {
+                                cloned_messages = channel_messages.clone();
+                            }
+                            let mut messages: Vec<_> = cloned_messages.values().collect();
+                            messages.reverse();
+                            let last_5_messages = messages.iter().take(5);
+                            let messages = last_5_messages;
+
+                            for message in messages {
+                                println!("{:?}", message);
+                                if message.author.id == entry.user_id {
+                                    if let Some(kind) =
+                                        &message.embeds.get(0).and_then(|e| e.kind.clone())
+                                    {
+                                        if kind == "auto_moderation_message" {
+                                            if let Some(description) =
+                                                &message.embeds[0].description
+                                            {
+                                                status = description.to_string();
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            let author_title =
+                                format!("{} tried to set an inappropriate status", user_name);
+                            let footer = serenity::CreateEmbedFooter::new(format!(
+                                "User ID: {} • Please check status manually in <#697738506944118814>", entry.user_id
+                            ));
+                            let embed = serenity::CreateEmbed::default()
+                                .author(CreateEmbedAuthor::new(author_title).icon_url(avatar_url))
+                                .field("Status", status, true)
+                                .footer(footer);
+                            let builder = serenity::CreateMessage::default().embed(embed);
+                            ChannelId::new(158484765136125952)
+                                .send_message(&ctx, builder.clone())
+                                .await?;
+                            ChannelId::new(1163544192866336808)
+                                .send_message(ctx, builder)
+                                .await?;
+                        }
+                    }
+                }
+            }
         }
         _ => (),
     }
