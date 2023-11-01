@@ -3,8 +3,6 @@ name = "jamespy-rs"
 version = "0.1.1-rc3"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 #poise = { git = "https://github.com/serenity-rs/poise.git", branch = "serenity-next" }
 poise = { git = "https://github.com/jamesbt365/poise.git", branch = "serenity-next-bump" }
@@ -29,6 +27,10 @@ serde_json = "1.0.105"
 #[patch.'https://github.com/serenity-rs/serenity']
 #serenity = { git = 'https://github.com//serenity-rs/serenity', branch = 'next' }
 
+
+[features]
+websocket = []
+#raspberrypi = []
 
 [profile.release]
 strip = true

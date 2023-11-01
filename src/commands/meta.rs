@@ -1,10 +1,14 @@
-use std::collections::HashMap;
-use std::net::SocketAddr;
+#[cfg(feature = "websocket")]
+use std::{collections::HashMap, net::SocketAddr};
 use std::{fs::File, io::Read, time::Instant};
 
+#[cfg(feature = "websocket")]
 use futures_channel::mpsc::UnboundedSender;
+#[cfg(feature = "websocket")]
 use futures_util::SinkExt;
+
 use poise::serenity_prelude::{self as serenity};
+#[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite::Message;
 use toml::Value;
 
@@ -151,21 +155,10 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+#[cfg(feature = "websocket")]
 use crate::websocket::PEER_MAP;
 
-#[poise::command(prefix_command, owners_only, category = "Misc", hide_in_help)]
-pub async fn send(_ctx: Context<'_>, #[rest] message_str: String) -> Result<(), Error> {
-    let peers;
-    {
-        let peer_map_lock = PEER_MAP.lock().unwrap();
-        peers = peer_map_lock.clone();
-    }
-
-    let message = Message::Text(message_str);
-    broadcast_message(peers, message).await;
-    Ok(())
-}
-
+#[cfg(feature = "websocket")]
 pub async fn broadcast_message(
     peers: HashMap<SocketAddr, UnboundedSender<Message>>,
     message: Message,

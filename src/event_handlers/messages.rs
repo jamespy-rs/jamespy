@@ -3,7 +3,9 @@ use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, CreateMessage, GuildId, Message,
     MessageId, MessageUpdateEvent, Timestamp, UserId,
 };
+#[cfg(feature = "websocket")]
 use serde::Serialize;
+#[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
 
 use crate::{Data, Error};
@@ -15,6 +17,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+#[cfg(feature = "websocket")]
 use crate::websocket::PEER_MAP;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -25,9 +28,14 @@ static REGEX_PATTERNS: [&str; 2] = [
     r"(?i)\b\w*b\s*\d*\W*?t+\W*\d*\W*?3+\W*\d*\W*?6+\W*\d*\W*?5+\W*\d*\W*?\w*\b",
 ];
 
+#[cfg(feature = "websocket")]
 #[derive(Serialize, Debug)]
 enum WebSocketEvent {
-    NewMessage { message: Message, guild_name: String, channel_name: String },
+    NewMessage {
+        message: Message,
+        guild_name: String,
+        channel_name: String,
+    },
 }
 
 lazy_static! {
@@ -260,21 +268,23 @@ pub async fn message(
     let timestamp: NaiveDateTime =
         NaiveDateTime::from_timestamp_opt(new_message.timestamp.timestamp(), 0).unwrap();
 
-    let new_message_event = WebSocketEvent::NewMessage {
-        message: new_message.clone(),
-        guild_name,
-        channel_name
-    };
-
-    let message = serde_json::to_string(&new_message_event).unwrap();
-    let peers;
+    #[cfg(feature = "websocket")]
     {
-        let peer_map_lock = PEER_MAP.lock().unwrap();
-        peers = peer_map_lock.clone();
+        let new_message_event = WebSocketEvent::NewMessage {
+            message: new_message.clone(),
+            guild_name,
+            channel_name,
+        };
+        let message = serde_json::to_string(&new_message_event).unwrap();
+        let peers;
+        {
+            let peer_map_lock = PEER_MAP.lock().unwrap();
+            peers = peer_map_lock.clone();
+        }
+        let message = tungstenite::protocol::Message::Text(message);
     }
 
-    let message = tungstenite::protocol::Message::Text(message);
-
+    #[cfg(feature = "websocket")]
     crate::commands::meta::broadcast_message(peers, message).await;
 
     let _ = query!(

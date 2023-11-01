@@ -1,6 +1,9 @@
-use std::{collections::HashMap, sync::{Mutex, Arc}};
-use std::net::SocketAddr;
 use futures_channel::mpsc::UnboundedSender;
+use std::net::SocketAddr;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use futures_channel::mpsc::unbounded;
 use futures_util::{future, pin_mut, stream::TryStreamExt, StreamExt};
@@ -15,7 +18,6 @@ use lazy_static::lazy_static;
 lazy_static! {
     pub static ref PEER_MAP: PeerMap = Arc::new(Mutex::new(HashMap::new()));
 }
-
 
 pub async fn handle_connection(peer_map: PeerMap, raw_stream: TcpStream, addr: SocketAddr) {
     println!("Incoming TCP connection from: {}", addr);
