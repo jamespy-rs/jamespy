@@ -282,10 +282,9 @@ pub async fn message(
             peers = peer_map_lock.clone();
         }
         let message = tungstenite::protocol::Message::Text(message);
+        crate::commands::meta::broadcast_message(peers, message).await;
     }
 
-    #[cfg(feature = "websocket")]
-    crate::commands::meta::broadcast_message(peers, message).await;
 
     let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
