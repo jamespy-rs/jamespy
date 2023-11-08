@@ -1,6 +1,11 @@
 use poise::serenity_prelude::{self as serenity, GuildMemberUpdateEvent, Member};
+use tokio_tungstenite::tungstenite;
 
-use crate::Error;
+use crate::{
+    event_handlers::{broadcast_message, WebSocketEvent},
+    websocket::PEER_MAP,
+    Error,
+};
 
 pub async fn guild_member_update(
     ctx: &serenity::Context,
@@ -8,18 +13,32 @@ pub async fn guild_member_update(
     new: Option<Member>,
     event: GuildMemberUpdateEvent,
 ) -> Result<(), Error> {
+    let guild_id = event.guild_id;
+    let guild_name = if guild_id == 1 {
+        "None".to_owned()
+    } else {
+        match guild_id.name(ctx.clone()) {
+            Some(name) => name,
+            None => "Unknown".to_owned(),
+        }
+    };
+
+    #[cfg(feature = "websocket")]
+    {
+        let new_message_event = WebSocketEvent::GuildMemberUpdate {
+            old_if_available: old_if_available.clone(),
+            new: new.clone(),
+            event: event.clone(),
+            guild_name: guild_name.clone(),
+        };
+        let message = serde_json::to_string(&new_message_event).unwrap();
+        let peers = { PEER_MAP.lock().unwrap().clone() };
+
+        let message = tungstenite::protocol::Message::Text(message);
+        broadcast_message(peers, message).await;
+    }
     if let Some(old_member) = old_if_available {
         if let Some(new_member) = new {
-            let guild_id = event.guild_id;
-            let guild_name = if guild_id == 1 {
-                "None".to_owned()
-            } else {
-                match guild_id.name(ctx.clone()) {
-                    Some(name) => name,
-                    None => "Unknown".to_owned(),
-                }
-            };
-
             let old_nickname = old_member.nick.as_deref().unwrap_or("None");
             let new_nickname = new_member.nick.as_deref().unwrap_or("None");
 

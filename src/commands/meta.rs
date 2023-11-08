@@ -1,6 +1,5 @@
 use std::{fs::File, io::Read, time::Instant};
 
-
 use poise::serenity_prelude as serenity;
 use toml::Value;
 

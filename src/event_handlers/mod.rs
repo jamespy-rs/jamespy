@@ -1,6 +1,9 @@
 #[cfg(feature = "websocket")]
 use futures_util::SinkExt;
-use poise::serenity_prelude::{MessageId, ChannelId, GuildId, GuildChannel, Channel, PartialGuildChannel, Guild, Member, User, Reaction, GuildMemberUpdateEvent, VoiceState};
+use poise::serenity_prelude::{
+    Channel, ChannelId, Guild, GuildChannel, GuildId, GuildMemberUpdateEvent, Member, MessageId,
+    PartialGuildChannel, Reaction, User, VoiceState,
+};
 #[cfg(feature = "websocket")]
 use poise::serenity_prelude::{Message, MessageUpdateEvent};
 #[cfg(feature = "websocket")]
@@ -15,7 +18,6 @@ pub mod reactions;
 pub mod users;
 pub mod voice;
 
-
 #[cfg(feature = "websocket")]
 #[derive(Serialize, Debug)]
 enum WebSocketEvent {
@@ -29,7 +31,7 @@ enum WebSocketEvent {
         new: Option<Message>,
         event: MessageUpdateEvent,
         guild_name: Option<String>,
-        channel_name: Option<String>
+        channel_name: Option<String>,
     },
     MessageDelete {
         channel_id: ChannelId,
@@ -37,28 +39,35 @@ enum WebSocketEvent {
         guild_id: Option<GuildId>,
         message: Option<Message>,
         guild_name: String,
-        channel_name: String
+        channel_name: String,
     },
     ChannelCreate {
-        channel: GuildChannel
+        channel: GuildChannel,
+        guild_name: String,
     },
     ChannelUpdate {
         old: Option<Channel>,
         new: Channel,
+        guild_name: String,
     },
     ChannelDelete {
         channel: GuildChannel,
+        guild_name: String,
     },
     ThreadCreate {
-        thread: GuildChannel
+        thread: GuildChannel,
+        guild_name: String,
     },
     ThreadUpdate {
         old: Option<GuildChannel>,
         new: GuildChannel,
+        parent_channel: Option<Channel>,
+        guild_name: String,
     },
     ThreadDelete {
         thread: PartialGuildChannel,
         full_thread_data: Option<GuildChannel>,
+        guild_name: String,
     },
     GuildCreate {
         guild: Guild,
@@ -77,13 +86,13 @@ enum WebSocketEvent {
         add_reaction: Reaction,
         user_name: String,
         guild_name: String,
-        channel_name: String
+        channel_name: String,
     },
     ReactionRemove {
         removed_reaction: Reaction,
         user_name: String,
         guild_name: String,
-        channel_name: String
+        channel_name: String,
     },
     GuildMemberUpdate {
         old_if_available: Option<Member>,
@@ -94,26 +103,24 @@ enum WebSocketEvent {
     VoiceStateUpdate {
         old: Option<VoiceState>,
         new: VoiceState,
-        old_guild_name: String,
-        old_channel_name: String,
-        new_guild_name: String,
-        new_channel_name: String
-    }
+        old_guild_name: Option<String>,
+        old_channel_name: Option<String>,
+        new_guild_name: Option<String>,
+        new_channel_name: Option<String>,
+        user_name: Option<String>,
+    },
 }
 
-
-#[cfg(feature = "websocket")]
-use std::{net::SocketAddr, collections::HashMap};
 #[cfg(feature = "websocket")]
 use futures_channel::mpsc::UnboundedSender;
-
+#[cfg(feature = "websocket")]
+use std::{collections::HashMap, net::SocketAddr};
 
 #[cfg(feature = "websocket")]
 pub async fn broadcast_message(
     peers: HashMap<SocketAddr, UnboundedSender<tokio_tungstenite::tungstenite::Message>>,
     message: tokio_tungstenite::tungstenite::Message,
 ) {
-
     for (_, mut ws_sink) in peers.iter() {
         let cloned_msg: tokio_tungstenite::tungstenite::Message = message.clone();
 

@@ -1,7 +1,7 @@
 use crate::utils::misc::{get_channel_name, get_guild_name, read_words_from_file};
 
 #[cfg(feature = "websocket")]
-use crate::event_handlers::{WebSocketEvent, broadcast_message};
+use crate::event_handlers::{broadcast_message, WebSocketEvent};
 
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, CreateMessage, GuildId, Message,
@@ -29,7 +29,6 @@ static REGEX_PATTERNS: [&str; 2] = [
     r"(?i)\b\w*j\s*\d*\W*?a+\W*\d*\W*?m+\W*\d*\W*?e+\W*\d*\W*?s+\W*\d*\W*?\w*\b",
     r"(?i)\b\w*b\s*\d*\W*?t+\W*\d*\W*?3+\W*\d*\W*?6+\W*\d*\W*?5+\W*\d*\W*?\w*\b",
 ];
-
 
 lazy_static! {
     // These are the channels in gg/osu specified for logging, I don't want to show these.
@@ -269,14 +268,11 @@ pub async fn message(
             channel_name,
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = {
-            PEER_MAP.lock().unwrap().clone()
-        };
+        let peers = { PEER_MAP.lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
     }
-
 
     let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
@@ -316,13 +312,11 @@ pub async fn message_edit(
             new: new.clone(),
             event: event.clone(),
             guild_name: Some(guild_name.clone()),
-            channel_name: Some(channel_name.clone())
+            channel_name: Some(channel_name.clone()),
         };
 
         let message = serde_json::to_string(&edit_event).unwrap();
-        let peers = {
-            PEER_MAP.lock().unwrap().clone()
-        };
+        let peers = { PEER_MAP.lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -335,7 +329,6 @@ pub async fn message_edit(
             }
 
             if old_message.content != new_message.content {
-
                 let attachments = new_message.attachments.clone();
                 let attachments_fmt: Option<String> = if !attachments.is_empty() {
                     let attachment_names: Vec<String> = attachments
@@ -431,18 +424,15 @@ pub async fn message_delete(
             guild_id,
             message: ctx.cache.message(channel_id, deleted_message_id),
             guild_name: guild_name.clone(),
-            channel_name: channel_name.clone()
+            channel_name: channel_name.clone(),
         };
 
         let message = serde_json::to_string(&delete_event).unwrap();
-        let peers = {
-            PEER_MAP.lock().unwrap().clone()
-        };
+        let peers = { PEER_MAP.lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
     }
-
 
     if let Some(message) = ctx.cache.message(channel_id, deleted_message_id) {
         let user_name = message.author.name.clone();
