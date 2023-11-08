@@ -1,16 +1,7 @@
-#[cfg(feature = "websocket")]
-use std::{collections::HashMap, net::SocketAddr};
 use std::{fs::File, io::Read, time::Instant};
 
-use chrono::{Utc, Duration};
-#[cfg(feature = "websocket")]
-use futures_channel::mpsc::UnboundedSender;
-#[cfg(feature = "websocket")]
-use futures_util::SinkExt;
 
-use poise::serenity_prelude::{self as serenity, Member, EditMember};
-#[cfg(feature = "websocket")]
-use tokio_tungstenite::tungstenite::Message;
+use poise::serenity_prelude as serenity;
 use toml::Value;
 
 use crate::{Context, Error};
@@ -152,46 +143,6 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
             ),
         )
         .await?;
-
-    Ok(())
-}
-
-#[cfg(feature = "websocket")]
-pub async fn broadcast_message(
-    peers: HashMap<SocketAddr, UnboundedSender<Message>>,
-    message: Message,
-) {
-    for (_, mut ws_sink) in peers.iter() {
-        let cloned_msg = message.clone();
-
-        if let Err(err) = ws_sink.send(cloned_msg).await {
-            println!("Error sending message to peer: {:?}", err);
-        }
-    }
-}
-
-
-
-#[poise::command(
-    prefix_command,
-    guild_only,
-    category = "Utility",
-    required_permissions = "ADMINISTRATOR",
-    track_edits,
-    user_cooldown = 4
-)]
-pub async fn test(
-    ctx: Context<'_>,
-    #[description = "The member whose flags are to be checked."] mut member: Member,
-) -> Result<(), Error> {
-
-    let current_time = Utc::now();
-    let future_date = current_time + Duration::days(5);
-    let until = future_date.to_rfc3339();
-
-    let builder = EditMember::default().disable_communication_until(until.to_string());
-   member.edit(ctx, builder).await?;
-
 
     Ok(())
 }

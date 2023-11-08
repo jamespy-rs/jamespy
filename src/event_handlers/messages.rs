@@ -1,10 +1,12 @@
 use crate::utils::misc::{get_channel_name, get_guild_name, read_words_from_file};
+
+#[cfg(feature = "websocket")]
+use crate::event_handlers::{WebSocketEvent, broadcast_message};
+
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, CreateMessage, GuildId, Message,
     MessageId, MessageUpdateEvent, Timestamp, UserId,
 };
-#[cfg(feature = "websocket")]
-use serde::Serialize;
 #[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
 
@@ -28,15 +30,6 @@ static REGEX_PATTERNS: [&str; 2] = [
     r"(?i)\b\w*b\s*\d*\W*?t+\W*\d*\W*?3+\W*\d*\W*?6+\W*\d*\W*?5+\W*\d*\W*?\w*\b",
 ];
 
-#[cfg(feature = "websocket")]
-#[derive(Serialize, Debug)]
-enum WebSocketEvent {
-    NewMessage {
-        message: Message,
-        guild_name: String,
-        channel_name: String,
-    },
-}
 
 lazy_static! {
     // These are the channels in gg/osu specified for logging, I don't want to show these.
@@ -276,13 +269,12 @@ pub async fn message(
             channel_name,
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers;
-        {
-            let peer_map_lock = PEER_MAP.lock().unwrap();
-            peers = peer_map_lock.clone();
-        }
+        let peers = {
+            PEER_MAP.lock().unwrap().clone()
+        };
+
         let message = tungstenite::protocol::Message::Text(message);
-        crate::commands::meta::broadcast_message(peers, message).await;
+        broadcast_message(peers, message).await;
     }
 
 
@@ -312,14 +304,37 @@ pub async fn message_edit(
     data: &Data,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
+
+    let guild_id = event.guild_id.unwrap_or_default();
+    let guild_name = get_guild_name(ctx, guild_id);
+    let channel_name = get_channel_name(ctx, guild_id, event.channel_id).await;
+
+    #[cfg(feature = "websocket")]
+    {
+        let edit_event = WebSocketEvent::MessageEdit {
+            old_if_available: old_if_available.clone(),
+            new: new.clone(),
+            event: event.clone(),
+            guild_name: Some(guild_name.clone()),
+            channel_name: Some(channel_name.clone())
+        };
+
+        let message = serde_json::to_string(&edit_event).unwrap();
+        let peers = {
+            PEER_MAP.lock().unwrap().clone()
+        };
+
+        let message = tungstenite::protocol::Message::Text(message);
+        broadcast_message(peers, message).await;
+    }
+
     match (old_if_available, new) {
         (Some(old_message), Some(new_message)) => {
             if new_message.author.bot {
                 return Ok(());
             }
+
             if old_message.content != new_message.content {
-                let guild_id = new_message.guild_id.unwrap_or_default();
-                let guild_name = get_guild_name(ctx, guild_id);
 
                 let attachments = new_message.attachments.clone();
                 let attachments_fmt: Option<String> = if !attachments.is_empty() {
@@ -344,7 +359,6 @@ pub async fn message_edit(
                     None
                 };
 
-                let channel_name = get_channel_name(ctx, guild_id, new_message.channel_id).await;
                 println!(
                     "\x1B[36m[{}] [#{}] A message by \x1B[0m{}\x1B[36m was edited:",
                     guild_name, channel_name, new_message.author.name
