@@ -1,5 +1,6 @@
 #[cfg(feature = "websocket")]
 use futures_util::SinkExt;
+use poise::serenity_prelude::{MessageId, ChannelId, GuildId, GuildChannel, Channel, PartialGuildChannel, Guild, Member, User, Reaction, GuildMemberUpdateEvent, VoiceState};
 #[cfg(feature = "websocket")]
 use poise::serenity_prelude::{Message, MessageUpdateEvent};
 #[cfg(feature = "websocket")]
@@ -27,10 +28,79 @@ enum WebSocketEvent {
         old_if_available: Option<Message>,
         new: Option<Message>,
         event: MessageUpdateEvent,
-        guild_name : Option<String>,
+        guild_name: Option<String>,
         channel_name: Option<String>
     },
+    MessageDelete {
+        channel_id: ChannelId,
+        deleted_message_id: MessageId,
+        guild_id: Option<GuildId>,
+        message: Option<Message>,
+        guild_name: String,
+        channel_name: String
+    },
+    ChannelCreate {
+        channel: GuildChannel
+    },
+    ChannelUpdate {
+        old: Option<Channel>,
+        new: Channel,
+    },
+    ChannelDelete {
+        channel: GuildChannel,
+    },
+    ThreadCreate {
+        thread: GuildChannel
+    },
+    ThreadUpdate {
+        old: Option<GuildChannel>,
+        new: GuildChannel,
+    },
+    ThreadDelete {
+        thread: PartialGuildChannel,
+        full_thread_data: Option<GuildChannel>,
+    },
+    GuildCreate {
+        guild: Guild,
+        is_new: Option<bool>,
+    },
+    GuildMemberAddition {
+        new_member: Member,
+        guild_name: String,
+    },
+    GuildMemberRemoval {
+        guild_id: GuildId,
+        user: User,
+        guild_name: String,
+    },
+    ReactionAdd {
+        add_reaction: Reaction,
+        user_name: String,
+        guild_name: String,
+        channel_name: String
+    },
+    ReactionRemove {
+        removed_reaction: Reaction,
+        user_name: String,
+        guild_name: String,
+        channel_name: String
+    },
+    GuildMemberUpdate {
+        old_if_available: Option<Member>,
+        new: Option<Member>,
+        event: GuildMemberUpdateEvent,
+        guild_name: String,
+    },
+    VoiceStateUpdate {
+        old: Option<VoiceState>,
+        new: VoiceState,
+        old_guild_name: String,
+        old_channel_name: String,
+        new_guild_name: String,
+        new_channel_name: String
+    }
 }
+
 
 #[cfg(feature = "websocket")]
 use std::{net::SocketAddr, collections::HashMap};

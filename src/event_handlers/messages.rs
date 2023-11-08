@@ -417,11 +417,32 @@ pub async fn message_delete(
     data: &Data,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
-    let guild_id = guild_id.unwrap_or_default();
+    let guild_id_default = guild_id.unwrap_or_default();
 
-    let guild_name = get_guild_name(ctx, guild_id);
+    let guild_name = get_guild_name(ctx, guild_id_default);
 
-    let channel_name = get_channel_name(ctx, guild_id, channel_id).await;
+    let channel_name = get_channel_name(ctx, guild_id_default, channel_id).await;
+
+    #[cfg(feature = "websocket")]
+    {
+        let delete_event = WebSocketEvent::MessageDelete {
+            channel_id,
+            deleted_message_id,
+            guild_id,
+            message: ctx.cache.message(channel_id, deleted_message_id),
+            guild_name: guild_name.clone(),
+            channel_name: channel_name.clone()
+        };
+
+        let message = serde_json::to_string(&delete_event).unwrap();
+        let peers = {
+            PEER_MAP.lock().unwrap().clone()
+        };
+
+        let message = tungstenite::protocol::Message::Text(message);
+        broadcast_message(peers, message).await;
+    }
+
 
     if let Some(message) = ctx.cache.message(channel_id, deleted_message_id) {
         let user_name = message.author.name.clone();
@@ -458,7 +479,7 @@ pub async fn message_delete(
         let _ = query!(
                 "INSERT INTO msgs_deletions (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-                i64::from(guild_id),
+                i64::from(guild_id_default),
                 message.channel_id.get() as i64,
                 message.id.get() as i64,
                 message.author.id.get() as i64,

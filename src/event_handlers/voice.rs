@@ -32,6 +32,7 @@ pub async fn voice_state_update(
                     old_channel = "Unknown".to_owned();
                 }
             }
+
             if let Some(new_channel_id) = new.channel_id {
                 new_channel_id_ = new_channel_id.get().to_string();
                 if let Ok(channel_name) = new_channel_id.name(ctx.clone()).await {
