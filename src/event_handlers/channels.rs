@@ -1,15 +1,18 @@
+#[cfg(feature = "websocket")]
 use crate::event_handlers::{broadcast_message, WebSocketEvent};
 use crate::utils::misc::{
     auto_archive_duration_to_string, channel_type_to_string, forum_layout_to_string,
     get_guild_name, sort_order_to_string,
 };
 use crate::utils::permissions::get_permission_changes;
+#[cfg(feature = "websocket")]
 use crate::websocket::PEER_MAP;
 use crate::Error;
 use poise::serenity_prelude::{
     self as serenity, Channel, ChannelFlags, ChannelId, ChannelType, ForumEmoji, GuildChannel,
     GuildId, PartialGuildChannel, UserId,
 };
+#[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
 
 use std::time::Duration;
@@ -357,6 +360,8 @@ pub async fn thread_update(
     let kind = channel_type_to_string(new.kind);
     let mut diff = String::new();
 
+
+    #[cfg(feature = "websocket")]
     let (parent_channel_name, parent_channel) = if let Some(parent_id) = new.parent_id {
         let channel = parent_id.to_channel(ctx).await?;
         let name = parent_id.name(ctx).await?;
@@ -364,6 +369,16 @@ pub async fn thread_update(
     } else {
         ("Unknown Channel".to_string(), None)
     };
+
+    // fix this mess later.
+    #[cfg(not(feature = "websocket"))]
+    let parent_channel_name = if let Some(parent_id) = new.parent_id {
+        parent_id.name(ctx).await?
+    } else {
+        "Unknown Channel".to_string()
+    };
+
+
 
     #[cfg(feature = "websocket")]
     {

@@ -1,11 +1,13 @@
 use poise::serenity_prelude::{self as serenity, GuildMemberUpdateEvent, Member};
+#[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
-
+#[cfg(feature = "websocket")]
 use crate::{
     event_handlers::{broadcast_message, WebSocketEvent},
     websocket::PEER_MAP,
-    Error,
 };
+
+use crate::Error;
 
 pub async fn guild_member_update(
     ctx: &serenity::Context,

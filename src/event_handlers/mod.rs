@@ -1,5 +1,7 @@
 #[cfg(feature = "websocket")]
 use futures_util::SinkExt;
+
+#[cfg(feature = "websocket")]
 use poise::serenity_prelude::{
     Channel, ChannelId, Guild, GuildChannel, GuildId, GuildMemberUpdateEvent, Member, MessageId,
     PartialGuildChannel, Reaction, User, VoiceState,

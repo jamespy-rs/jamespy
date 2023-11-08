@@ -1,17 +1,21 @@
 use poise::serenity_prelude::{self as serenity, VoiceState};
+#[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
-
+#[cfg(feature = "websocket")]
 use crate::{
     event_handlers::{broadcast_message, WebSocketEvent},
     websocket::PEER_MAP,
-    Error,
 };
+
+use crate::Error;
 
 pub async fn voice_state_update(
     ctx: &serenity::Context,
     old: Option<VoiceState>,
     new: VoiceState,
 ) -> Result<(), Error> {
+    #[cfg(feature = "websocket")]
+    {
     let mut old_guild_name = None;
     let mut old_channel_name = None;
     let mut new_guild_name = None;
@@ -46,8 +50,6 @@ pub async fn voice_state_update(
         user_name = Some(member.user.name.clone());
     }
 
-    #[cfg(feature = "websocket")]
-    {
         let new_message_event = WebSocketEvent::VoiceStateUpdate {
             old: old.clone(),
             new: new.clone(),

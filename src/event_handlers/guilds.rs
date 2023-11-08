@@ -1,9 +1,17 @@
+#[cfg(feature = "websocket")]
 use crate::event_handlers::broadcast_message;
+#[cfg(feature = "websocket")]
 use crate::websocket::PEER_MAP;
-use crate::Error;
-use crate::{event_handlers::WebSocketEvent, utils::misc::get_guild_name};
-use poise::serenity_prelude::{self as serenity, Guild, GuildId, Member, User};
+
+#[cfg(feature = "websocket")]
+use crate::event_handlers::WebSocketEvent;
+#[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
+
+use crate::Error;
+use crate::utils::misc::get_guild_name;
+use poise::serenity_prelude::{self as serenity, Guild, GuildId, Member, User};
+
 
 pub async fn guild_create(
     ctx: &serenity::Context,
