@@ -153,52 +153,97 @@ pub async fn event_handler(
                                 ),
                             };
 
-                            let mut status = "Unknown (check <#697738506944118814>)".to_string();
                             let mut cloned_messages = HashMap::new();
-                            if let Some(channel_messages) =
-                                ctx.cache.channel_messages(697738506944118814)
-                            {
-                                cloned_messages = channel_messages.clone();
-                            }
-                            let mut messages: Vec<_> = cloned_messages.values().collect();
-                            messages.reverse();
-                            let last_5_messages = messages.iter().take(5);
-                            let messages = last_5_messages;
 
-                            for message in messages {
-                                println!("{:?}", message);
-                                if message.author.id == entry.user_id {
-                                    if let Some(kind) =
-                                        &message.embeds.get(0).and_then(|e| e.kind.clone())
-                                    {
-                                        if kind == "auto_moderation_message" {
-                                            if let Some(description) =
-                                                &message.embeds[0].description
-                                            {
-                                                status = description.to_string();
-                                                break;
+                            let channel_id: Option<u64> = if let Some(options) = entry.options {
+                                match options.auto_moderation_rule_name {
+                                    Some(rule_name) => match rule_name.as_str() {
+                                        "Bad Words ❌ [BLOCKED]" => Some(697738506944118814),
+                                        "Bad Words 📫 [ALERT]" => Some(158484765136125952),
+                                        _ => None,
+                                    },
+                                    None => None,
+                                }
+                            } else {
+                                None
+                            };
+
+                            if let Some(id) = channel_id {
+                                if let Some(channel_messages) = ctx.cache.channel_messages(id) {
+                                    cloned_messages = channel_messages.clone();
+                                }
+                                let mut messages: Vec<_> = cloned_messages.values().collect();
+                                messages.reverse();
+                                let last_5_messages = messages.iter().take(5);
+                                let messages = last_5_messages;
+
+                                let mut status = format!(
+                                    "Unknown (check #{})",
+                                    ChannelId::new(id)
+                                        .name(&ctx)
+                                        .await
+                                        .unwrap_or("Unknown".to_string())
+                                )
+                                .to_string();
+
+                                for message in messages {
+                                    if message.author.id == entry.user_id {
+                                        if let Some(kind) =
+                                            &message.embeds.get(0).and_then(|e| e.kind.clone())
+                                        {
+                                            if kind == "auto_moderation_message" {
+                                                if let Some(description) =
+                                                    &message.embeds[0].description
+                                                {
+                                                    status = description.to_string();
+                                                    break;
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
 
-                            let author_title =
-                                format!("{} tried to set an inappropriate status", user_name);
-                            let footer = serenity::CreateEmbedFooter::new(format!(
-                                "User ID: {} • Please check status manually in <#697738506944118814>", entry.user_id
-                            ));
-                            let embed = serenity::CreateEmbed::default()
-                                .author(CreateEmbedAuthor::new(author_title).icon_url(avatar_url))
-                                .field("Status", status, true)
-                                .footer(footer);
-                            let builder = serenity::CreateMessage::default().embed(embed);
-                            ChannelId::new(158484765136125952)
-                                .send_message(&ctx, builder.clone())
-                                .await?;
-                            ChannelId::new(1163544192866336808)
-                                .send_message(ctx, builder)
-                                .await?;
+                                // i'll merge this logic with the above but i'll just do something basic now.
+                                // blocked = text logs
+                                // alert = war room
+                                let author_title = match id {
+                                    697738506944118814 => format!(
+                                        "{} tried to set an inappropriate status",
+                                        user_name
+                                    ),
+                                    158484765136125952 => {
+                                        format!("{} set a possibly inappropriate status", user_name)
+                                    }
+                                    _ => {
+                                        format!("{} set a possibly inappropriate status", user_name)
+                                    }
+                                };
+
+                                let footer = serenity::CreateEmbedFooter::new(format!(
+                                    "User ID: {} • Please check status manually in #{}",
+                                    entry.user_id,
+                                    ChannelId::new(id)
+                                        .name(&ctx)
+                                        .await
+                                        .unwrap_or("Unknown".to_string())
+                                ));
+                                let embed = serenity::CreateEmbed::default()
+                                    .author(
+                                        CreateEmbedAuthor::new(author_title).icon_url(avatar_url),
+                                    )
+                                    .field("Status", status, true)
+                                    .footer(footer);
+                                let builder = serenity::CreateMessage::default()
+                                    .embed(embed)
+                                    .content(format!("<@{}>", entry.user_id));
+                                // this is gg/osu only, so i won't enable configurable stuff for this.
+                                ChannelId::new(158484765136125952)
+                                    .send_message(&ctx, builder.clone())
+                                    .await?;
+                                ChannelId::new(1163544192866336808)
+                                    .send_message(ctx, builder)
+                                    .await?;
+                            }
                         }
                     }
                 }

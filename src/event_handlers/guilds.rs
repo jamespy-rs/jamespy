@@ -8,10 +8,9 @@ use crate::event_handlers::WebSocketEvent;
 #[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
 
-use crate::Error;
 use crate::utils::misc::get_guild_name;
+use crate::Error;
 use poise::serenity_prelude::{self as serenity, Guild, GuildId, Member, User};
-
 
 pub async fn guild_create(
     ctx: &serenity::Context,

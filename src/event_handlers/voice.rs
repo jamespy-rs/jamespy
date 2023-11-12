@@ -1,11 +1,11 @@
-use poise::serenity_prelude::{self as serenity, VoiceState};
-#[cfg(feature = "websocket")]
-use tokio_tungstenite::tungstenite;
 #[cfg(feature = "websocket")]
 use crate::{
     event_handlers::{broadcast_message, WebSocketEvent},
     websocket::PEER_MAP,
 };
+use poise::serenity_prelude::{self as serenity, VoiceState};
+#[cfg(feature = "websocket")]
+use tokio_tungstenite::tungstenite;
 
 use crate::Error;
 
@@ -16,39 +16,39 @@ pub async fn voice_state_update(
 ) -> Result<(), Error> {
     #[cfg(feature = "websocket")]
     {
-    let mut old_guild_name = None;
-    let mut old_channel_name = None;
-    let mut new_guild_name = None;
-    let mut new_channel_name = None;
-    let mut user_name = None;
+        let mut old_guild_name = None;
+        let mut old_channel_name = None;
+        let mut new_guild_name = None;
+        let mut new_channel_name = None;
+        let mut user_name = None;
 
-    if let Some(old) = &old {
-        if let Some(old_channel_id) = &old.channel_id {
-            old_channel_name = Some(old_channel_id.name(ctx).await?);
+        if let Some(old) = &old {
+            if let Some(old_channel_id) = &old.channel_id {
+                old_channel_name = Some(old_channel_id.name(ctx).await?);
+            }
+
+            if let Some(old_guild_id) = &old.guild_id {
+                old_guild_name = Some(match old_guild_id.name(ctx) {
+                    Some(name) => name,
+                    None => "Unknown".to_string(),
+                });
+            }
         }
 
-        if let Some(old_guild_id) = &old.guild_id {
-            old_guild_name = Some(match old_guild_id.name(ctx) {
+        if let Some(new_channel_id) = &new.channel_id {
+            new_channel_name = Some(new_channel_id.name(ctx).await?);
+        }
+
+        if let Some(new_guild_id) = &new.guild_id {
+            new_guild_name = Some(match new_guild_id.name(ctx) {
                 Some(name) => name,
                 None => "Unknown".to_string(),
             });
         }
-    }
 
-    if let Some(new_channel_id) = &new.channel_id {
-        new_channel_name = Some(new_channel_id.name(ctx).await?);
-    }
-
-    if let Some(new_guild_id) = &new.guild_id {
-        new_guild_name = Some(match new_guild_id.name(ctx) {
-            Some(name) => name,
-            None => "Unknown".to_string(),
-        });
-    }
-
-    if let Some(member) = &new.member {
-        user_name = Some(member.user.name.clone());
-    }
+        if let Some(member) = &new.member {
+            user_name = Some(member.user.name.clone());
+        }
 
         let new_message_event = WebSocketEvent::VoiceStateUpdate {
             old: old.clone(),

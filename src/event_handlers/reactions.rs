@@ -1,16 +1,16 @@
 #[cfg(feature = "websocket")]
-use tokio_tungstenite::tungstenite;
-#[cfg(feature = "websocket")]
 use crate::event_handlers::{broadcast_message, WebSocketEvent};
 #[cfg(feature = "websocket")]
 use crate::websocket::PEER_MAP;
+#[cfg(feature = "websocket")]
+use tokio_tungstenite::tungstenite;
 
-use bb8_redis::redis::AsyncCommands;
-use poise::serenity_prelude::{self as serenity, Reaction};
 use crate::{
     utils::misc::{get_channel_name, get_guild_name},
     Data, Error,
 };
+use bb8_redis::redis::AsyncCommands;
+use poise::serenity_prelude::{self as serenity, Reaction};
 
 pub async fn reaction_add(
     ctx: &serenity::Context,

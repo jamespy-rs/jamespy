@@ -360,7 +360,6 @@ pub async fn thread_update(
     let kind = channel_type_to_string(new.kind);
     let mut diff = String::new();
 
-
     #[cfg(feature = "websocket")]
     let (parent_channel_name, parent_channel) = if let Some(parent_id) = new.parent_id {
         let channel = parent_id.to_channel(ctx).await?;
@@ -377,8 +376,6 @@ pub async fn thread_update(
     } else {
         "Unknown Channel".to_string()
     };
-
-
 
     #[cfg(feature = "websocket")]
     {
@@ -623,13 +620,18 @@ pub async fn add(
 
         if let Some(post) = vcstatus.post_channel {
             if !any_pattern_matched {
-                post.send_message(ctx, serenity::CreateMessage::default().embed(embed))
-                    .await?;
+                post.send_message(
+                    ctx,
+                    serenity::CreateMessage::default()
+                        .content(format!("<@{}>", user_id))
+                        .embed(embed),
+                )
+                .await?;
             } else if let Some(announce) = vcstatus.announce_channel {
                 post.send_message(
                     ctx,
                     serenity::CreateMessage::default()
-                        .content("**Blacklisted word in status!**")
+                        .content(format!("<@{}>: **Blacklisted word in status!**", user_id))
                         .embed(embed.clone()),
                 )
                 .await?;
@@ -637,7 +639,7 @@ pub async fn add(
                     .send_message(
                         ctx,
                         serenity::CreateMessage::default()
-                            .content("**Blacklisted word in status!**")
+                            .content(format!("<@{}>: **Blacklisted word in status!**", user_id))
                             .embed(embed),
                     )
                     .await?;
