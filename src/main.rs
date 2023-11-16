@@ -102,6 +102,7 @@ async fn main() {
             meta::help(),
             meta::uptime(),
             meta::ping(),
+            meta::fucky(),
             general::lob::lob(),
             general::lob::reload_lob(),
             general::lob::no_lob(),

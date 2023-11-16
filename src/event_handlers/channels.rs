@@ -529,7 +529,9 @@ pub async fn voice_channel_status_update(
             (Some(old), Some(status)) => {
                 old_field = Some(old);
                 new_field = Some(status.clone());
-                add(ctx, id, guild_id, old_field, new_field, Some(status)).await?;
+                if old_field != new_field {
+                    add(ctx, id, guild_id, old_field, new_field, Some(status)).await?;
+                }
             }
             (None, Some(status)) => {
                 old_field = None;

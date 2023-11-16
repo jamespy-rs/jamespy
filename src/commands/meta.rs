@@ -147,3 +147,14 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
+
+#[poise::command(prefix_command, owners_only)]
+pub async fn fucky(ctx: Context<'_>) -> Result<(), Error> {
+    let logs = ctx
+        .guild_id()
+        .unwrap()
+        .audit_logs(ctx, Some(192), None, None, Some(20))
+        .await;
+    println!("{:?}", logs);
+    Ok(())
+}
