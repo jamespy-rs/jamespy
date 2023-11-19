@@ -59,7 +59,7 @@ pub async fn role_info(
         Permissions::MOVE_MEMBERS,
         Permissions::MANAGE_ROLES,
         Permissions::MANAGE_WEBHOOKS,
-        Permissions::MANAGE_EMOJIS_AND_STICKERS,
+        Permissions::MANAGE_GUILD_EXPRESSIONS,
         Permissions::MANAGE_THREADS,
         Permissions::CREATE_PRIVATE_THREADS,
         Permissions::MODERATE_MEMBERS, // Timeout

@@ -43,16 +43,16 @@ pub async fn max_messages(
 pub async fn cache_stats(ctx: Context<'_>) -> Result<(), Error> {
     let cache = &ctx.serenity_context().cache;
 
+    // add category stuff back, you'll need to loop over all guilds.
     let guilds = cache.guild_count();
     let users = cache.user_count();
     let channels = cache.guild_channel_count();
-    let categories = cache.category_count();
     let shards = cache.shard_count();
 
     let unknown_members = cache.unknown_members();
-    let unavailable_guilds_len = cache.unavailable_guilds().len(); // Now either this works right or doesn't.
+    let unavailable_guilds_len = cache.unavailable_guilds().len();
 
-    let settings = cache.settings();
+    let settings = cache.settings().clone();
     let max_messages = settings.max_messages;
     let cache_guilds = settings.cache_guilds;
     let cache_channels = settings.cache_channels;
@@ -60,8 +60,8 @@ pub async fn cache_stats(ctx: Context<'_>) -> Result<(), Error> {
     let time_to_live = settings.time_to_live;
 
     let normal_stats = format!(
-        "Guilds: **{}**\nUsers: **{}**\nChannels: **{}**\nCategories: **{}**\nShards: **{}**",
-        guilds, users, channels, categories, shards
+        "Guilds: **{}**\nUsers: **{}**\nChannels: **{}**\nShards: **{}**",
+        guilds, users, channels, shards
     );
     let unknown_stats = format!(
         "Unknown Members: **{}**\nUnavailable Guilds: **{}**",
@@ -95,11 +95,12 @@ pub async fn guild_message_cache(
     let cache = &ctx.cache();
     let guild_id = guild_id.unwrap_or(ctx.guild_id().unwrap().get());
 
-    let channels = cache.guild_channels(guild_id).unwrap();
+    let channels = cache.guild_channels(guild_id).unwrap().clone(); // future james no clone this.
 
     let mut channel_info_vec: Vec<(String, usize)> = Vec::new();
 
-    for channel in channels {
+    // future james handle better.
+    for channel in channels.iter() {
         if channel.1.kind != ChannelType::Category && channel.1.kind != ChannelType::Voice {
             if let Some(messages) = cache.channel_messages(channel.0) {
                 let message_count = messages.len();
