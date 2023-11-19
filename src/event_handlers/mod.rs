@@ -48,8 +48,8 @@ enum WebSocketEvent {
         guild_name: String,
     },
     ChannelUpdate {
-        old: Option<Channel>,
-        new: Channel,
+        old: Option<GuildChannel>,
+        new: GuildChannel,
         guild_name: String,
     },
     ChannelDelete {

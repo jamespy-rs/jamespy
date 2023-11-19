@@ -418,11 +418,17 @@ pub async fn message_delete(
 
     #[cfg(feature = "websocket")]
     {
+        // This works but might not be optimal.
+        let serenity_message = ctx
+            .cache
+            .message(channel_id, deleted_message_id)
+            .map(|message_ref| message_ref.clone());
+
         let delete_event = WebSocketEvent::MessageDelete {
             channel_id,
             deleted_message_id,
             guild_id,
-            message: ctx.cache.message(channel_id, deleted_message_id),
+            message: serenity_message,
             guild_name: guild_name.clone(),
             channel_name: channel_name.clone(),
         };
