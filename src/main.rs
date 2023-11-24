@@ -13,6 +13,7 @@ mod config;
 use database::init_data;
 use database::init_redis_pool;
 use poise::serenity_prelude as serenity;
+use std::sync::Arc;
 use std::{env::var, time::Duration};
 
 #[cfg(feature = "websocket")]
@@ -122,7 +123,7 @@ async fn main() {
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
-            edit_tracker: Some(poise::EditTracker::for_timespan(Duration::from_secs(600))),
+            edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(Duration::from_secs(600)))),
             ..Default::default()
         },
 

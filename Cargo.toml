@@ -4,8 +4,8 @@ version = "0.1.1-rc3"
 edition = "2021"
 
 [dependencies]
-poise = { git = "https://github.com/serenity-rs/poise.git", branch = "serenity-next" }
-serenity = { git = "https://github.com/serenity-rs/serenity", branch = "next", features =  ["temp_cache"] }
+poise = { git = "https://github.com/GnomedDev/poise", branch = "next-on-current" }
+serenity = { git = "https://github.com/serenity-rs/serenity", branch = "current", features =  ["temp_cache", "typesize"] }
 tokio = { version = "1.33.0", features = ["macros", "signal", "rt-multi-thread", "net", "io-util"] }
 futures-util = { version = "0.3.28", default-features = false, features = ["sink", "std"] }
 futures-channel = "0.3.28"
