@@ -169,13 +169,18 @@ pub async fn event_handler(
                             };
 
                             if let Some(id) = channel_id {
+                                tokio::time::sleep(
+                                    std::time::Duration::from_secs(1)
+                                        + std::time::Duration::from_millis(500),
+                                )
+                                .await;
                                 if let Some(channel_messages) = ctx.cache.channel_messages(id) {
                                     cloned_messages = channel_messages.clone();
                                 }
                                 let mut messages: Vec<_> = cloned_messages.values().collect();
                                 messages.reverse();
-                                let last_5_messages = messages.iter().take(5);
-                                let messages = last_5_messages;
+                                let last_8_messages = messages.iter().take(8);
+                                let messages = last_8_messages;
 
                                 let mut status = format!(
                                     "Unknown (check #{})",

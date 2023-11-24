@@ -1,7 +1,6 @@
 use std::{fs::File, io::Read, time::Instant};
 
 use poise::serenity_prelude as serenity;
-use ::serenity::all::Message;
 use toml::Value;
 
 use crate::{Context, Error};
@@ -129,7 +128,6 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     let now = Instant::now();
     reqwest::get("https://discordapp.com/api/v6/gateway").await?;
     let get_latency = now.elapsed().as_millis();
-
     let now = Instant::now();
     let ping_msg = ctx.say("Calculating...").await?;
     let post_latency = now.elapsed().as_millis();
@@ -148,4 +146,3 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
-
