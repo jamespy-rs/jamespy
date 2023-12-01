@@ -13,6 +13,7 @@ mod config;
 use database::init_data;
 use database::init_redis_pool;
 use poise::serenity_prelude as serenity;
+use serde::Deserialize;
 use std::sync::Arc;
 use std::{env::var, time::Duration};
 
@@ -30,6 +31,11 @@ pub struct Data {
     pub db: database::DbPool,
     pub redis: database::RedisPool,
     time_started: std::time::Instant,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct GuildConfig {
+    pub prefix: Option<String>,
 }
 
 #[poise::command(prefix_command, hide_in_help)]
@@ -130,8 +136,8 @@ async fn main() {
         on_error: |error| Box::pin(on_error(error)),
 
         skip_checks_for_owners: false,
-        event_handler: |event: &serenity::FullEvent, framework, data| {
-            Box::pin(event_handler::event_handler(event.clone(), framework, data))
+        event_handler: |ctx: &serenity::Context, event: &serenity::FullEvent, framework, data| {
+            Box::pin(event_handler::event_handler(ctx, event.clone(), framework, data))
         },
         ..Default::default()
     };

@@ -8,9 +8,10 @@ use crate::utils::permissions::get_permission_changes;
 #[cfg(feature = "websocket")]
 use crate::websocket::PEER_MAP;
 use crate::Error;
+use poise::serenity_prelude::audit_log::Action::VoiceChannelStatus;
 use poise::serenity_prelude::{
     self as serenity, ChannelFlags, ChannelId, ChannelType, ForumEmoji, GuildChannel, GuildId,
-    PartialGuildChannel, UserId,
+    PartialGuildChannel, UserId, VoiceChannelStatusAction,
 };
 #[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
@@ -548,7 +549,7 @@ pub async fn add(
 ) -> Result<(), Error> {
     tokio::time::sleep(Duration::from_secs(2)).await;
     let logs = guild_id
-        .audit_logs(&ctx, Some(192), None, None, Some(5))
+        .audit_logs(&ctx, Some(VoiceChannelStatus(VoiceChannelStatusAction::StatusUpdate)), None, None, Some(5))
         .await?;
     let mut user_id = UserId::new(1);
     for log in &logs.entries {

@@ -4,7 +4,7 @@ version = "0.1.1-rc3"
 edition = "2021"
 
 [dependencies]
-poise = { git = "https://github.com/GnomedDev/poise", branch = "next-on-current" }
+poise = { git = "https://github.com/serenity-rs/poise", branch = "current" }
 serenity = { git = "https://github.com/serenity-rs/serenity", branch = "current", features =  ["temp_cache", "typesize"] }
 tokio = { version = "1.33.0", features = ["macros", "signal", "rt-multi-thread", "net", "io-util"] }
 futures-util = { version = "0.3.28", default-features = false, features = ["sink", "std"] }
@@ -22,6 +22,7 @@ chrono = "0.4.28"
 serde_json = "1.0.108"
 # Optional dependencies
 tokio-tungstenite = { version = "0.20", features = ["rustls-tls-native-roots"], optional = true  }
+typesize = { version = "0.1.2", features = ["url", "time", "serde_json", "secrecy", "dashmap", "parking_lot", "details"] }
 
 # serenity patch for developing.
 #[patch.'https://github.com/serenity-rs/serenity']
