@@ -30,7 +30,7 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 pub struct Data {
     pub db: database::DbPool,
     pub redis: database::RedisPool,
-    time_started: std::time::Instant,
+    pub time_started: std::time::Instant,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -129,7 +129,9 @@ async fn main() {
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
-            edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(Duration::from_secs(600)))),
+            edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(
+                Duration::from_secs(600),
+            ))),
             ..Default::default()
         },
 
@@ -137,7 +139,12 @@ async fn main() {
 
         skip_checks_for_owners: false,
         event_handler: |ctx: &serenity::Context, event: &serenity::FullEvent, framework, data| {
-            Box::pin(event_handler::event_handler(ctx, event.clone(), framework, data))
+            Box::pin(event_handler::event_handler(
+                ctx,
+                event.clone(),
+                framework,
+                data,
+            ))
         },
         ..Default::default()
     };

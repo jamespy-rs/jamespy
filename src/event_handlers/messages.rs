@@ -492,6 +492,7 @@ pub async fn message_delete(
             )
             .execute(db_pool)
             .await;
+
     } else {
         println!(
             "\x1B[91m\x1B[2mA message (ID:{}) was deleted but was not in cache\x1B[0m",

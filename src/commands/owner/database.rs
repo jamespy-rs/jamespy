@@ -36,7 +36,7 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
     let db_size_query = "SELECT pg_database_size(current_database())";
     let row = query(db_size_query).fetch_one(db_pool).await?;
     let db_size_bytes: i64 = row.get(0);
-    let db_size = format!("{:.2} MB", db_size_bytes as f64 / (1024.0 * 1024.0));
+    let db_size = format!("{:.2} MB", db_size_bytes / (1024 * 1024));
 
     embed = embed.footer(CreateEmbedFooter::new(format!(
         "Database size: {}",

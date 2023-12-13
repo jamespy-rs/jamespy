@@ -549,7 +549,13 @@ pub async fn add(
 ) -> Result<(), Error> {
     tokio::time::sleep(Duration::from_secs(2)).await;
     let logs = guild_id
-        .audit_logs(&ctx, Some(VoiceChannelStatus(VoiceChannelStatusAction::StatusUpdate)), None, None, Some(5))
+        .audit_logs(
+            &ctx,
+            Some(VoiceChannelStatus(VoiceChannelStatusAction::StatusUpdate)),
+            None,
+            None,
+            Some(5),
+        )
         .await?;
     let mut user_id = UserId::new(1);
     for log in &logs.entries {

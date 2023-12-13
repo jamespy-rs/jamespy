@@ -19,8 +19,7 @@ pub async fn event_handler(
             new,
             event,
         } => {
-            event_handlers::messages::message_edit(ctx, old_if_available, new, event, data)
-                .await?;
+            event_handlers::messages::message_edit(ctx, old_if_available, new, event, data).await?;
         }
         serenity::FullEvent::MessageDelete {
             channel_id,
@@ -37,16 +36,14 @@ pub async fn event_handler(
             .await?;
         }
         // need serenity:FullEvent::MessageDeleteBulk
-        serenity::FullEvent::GuildCreate {guild, is_new } => {
+        serenity::FullEvent::GuildCreate { guild, is_new } => {
             event_handlers::guilds::guild_create(ctx, guild, is_new).await?;
         }
 
         serenity::FullEvent::ReactionAdd { add_reaction } => {
             event_handlers::reactions::reaction_add(ctx, add_reaction, data).await?;
         }
-        serenity::FullEvent::ReactionRemove {
-            removed_reaction,
-        } => {
+        serenity::FullEvent::ReactionRemove { removed_reaction } => {
             event_handlers::reactions::reaction_remove(ctx, removed_reaction, data).await?;
         }
         serenity::FullEvent::ReactionRemoveAll {
@@ -103,9 +100,7 @@ pub async fn event_handler(
                 }
             }
         }
-        serenity::FullEvent::Ready {
-            data_about_bot: _,
-        } => {
+        serenity::FullEvent::Ready { data_about_bot: _ } => {
             event_handlers::misc::ready(ctx, data).await?;
         }
         serenity::FullEvent::GuildMemberAddition { new_member } => {
@@ -125,10 +120,7 @@ pub async fn event_handler(
         } => {
             event_handlers::users::guild_member_update(ctx, old_if_available, new, event).await?;
         }
-        serenity::FullEvent::GuildAuditLogEntryCreate {
-            entry,
-            guild_id,
-        } => {
+        serenity::FullEvent::GuildAuditLogEntryCreate { entry, guild_id } => {
             if guild_id == 98226572468690944 {
                 if let Action::AutoMod(serenity::AutoModAction::FlagToChannel) = &entry.action {
                     if let Some(reason) = entry.reason {

@@ -1,11 +1,10 @@
 [package]
 name = "jamespy-rs"
-version = "0.1.1-rc3"
+version = "0.1.1"
 edition = "2021"
 
 [dependencies]
 poise = { git = "https://github.com/serenity-rs/poise", branch = "current" }
-serenity = { git = "https://github.com/serenity-rs/serenity", branch = "current", features =  ["temp_cache", "typesize"] }
 tokio = { version = "1.33.0", features = ["macros", "signal", "rt-multi-thread", "net", "io-util"] }
 futures-util = { version = "0.3.28", default-features = false, features = ["sink", "std"] }
 futures-channel = "0.3.28"
@@ -29,9 +28,14 @@ typesize = { version = "0.1.2", features = ["url", "time", "serde_json", "secrec
 #serenity = { git = 'https://github.com//serenity-rs/serenity', branch = 'next' }
 
 
+
+[dependencies.serenity]
+features = ["unstable_discord_api", "typesize"]
+default-features = false
+version = "0.12"
+
 [features]
 websocket = ["tokio-tungstenite"]
-#raspberrypi = []
 
 [profile.release]
 strip = true
