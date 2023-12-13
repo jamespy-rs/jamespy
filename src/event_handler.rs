@@ -32,7 +32,6 @@ pub async fn event_handler(
             )
             .await?;
         }
-        // need serenity:FullEvent::MessageDeleteBulk
         serenity::FullEvent::GuildCreate { guild, is_new } => {
             event_handlers::guilds::guild_create(ctx, guild, is_new).await?;
         }
@@ -42,13 +41,6 @@ pub async fn event_handler(
         }
         serenity::FullEvent::ReactionRemove { removed_reaction } => {
             event_handlers::reactions::reaction_remove(ctx, removed_reaction, data).await?;
-        }
-        serenity::FullEvent::ReactionRemoveAll {
-            channel_id: _,
-            removed_from_message_id: _,
-        } => {
-            // Need to do the funny here.
-            // Will leave it untouched until I have a better codebase.
         }
         serenity::FullEvent::ChannelCreate { channel } => {
             event_handlers::channels::channel_create(ctx, channel).await?;
