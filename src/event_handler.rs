@@ -92,15 +92,18 @@ pub async fn event_handler(
         serenity::FullEvent::Ready { data_about_bot: _ } => {
             event_handlers::misc::ready(ctx, data).await?;
         }
+        serenity::FullEvent::CacheReady { guilds } => {
+            event_handlers::misc::cache_ready(ctx, guilds, data).await?;
+        }
         serenity::FullEvent::GuildMemberAddition { new_member } => {
-            event_handlers::guilds::guild_member_addition(ctx, new_member).await?;
+            event_handlers::guilds::guild_member_addition(ctx, new_member, data).await?;
         }
         serenity::FullEvent::GuildMemberRemoval {
             guild_id,
             user,
             member_data_if_available: _,
         } => {
-            event_handlers::guilds::guild_member_removal(ctx, guild_id, user).await?;
+            event_handlers::guilds::guild_member_removal(ctx, guild_id, user, data).await?;
         }
         serenity::FullEvent::GuildMemberUpdate {
             old_if_available,

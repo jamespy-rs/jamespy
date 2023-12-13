@@ -7,12 +7,16 @@ use crate::websocket::PEER_MAP;
 
 #[cfg(feature = "websocket")]
 use crate::event_handlers::WebSocketEvent;
+use sqlx::query;
 #[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
 
-use crate::utils::misc::get_guild_name;
 use crate::Error;
-use poise::serenity_prelude::{self as serenity, Guild, GuildId, Member, User, AuditLogEntry, ChannelId, CreateEmbedAuthor};
+use crate::{utils::misc::get_guild_name, Data};
+use poise::serenity_prelude::{
+    self as serenity, AuditLogEntry, ChannelId, CreateEmbedAuthor, Guild, GuildId, Member, User,
+    UserId,
+};
 use serenity::model::guild::audit_log::Action;
 
 pub async fn guild_create(
@@ -48,7 +52,9 @@ pub async fn guild_create(
 pub async fn guild_member_addition(
     ctx: &serenity::Context,
     new_member: Member,
+    data: &Data,
 ) -> Result<(), Error> {
+    let db_pool = &data.db;
     let guild_id = new_member.guild_id;
     let joined_user_id = new_member.user.id;
 
@@ -71,6 +77,41 @@ pub async fn guild_member_addition(
         "\x1B[33m[{}] {} (ID:{}) has joined!\x1B[0m",
         guild_name, new_member.user.name, joined_user_id
     );
+
+    // Check join tracks
+    let result = query!(
+        "SELECT * FROM join_tracks WHERE user_id = $1 AND guild_id = $2",
+        i64::from(joined_user_id),
+        i64::from(new_member.guild_id)
+    )
+    .fetch_all(db_pool)
+    .await;
+    let reply_content: &str = &format!(
+        "{} (<@{}>) joined {}!",
+        new_member.user.name, new_member.user.id, guild_name
+    );
+    if let Ok(records) = result {
+        for record in records {
+            let reply_builder = serenity::CreateMessage::default().content(reply_content);
+            // record contain the user_id.
+
+            // check author is in guild still, check if author can be dmed.
+            // Remove if author can't be dmed.
+            let authorid = UserId::new(record.author_id.unwrap() as u64);
+
+            match guild_id.member(ctx, authorid).await {
+                Ok(member) => {
+                    member.user.dm(ctx, reply_builder).await?;
+                    // in the future i should check for if this fails and why, and remove depending on the situation.
+                    let _ = query!("DELETE FROM join_tracks WHERE guild_id = $1 AND author_id = $2 AND user_id = $3", i64::from(guild_id), i64::from(authorid), i64::from(joined_user_id)).execute(db_pool).await;
+                }
+                Err(_err) => {
+                    // In the future the user should be removed if the user isn't valid, but checking that is a bit of a pain.
+                }
+            }
+        }
+    };
+
     Ok(())
 }
 
@@ -78,7 +119,9 @@ pub async fn guild_member_removal(
     ctx: &serenity::Context,
     guild_id: GuildId,
     user: User,
+    data: &Data,
 ) -> Result<(), Error> {
+    let db_pool = &data.db;
     let guild_name = get_guild_name(ctx, guild_id);
 
     #[cfg(feature = "websocket")]
@@ -99,22 +142,31 @@ pub async fn guild_member_removal(
         "\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m",
         guild_name, user.name, user.id
     );
+
+    // Author left guild, these are no longer important.
+    let _ = query!(
+        "DELETE FROM join_tracks WHERE author_id = $1 AND guild_id = $2",
+        i64::from(user.id),
+        i64::from(guild_id)
+    )
+    .execute(db_pool)
+    .await;
+
+
     Ok(())
 }
 
 pub async fn guild_audit_log_entry_create(
     ctx: &serenity::Context,
     entry: AuditLogEntry,
-    guild_id: GuildId
+    guild_id: GuildId,
 ) -> Result<(), Error> {
     if guild_id == 98226572468690944 {
         if let Action::AutoMod(serenity::AutoModAction::FlagToChannel) = &entry.action {
             if let Some(reason) = entry.reason {
                 if reason.starts_with("Voice Channel Status") {
                     let (user_name, avatar_url) = match entry.user_id.to_user(&ctx).await {
-                        Ok(user) => {
-                            (user.name.clone(), user.avatar_url().unwrap_or_default())
-                        }
+                        Ok(user) => (user.name.clone(), user.avatar_url().unwrap_or_default()),
                         Err(_) => (
                             "Unknown User".to_string(),
                             String::from("https://cdn.discordapp.com/embed/avatars/0.png"),
@@ -165,9 +217,7 @@ pub async fn guild_audit_log_entry_create(
                                     &message.embeds.get(0).and_then(|e| e.kind.clone())
                                 {
                                     if kind == "auto_moderation_message" {
-                                        if let Some(description) =
-                                            &message.embeds[0].description
-                                        {
+                                        if let Some(description) = &message.embeds[0].description {
                                             status = description.to_string();
                                             break;
                                         }
@@ -180,10 +230,9 @@ pub async fn guild_audit_log_entry_create(
                         // blocked = text logs
                         // alert = war room
                         let author_title = match id {
-                            697738506944118814 => format!(
-                                "{} tried to set an inappropriate status",
-                                user_name
-                            ),
+                            697738506944118814 => {
+                                format!("{} tried to set an inappropriate status", user_name)
+                            }
                             158484765136125952 => {
                                 format!("{} set a possibly inappropriate status", user_name)
                             }
@@ -201,9 +250,7 @@ pub async fn guild_audit_log_entry_create(
                                 .unwrap_or("Unknown".to_string())
                         ));
                         let embed = serenity::CreateEmbed::default()
-                            .author(
-                                CreateEmbedAuthor::new(author_title).icon_url(avatar_url),
-                            )
+                            .author(CreateEmbedAuthor::new(author_title).icon_url(avatar_url))
                             .field("Status", status, true)
                             .footer(footer);
                         let builder = serenity::CreateMessage::default()
