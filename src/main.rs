@@ -124,6 +124,7 @@ async fn main() {
             utility::info::role_info(),
             utility::join_tracks::track_join(),
             utility::join_tracks::list_tracked(),
+            utility::join_tracks::remove_track()
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
