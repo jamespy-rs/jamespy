@@ -15,6 +15,7 @@ use database::init_redis_pool;
 use poise::serenity_prelude as serenity;
 use serde::Deserialize;
 use std::sync::Arc;
+use std::sync::RwLock;
 use std::{env::var, time::Duration};
 
 #[cfg(feature = "websocket")]
@@ -22,7 +23,7 @@ use std::env;
 #[cfg(feature = "websocket")]
 use tokio::net::TcpListener;
 #[cfg(feature = "websocket")]
-use websocket::{handle_connection, PEER_MAP};
+use websocket::{get_peers, handle_connection};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -38,11 +39,11 @@ impl std::ops::Deref for Data {
     }
 }
 
-
 pub struct DataInner {
     pub db: database::DbPool,
     pub redis: database::RedisPool,
     pub time_started: std::time::Instant,
+    pub jamespy_config: RwLock<config::JamespyConfig>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -75,7 +76,6 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 async fn main() {
     let db_pool = init_data().await;
     let redis_pool = init_redis_pool().await;
-    config::load_config();
 
     #[cfg(feature = "websocket")]
     {
@@ -89,7 +89,7 @@ async fn main() {
 
         tokio::spawn(async move {
             while let Ok((stream, addr)) = listener.accept().await {
-                tokio::spawn(handle_connection(PEER_MAP.clone(), stream, addr));
+                tokio::spawn(handle_connection(get_peers().clone(), stream, addr));
             }
         });
     }
@@ -97,6 +97,7 @@ async fn main() {
         db: db_pool,
         redis: redis_pool,
         time_started: std::time::Instant::now(),
+        jamespy_config: config::load_config().into(),
     }));
 
     let options = poise::FrameworkOptions {
@@ -140,7 +141,7 @@ async fn main() {
             utility::info::role_info(),
             utility::join_tracks::track_join(),
             utility::join_tracks::list_tracked(),
-            utility::join_tracks::remove_track()
+            utility::join_tracks::remove_track(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),

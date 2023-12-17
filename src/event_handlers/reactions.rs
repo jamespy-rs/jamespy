@@ -1,7 +1,7 @@
 #[cfg(feature = "websocket")]
 use crate::event_handlers::{broadcast_message, WebSocketEvent};
 #[cfg(feature = "websocket")]
-use crate::websocket::PEER_MAP;
+use crate::websocket::get_peers;
 #[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
 
@@ -44,7 +44,7 @@ pub async fn reaction_add(
             channel_name: channel_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -101,7 +101,7 @@ pub async fn reaction_remove(
             channel_name: channel_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;

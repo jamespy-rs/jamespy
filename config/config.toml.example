@@ -1,3 +1,16 @@
-[glow]
+[vcstatus]
 action = false
-# channel_id = 0
+blacklist_detection = false
+announce_channel = "123456"
+regex_patterns = ["pattern1", "pattern2"]
+guilds = ["123456", "7890"]
+
+[events_config]
+no_log_channels = [
+        1234,
+        5678,
+]
+no_log_users = [1234, 5678]
+regex_patterns = ["pattern1", "pattern2"]
+badlist = "data/badwords.txt"
+fixlist = "data/fixwords.txt"

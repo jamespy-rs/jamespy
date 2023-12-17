@@ -1,5 +1,5 @@
 use crate::{Context, Error};
-use poise::serenity_prelude::{User, GuildId, UserId, CreateEmbed};
+use poise::serenity_prelude::{CreateEmbed, GuildId, User, UserId};
 use sqlx::query;
 
 /// Track a user joining!
@@ -25,14 +25,13 @@ pub async fn track_join(
         return Ok(());
     };
 
-    let result =
-        query!(
-            "SELECT user_id FROM join_tracks WHERE author_id = $1 AND guild_id = $2",
-            i64::from(ctx.author().id),
-            i64::from(ctx.guild_id().unwrap())
-        )
-        .fetch_one(db_pool)
-        .await;
+    let result = query!(
+        "SELECT user_id FROM join_tracks WHERE author_id = $1 AND guild_id = $2",
+        i64::from(ctx.author().id),
+        i64::from(ctx.guild_id().unwrap())
+    )
+    .fetch_one(db_pool)
+    .await;
 
     println!("{:?}", result);
     if result.is_ok() {
@@ -74,31 +73,31 @@ pub async fn list_tracked(
 
     let guild_id = guild_id.unwrap_or(ctx.guild_id().unwrap());
 
+    let result = query!(
+        "SELECT user_id FROM join_tracks WHERE author_id = $1 AND guild_id = $2",
+        i64::from(ctx.author().id),
+        i64::from(guild_id)
+    )
+    .fetch_all(db_pool)
+    .await;
 
-    let result =
-        query!(
-            "SELECT user_id FROM join_tracks WHERE author_id = $1 AND guild_id = $2",
-            i64::from(ctx.author().id),
-            i64::from(guild_id)
-        )
-        .fetch_all(db_pool)
-        .await;
-
-        let mut description = String::new();
-        if let Ok(rows) = result {
-            for row in rows {
-                let userid = UserId::new(row.user_id.unwrap() as u64);
-                // future me will check for error.
-                let user = userid.to_user(ctx).await?;
-                description = format!("\n{} (ID:{})", user.name, user.id)
-            };
-        } else {
-            ctx.say("You aren't tracking any users!").await?;
-            return Ok(());
+    let mut description = String::new();
+    if let Ok(rows) = result {
+        for row in rows {
+            let userid = UserId::new(row.user_id.unwrap() as u64);
+            // future me will check for error.
+            let user = userid.to_user(ctx).await?;
+            description = format!("\n{} (ID:{})", user.name, user.id)
         }
+    } else {
+        ctx.say("You aren't tracking any users!").await?;
+        return Ok(());
+    }
 
-        let embed = CreateEmbed::default().title("Tracked Users").description(description);
-        ctx.send(poise::CreateReply::default().embed(embed)).await?;
+    let embed = CreateEmbed::default()
+        .title("Tracked Users")
+        .description(description);
+    ctx.send(poise::CreateReply::default().embed(embed)).await?;
 
     Ok(())
 }
@@ -120,18 +119,20 @@ pub async fn remove_track(
 ) -> Result<(), Error> {
     let db_pool = &ctx.data().db;
 
+    let _ = query!(
+        "DELETE FROM join_tracks WHERE author_id = $1 AND guild_id = $2 AND user_id = $3",
+        i64::from(ctx.author().id),
+        i64::from(ctx.guild_id().unwrap()),
+        i64::from(user.id)
+    )
+    .execute(db_pool)
+    .await;
 
-    let _ =
-        query!(
-            "DELETE FROM join_tracks WHERE author_id = $1 AND guild_id = $2 AND user_id = $3",
-            i64::from(ctx.author().id),
-            i64::from(ctx.guild_id().unwrap()),
-            i64::from(user.id)
-        )
-        .execute(db_pool)
-        .await;
-
-        ctx.send(poise::CreateReply::default().content("Removing track for user if user is currently tracked!")).await?;
+    ctx.send(
+        poise::CreateReply::default()
+            .content("Removing track for user if user is currently tracked!"),
+    )
+    .await?;
 
     Ok(())
 }

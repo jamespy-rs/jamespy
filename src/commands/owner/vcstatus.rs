@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::config::{JamespyConfig, CONFIG};
+use crate::config::JamespyConfig;
 use crate::{Context, Error};
 
 #[poise::command(
@@ -12,7 +12,7 @@ use crate::{Context, Error};
 )]
 pub async fn vcstatus(ctx: Context<'_>) -> Result<(), Error> {
     let vcstatus = {
-        let config = CONFIG.read().unwrap();
+        let config = ctx.data().jamespy_config.read().unwrap();
         config.vcstatus.clone()
     };
     let action = vcstatus.action;
@@ -49,7 +49,7 @@ pub async fn vcstatus(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(prefix_command, category = "VCStatus", hide_in_help, owners_only)]
 pub async fn toggle(ctx: Context<'_>) -> Result<(), Error> {
     let vcstatus = {
-        let mut config = CONFIG.write().unwrap();
+        let mut config = ctx.data().jamespy_config.write().unwrap();
         let mut write_lock = config.vcstatus.clone();
         write_lock.action = !write_lock.action;
         config.vcstatus = write_lock.clone();
@@ -82,7 +82,7 @@ pub async fn new_regex(ctx: &Context<'_>) {
             if let Ok(config) = toml::from_str::<JamespyConfig>(&config_file) {
                 if let Some(ref regex_patterns) = config.vcstatus.regex_patterns {
                     {
-                        let mut write_lock = CONFIG.write().unwrap();
+                        let mut write_lock = ctx.data().jamespy_config.write().unwrap();
                         let cloned_regex_patterns: Vec<regex::Regex> = regex_patterns.clone();
                         write_lock.vcstatus.regex_patterns = Some(cloned_regex_patterns);
                     }

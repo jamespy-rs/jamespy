@@ -2,23 +2,22 @@ use std::collections::HashSet;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 
-use std::sync::{Arc, RwLock};
+use std::sync::{OnceLock, RwLock};
 
 use crate::{Context, Error};
-use lazy_static::lazy_static;
 use rand::seq::SliceRandom;
 
-lazy_static! {
-    pub static ref LOBLIST: Arc<RwLock<HashSet<String>>> = {
+fn get_loblist() -> &'static RwLock<HashSet<String>> {
+    static LOBLIST: OnceLock<RwLock<HashSet<String>>> = OnceLock::new();
+    LOBLIST.get_or_init(|| {
         let data = std::fs::read_to_string("data/loblist.txt").unwrap_or_else(|_| String::new());
         let words: HashSet<String> = data.lines().map(String::from).collect();
-
-        Arc::new(RwLock::new(words))
-    };
+        RwLock::new(words)
+    })
 }
 
 pub fn get_random_lob() -> Option<String> {
-    let loblist = LOBLIST.read().ok()?;
+    let loblist = get_loblist().read().unwrap();
 
     let options: Vec<String> = loblist.iter().cloned().collect();
 
@@ -32,7 +31,7 @@ pub async fn update_lob() -> Result<(usize, usize), Error> {
     let new_count;
 
     {
-        let mut loblist = LOBLIST.write().unwrap();
+        let mut loblist = get_loblist().write().unwrap();
         let lines: HashSet<String> = new_lob.lines().map(|s| s.to_string()).collect();
         old_count = loblist.len();
         *loblist = lines;
@@ -43,7 +42,7 @@ pub async fn update_lob() -> Result<(usize, usize), Error> {
 }
 
 pub async fn unload_lob() -> Result<(), Error> {
-    let mut loblist = LOBLIST.write().unwrap();
+    let mut loblist = get_loblist().write().unwrap();
     *loblist = HashSet::new();
 
     Ok(())

@@ -2,11 +2,10 @@ use std::collections::HashMap;
 
 #[cfg(feature = "websocket")]
 use crate::event_handlers::broadcast_message;
-#[cfg(feature = "websocket")]
-use crate::websocket::PEER_MAP;
 
 #[cfg(feature = "websocket")]
-use crate::event_handlers::WebSocketEvent;
+use crate::{event_handlers::WebSocketEvent, websocket::get_peers};
+
 use sqlx::query;
 #[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
@@ -32,7 +31,7 @@ pub async fn guild_create(
             is_new,
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -67,7 +66,7 @@ pub async fn guild_member_addition(
             guild_name: guild_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -132,7 +131,7 @@ pub async fn guild_member_removal(
             guild_name: guild_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -151,7 +150,6 @@ pub async fn guild_member_removal(
     )
     .execute(db_pool)
     .await;
-
 
     Ok(())
 }

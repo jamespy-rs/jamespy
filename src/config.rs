@@ -1,13 +1,26 @@
-use lazy_static::lazy_static;
 use poise::serenity_prelude::{ChannelId, GuildId};
 use regex::Regex;
 use serde::{Deserialize, Deserializer};
-use std::fs;
-use std::sync::RwLock;
+use std::{collections::HashSet, fs};
+
+use crate::utils::misc::read_words_from_file;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct JamespyConfig {
+    pub events_config: EventsConfig,
     pub vcstatus: VCStatus,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct EventsConfig {
+    pub no_log_channels: Option<Vec<u64>>,
+    pub no_log_users: Option<Vec<u64>>,
+    #[serde(deserialize_with = "deserialize_regex_patterns")]
+    pub regex_patterns: Option<Vec<Regex>>,
+    #[serde(deserialize_with = "deserialize_words_file_to_words")]
+    pub badlist: Option<HashSet<String>>,
+    #[serde(deserialize_with = "deserialize_words_file_to_words")]
+    pub fixlist: Option<HashSet<String>>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -35,6 +48,18 @@ where
     Ok(regex_patterns)
 }
 
+fn deserialize_words_file_to_words<'de, D>(
+    deserializer: D,
+) -> Result<Option<HashSet<String>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value: Option<String> = Option::deserialize(deserializer)?;
+    let lines = value.map(|value| read_words_from_file(&value));
+
+    Ok(lines)
+}
+
 impl JamespyConfig {
     pub fn new() -> Self {
         JamespyConfig {
@@ -46,15 +71,13 @@ impl JamespyConfig {
                 regex_patterns: None,
                 guilds: None,
             },
-        }
-    }
-    pub fn compile_regex_patterns(&mut self) {
-        if let Some(regex_patterns) = &self.vcstatus.regex_patterns {
-            let compiled_regex_patterns: Vec<Regex> = regex_patterns
-                .iter()
-                .filter_map(|pattern| Regex::new(pattern.as_str()).ok())
-                .collect();
-            self.vcstatus.regex_patterns = Some(compiled_regex_patterns);
+            events_config: EventsConfig {
+                no_log_channels: None,
+                no_log_users: None,
+                regex_patterns: None,
+                badlist: Some(read_words_from_file("data/badwords.txt")),
+                fixlist: Some(read_words_from_file("data/fixwords.txt")),
+            },
         }
     }
 }
@@ -65,31 +88,25 @@ impl Default for JamespyConfig {
     }
 }
 
-pub fn load_config() {
+pub fn load_config() -> JamespyConfig {
     let default_config = JamespyConfig::new();
 
     let config_result = fs::read_to_string("config/config.toml");
     match config_result {
         Ok(config_file) => {
             if let Ok(config) = toml::from_str::<JamespyConfig>(&config_file) {
-                let mut config_lock = CONFIG.write().unwrap();
-                *config_lock = config;
-                // Compile regex patterns if any exist in the loaded config
-                if let Some(ref mut _regex_patterns) = &mut config_lock.vcstatus.regex_patterns {
-                    config_lock.compile_regex_patterns();
-                }
+                config
             } else {
                 eprintln!("Error: Failed to parse config.toml. Using default configuration.");
-                *CONFIG.write().unwrap() = default_config;
+                if let Err(err) = toml::from_str::<JamespyConfig>(&config_file) {
+                    eprintln!("Parse error details: {}", err);
+                }
+                default_config
             }
         }
         Err(_) => {
             eprintln!("Error: Failed to read config.toml. Using default configuration.");
-            *CONFIG.write().unwrap() = default_config;
+            default_config
         }
     }
-}
-
-lazy_static! {
-    pub static ref CONFIG: RwLock<JamespyConfig> = RwLock::new(JamespyConfig::default());
 }

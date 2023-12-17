@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 
-use crate::event_handlers::messages::{BADLIST, FIXLIST};
 use crate::utils::misc::read_words_from_file;
 use crate::{Context, Error};
 
@@ -30,51 +29,46 @@ pub async fn update_lists(
 ) -> Result<(), Error> {
     let new_bad_words = read_words_from_file("data/badwords.txt");
     let new_fix_words = read_words_from_file("data/fixwords.txt");
+    let updated_list_description = {
+        let mut config = ctx.data().jamespy_config.write().unwrap();
+        let badlist = config.events_config.badlist.clone().unwrap_or_default();
+        let fixlist = config.events_config.badlist.clone().unwrap_or_default();
 
-    let updated_list_description = match choice {
-        Some(Lists::Badlist) => {
-            let mut badlist = BADLIST.write().unwrap();
-            let old_badlist_count = badlist.len();
-            *badlist = new_bad_words;
-            let new_badlist_count = badlist.len();
+        match choice {
+            Some(Lists::Badlist) => {
+                let old_badlist_count = badlist.len();
+                config.events_config.badlist = Some(new_bad_words);
+                let new_badlist_count = badlist.len();
 
-            let updated_list_description = format!(
-                "Updated badlist successfully!\nWords currently in the list updated from {} to {}",
-                old_badlist_count, new_badlist_count
-            );
+                format!(
+                    "Updated badlist successfully!\nWords currently in the list updated from {} to {}",
+                    old_badlist_count, new_badlist_count
+                )
+            }
+            Some(Lists::Fixlist) => {
+                let old_fixlist_count = fixlist.len();
+                config.events_config.fixlist = Some(new_fix_words);
+                let new_fixlist_count = fixlist.len();
 
-            updated_list_description
-        }
-        Some(Lists::Fixlist) => {
-            let mut fixlist = FIXLIST.write().unwrap();
-            let old_fixlist_count = fixlist.len();
-            *fixlist = new_fix_words;
-            let new_fixlist_count = fixlist.len();
+                format!(
+                    "Updated fixlist successfully!\nWords currently in the list updated from {} to {}",
+                    old_fixlist_count, new_fixlist_count
+                )
+            }
+            None => {
+                let old_badlist_count = badlist.len();
+                let old_fixlist_count = fixlist.len();
 
-            let updated_list_description = format!(
-                "Updated fixlist successfully!\nWords currently in the list updated from {} to {}",
-                old_fixlist_count, new_fixlist_count
-            );
+                config.events_config.badlist = Some(new_bad_words);
+                config.events_config.fixlist = Some(new_fix_words);
+                let new_badlist_count = badlist.len();
+                let new_fixlist_count = fixlist.len();
 
-            updated_list_description
-        }
-        None => {
-            let mut badlist = BADLIST.write().unwrap();
-            let mut fixlist = FIXLIST.write().unwrap();
-            let old_badlist_count = badlist.len();
-            let old_fixlist_count = fixlist.len();
-
-            *badlist = new_bad_words;
-            *fixlist = new_fix_words;
-            let new_badlist_count = badlist.len();
-            let new_fixlist_count = fixlist.len();
-
-            let updated_list_description = format!(
-                "Updated all lists successfully!\nbadlist: {} to {}\nfixlist: {} to {}",
-                old_badlist_count, new_badlist_count, old_fixlist_count, new_fixlist_count
-            );
-
-            updated_list_description
+                format!(
+                    "Updated all lists successfully!\nbadlist: {} to {}\nfixlist: {} to {}",
+                    old_badlist_count, new_badlist_count, old_fixlist_count, new_fixlist_count
+                )
+            }
         }
     };
 
@@ -91,13 +85,9 @@ pub async fn update_lists(
 )]
 pub async fn unload_lists(ctx: Context<'_>) -> Result<(), Error> {
     {
-        let mut badlist = BADLIST.write().unwrap();
-        *badlist = HashSet::new()
-    }
-
-    {
-        let mut fixlist = FIXLIST.write().unwrap();
-        *fixlist = HashSet::new();
+        let mut config = ctx.data().jamespy_config.write().unwrap();
+        config.events_config.badlist = Some(HashSet::new());
+        config.events_config.fixlist = Some(HashSet::new());
     }
 
     ctx.say("Unloaded lists!").await?;

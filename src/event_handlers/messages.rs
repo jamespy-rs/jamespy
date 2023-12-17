@@ -1,7 +1,9 @@
-use crate::utils::misc::{get_channel_name, get_guild_name, read_words_from_file};
+use crate::utils::misc::{get_channel_name, get_guild_name};
 
 #[cfg(feature = "websocket")]
 use crate::event_handlers::{broadcast_message, WebSocketEvent};
+#[cfg(feature = "websocket")]
+use crate::websocket::get_peers;
 
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, CreateMessage, GuildId, Message,
@@ -13,56 +15,29 @@ use tokio_tungstenite::tungstenite;
 use crate::{Data, Error};
 
 use chrono::NaiveDateTime;
-use std::{
-    collections::{HashMap, HashSet},
-    num::NonZeroU64,
-    sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, num::NonZeroU64};
 
-#[cfg(feature = "websocket")]
-use crate::websocket::PEER_MAP;
-use lazy_static::lazy_static;
-use regex::Regex;
 use sqlx::query;
-
-static REGEX_PATTERNS: [&str; 2] = [
-    r"(?i)\b\w*j\s*\d*\W*?a+\W*\d*\W*?m+\W*\d*\W*?e+\W*\d*\W*?s+\W*\d*\W*?\w*\b",
-    r"(?i)\b\w*b\s*\d*\W*?t+\W*\d*\W*?3+\W*\d*\W*?6+\W*\d*\W*?5+\W*\d*\W*?\w*\b",
-];
-
-lazy_static! {
-    // These are the channels in gg/osu specified for logging, I don't want to show these.
-    static ref NO_LOG_CHANNEL: Vec<u64> = vec![
-        572899947226333254,
-        787623037834100737,
-        697738506944118814,
-        787389586665504778,
-    ];
-    // mudae and rin bot, these bots are typically spammy and serve no purpose being seen directly.
-    static ref NO_LOG_USER: Vec<u64> = vec![432610292342587392, 429656936435286016];
-
-    static ref COMPILED_PATTERNS: Vec<Regex> = REGEX_PATTERNS
-    .iter()
-    .map(|pattern| Regex::new(pattern).unwrap())
-    .collect();
-
-    pub static ref BADLIST: Arc<RwLock<HashSet<String>>> = {
-        let words = read_words_from_file("data/badwords.txt");
-        Arc::new(RwLock::new(words))
-    };
-    pub static ref FIXLIST: Arc<RwLock<HashSet<String>>> = {
-        let words = read_words_from_file("data/fixwords.txt");
-        Arc::new(RwLock::new(words))
-    };
-}
 
 pub async fn message(
     ctx: &serenity::Context,
     new_message: Message,
     data: &Data,
 ) -> Result<(), Error> {
-    if NO_LOG_USER.contains(&new_message.author.id.get())
-        || NO_LOG_CHANNEL.contains(&new_message.channel_id.get())
+    let (no_log_user, no_log_channel, badlist, fixlist, patterns) = {
+        let config = data.jamespy_config.read().unwrap().events_config.clone();
+
+        (
+            config.no_log_users.unwrap_or_default(),
+            config.no_log_channels.unwrap_or_default(),
+            config.badlist.unwrap_or_default(),
+            config.fixlist.unwrap_or_default(),
+            config.regex_patterns.unwrap_or_default(),
+        )
+    };
+
+    if no_log_user.contains(&new_message.author.id.get())
+        || no_log_channel.contains(&new_message.channel_id.get())
         || new_message.content.starts_with('$') && new_message.channel_id == 850342078034870302
     {
         return Ok(());
@@ -113,7 +88,7 @@ pub async fn message(
     let channel_name = get_channel_name(&ctx.clone(), guild_id, new_message.channel_id).await;
 
     let mut any_pattern_matched = false;
-    for pattern in &*COMPILED_PATTERNS {
+    for pattern in patterns {
         if pattern.is_match(&new_message.content)
             && new_message.author.id != 158567567487795200
             && !new_message.author.bot
@@ -216,10 +191,7 @@ pub async fn message(
     let blacklisted_words: Vec<&String> = messagewords
         .iter()
         .filter(|word| {
-            let badlist = BADLIST.read().unwrap();
-            let fixlist = FIXLIST.read().unwrap();
-
-            // Check if the word is in the BADLIST and not in the FIXLIST
+            // Check if the word is in the badlist and not in the fixlist
             let is_blacklisted = badlist.iter().any(|badword| {
                 word.contains(badword) && !fixlist.iter().any(|fixword| word.contains(fixword))
             });
@@ -268,7 +240,7 @@ pub async fn message(
             channel_name,
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -316,7 +288,7 @@ pub async fn message_edit(
         };
 
         let message = serde_json::to_string(&edit_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -434,7 +406,7 @@ pub async fn message_delete(
         };
 
         let message = serde_json::to_string(&delete_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;

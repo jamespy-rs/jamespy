@@ -1,8 +1,9 @@
 #[cfg(feature = "websocket")]
-use crate::{
-    event_handlers::{broadcast_message, WebSocketEvent},
-    websocket::PEER_MAP,
-};
+use crate::event_handlers::{broadcast_message, WebSocketEvent};
+
+#[cfg(feature = "websocket")]
+use crate::websocket::get_peers;
+
 use poise::serenity_prelude::{self as serenity, GuildMemberUpdateEvent, Member};
 #[cfg(feature = "websocket")]
 use tokio_tungstenite::tungstenite;
@@ -34,7 +35,7 @@ pub async fn guild_member_update(
             guild_name: guild_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;

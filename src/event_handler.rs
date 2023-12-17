@@ -1,4 +1,4 @@
-use crate::{config::CONFIG, event_handlers, Data, Error};
+use crate::{event_handlers, Data, Error};
 use poise::serenity_prelude as serenity;
 
 pub async fn event_handler(
@@ -76,14 +76,14 @@ pub async fn event_handler(
             guild_id,
         } => {
             let guilds_opt = {
-                let config = CONFIG.read().unwrap();
+                let config = data.jamespy_config.read().unwrap();
                 config.vcstatus.guilds.clone()
             };
 
             if let Some(guilds) = guilds_opt {
                 if guilds.contains(&guild_id) {
                     event_handlers::channels::voice_channel_status_update(
-                        ctx, old, status, id, guild_id,
+                        ctx, old, status, id, guild_id, data,
                     )
                     .await?;
                 }

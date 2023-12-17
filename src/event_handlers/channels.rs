@@ -5,9 +5,12 @@ use crate::utils::misc::{
     get_guild_name, sort_order_to_string,
 };
 use crate::utils::permissions::get_permission_changes;
+
+use crate::{Data, Error};
+
 #[cfg(feature = "websocket")]
-use crate::websocket::PEER_MAP;
-use crate::Error;
+use crate::websocket::get_peers;
+
 use poise::serenity_prelude::audit_log::Action::VoiceChannelStatus;
 use poise::serenity_prelude::{
     self as serenity, ChannelFlags, ChannelId, ChannelType, ForumEmoji, GuildChannel, GuildId,
@@ -17,8 +20,6 @@ use poise::serenity_prelude::{
 use tokio_tungstenite::tungstenite;
 
 use std::time::Duration;
-
-use crate::config::CONFIG;
 
 pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> Result<(), Error> {
     let guild_name = channel
@@ -33,7 +34,7 @@ pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> R
             guild_name: guild_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -66,7 +67,7 @@ pub async fn channel_update(
             guild_name: guild_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -300,7 +301,7 @@ pub async fn channel_delete(ctx: &serenity::Context, channel: GuildChannel) -> R
             guild_name: guild_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -332,7 +333,7 @@ pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Res
             guild_name: guild_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -381,7 +382,7 @@ pub async fn thread_update(
             guild_name: guild_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -470,7 +471,7 @@ pub async fn thread_delete(
             guild_name: guild_name.clone(),
         };
         let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { PEER_MAP.lock().unwrap().clone() };
+        let peers = { get_peers().lock().unwrap().clone() };
 
         let message = tungstenite::protocol::Message::Text(message);
         broadcast_message(peers, message).await;
@@ -507,9 +508,10 @@ pub async fn voice_channel_status_update(
     status: Option<String>,
     id: ChannelId,
     guild_id: GuildId,
+    data: &Data,
 ) -> Result<(), Error> {
     let vcstatus = {
-        let config = CONFIG.read().unwrap();
+        let config = data.jamespy_config.read().unwrap();
         config.vcstatus.clone()
     };
     if vcstatus.action {
@@ -519,19 +521,19 @@ pub async fn voice_channel_status_update(
             (None, None) => {
                 old_field = None;
                 new_field = None;
-                add(ctx, id, guild_id, old_field, new_field, status).await?;
+                add(ctx, id, guild_id, old_field, new_field, status, data).await?;
             }
             (Some(old), Some(status)) => {
                 old_field = Some(old);
                 new_field = Some(status.clone());
                 if old_field != new_field {
-                    add(ctx, id, guild_id, old_field, new_field, Some(status)).await?;
+                    add(ctx, id, guild_id, old_field, new_field, Some(status), data).await?;
                 }
             }
             (None, Some(status)) => {
                 old_field = None;
                 new_field = Some(status.clone());
-                add(ctx, id, guild_id, old_field, new_field, Some(status)).await?;
+                add(ctx, id, guild_id, old_field, new_field, Some(status), data).await?;
             }
             _ => {}
         }
@@ -546,6 +548,7 @@ pub async fn add(
     old_field: Option<String>,
     new_field: Option<String>,
     status: Option<String>,
+    data: &Data,
 ) -> Result<(), Error> {
     tokio::time::sleep(Duration::from_secs(2)).await;
     let logs = guild_id
@@ -582,7 +585,7 @@ pub async fn add(
         ));
 
         let vcstatus = {
-            let config = CONFIG.read().unwrap();
+            let config = data.jamespy_config.read().unwrap();
             config.vcstatus.clone()
         };
 
