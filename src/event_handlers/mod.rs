@@ -12,7 +12,6 @@ use poise::serenity_prelude::{Message, MessageUpdateEvent};
 use serde::Serialize;
 
 pub mod channels;
-pub mod glow;
 pub mod guilds;
 pub mod messages;
 pub mod misc;

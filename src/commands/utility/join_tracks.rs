@@ -5,7 +5,7 @@ use sqlx::query;
 /// Track a user joining!
 #[poise::command(
     rename = "track-join",
-    aliases("stalk", "trackuser", "user-track", "join-track"),
+    aliases("stalk", "trackuser", "user-track", "join-track", "track-user"),
     slash_command,
     prefix_command,
     guild_only,

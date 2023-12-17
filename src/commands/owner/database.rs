@@ -18,7 +18,6 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
         ("msgs", "message_id"),
         ("msgs_edits", "message_id"),
         ("msgs_deletions", "message_id"),
-        ("snippets", "name"),
     ];
 
     let mut embed = serenity::CreateEmbed::default().title("Database Stats");

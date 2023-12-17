@@ -7,14 +7,7 @@ use std::sync::RwLock;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct JamespyConfig {
-    pub glow: GlowConfig,
     pub vcstatus: VCStatus,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize)]
-pub struct GlowConfig {
-    pub action: bool,
-    pub channel_id: Option<ChannelId>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -45,10 +38,6 @@ where
 impl JamespyConfig {
     pub fn new() -> Self {
         JamespyConfig {
-            glow: GlowConfig {
-                action: false,
-                channel_id: None,
-            },
             vcstatus: VCStatus {
                 action: false,
                 post_channel: None,

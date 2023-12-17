@@ -27,7 +27,19 @@ use websocket::{handle_connection, PEER_MAP};
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
-pub struct Data {
+#[derive(Clone)]
+pub struct Data(pub Arc<DataInner>);
+
+impl std::ops::Deref for Data {
+    type Target = DataInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+
+pub struct DataInner {
     pub db: database::DbPool,
     pub redis: database::RedisPool,
     pub time_started: std::time::Instant,
@@ -81,6 +93,11 @@ async fn main() {
             }
         });
     }
+    let data = Data(Arc::new(DataInner {
+        db: db_pool,
+        redis: redis_pool,
+        time_started: std::time::Instant::now(),
+    }));
 
     let options = poise::FrameworkOptions {
         commands: vec![
@@ -101,7 +118,6 @@ async fn main() {
             owner::cache::guild_message_cache(),
             owner::lists::update_lists(),
             owner::lists::unload_lists(),
-            owner::glow::glow(),
             owner::vcstatus::vcstatus(),
             owner::current_user::jamespy(),
             meta::source(),
@@ -152,11 +168,7 @@ async fn main() {
         Box::pin(async move {
             println!("Logged in as {}", ready.user.name);
             poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-            Ok(Data {
-                db: db_pool.clone(),
-                redis: redis_pool.clone(),
-                time_started: std::time::Instant::now(),
-            })
+            Ok(data)
         })
     });
 

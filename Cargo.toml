@@ -39,6 +39,6 @@ websocket = ["tokio-tungstenite"]
 
 [profile.release]
 strip = true
-opt-level = 3
+opt-level = "z" # opt for size
 lto = true
 codegen-units = 1
