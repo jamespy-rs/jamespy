@@ -75,7 +75,6 @@ pub async fn set_activity(
     #[description = "Custom status (optional)"] custom_status: Option<String>,
 ) -> Result<(), Error> {
     let activity_type_enum = match activity_type.to_lowercase().as_str() {
-        "playing" => ActivityType::Playing,
         "streaming" => ActivityType::Streaming,
         "listening" => ActivityType::Listening,
         "watching" => ActivityType::Watching,

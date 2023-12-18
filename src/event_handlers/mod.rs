@@ -122,7 +122,7 @@ pub async fn broadcast_message(
     peers: HashMap<SocketAddr, UnboundedSender<tokio_tungstenite::tungstenite::Message>>,
     message: tokio_tungstenite::tungstenite::Message,
 ) {
-    for (_, mut ws_sink) in peers.iter() {
+    for (_, mut ws_sink) in peers {
         let cloned_msg: tokio_tungstenite::tungstenite::Message = message.clone();
 
         if let Err(err) = ws_sink.send(cloned_msg).await {

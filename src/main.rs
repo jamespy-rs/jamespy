@@ -1,3 +1,17 @@
+#![warn(clippy::pedantic)]
+#![allow(
+    clippy::cast_sign_loss,
+    clippy::cast_possible_wrap,
+    clippy::cast_lossless,
+    clippy::cast_possible_truncation,
+    clippy::unused_async,
+    clippy::unreadable_literal,
+    clippy::wildcard_imports,
+    clippy::too_many_lines,
+    clippy::similar_names,
+    clippy::module_name_repetitions
+)]
+
 mod commands;
 use commands::*;
 mod database;
@@ -66,7 +80,7 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
         }
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
-                println!("Error while handling error: {}", e)
+                println!("Error while handling error: {}", e);
             }
         }
     }
@@ -122,7 +136,6 @@ async fn main() {
             owner::vcstatus::vcstatus(),
             owner::current_user::jamespy(),
             meta::source(),
-            meta::about(),
             meta::help(),
             meta::uptime(),
             meta::ping(),

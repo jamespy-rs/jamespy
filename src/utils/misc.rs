@@ -61,7 +61,7 @@ pub fn channel_type_to_string(channel_type: ChannelType) -> String {
         ChannelType::Stage => String::from("Stage"),
         ChannelType::Directory => String::from("Directory"),
         ChannelType::Forum => String::from("Forum"),
-        ChannelType::Unknown(u) => format!("Unknown({})", u),
+        ChannelType::Unknown(u) => format!("Unknown({u})"),
         _ => String::from("?"),
     }
 }
@@ -81,7 +81,7 @@ pub fn auto_archive_duration_to_string(duration: AutoArchiveDuration) -> String 
         AutoArchiveDuration::OneDay => String::from("1 day"),
         AutoArchiveDuration::ThreeDays => String::from("3 days"),
         AutoArchiveDuration::OneWeek => String::from("1 week"),
-        AutoArchiveDuration::Unknown(u) => format!("Unknown({})", u),
+        AutoArchiveDuration::Unknown(u) => format!("Unknown({u})"),
         _ => String::from("?"),
     }
 }
@@ -91,7 +91,7 @@ pub fn forum_layout_to_string(layout_type: ForumLayoutType) -> String {
         ForumLayoutType::NotSet => String::from("Not Set"),
         ForumLayoutType::ListView => String::from("List View"),
         ForumLayoutType::GalleryView => String::from("Gallery View"),
-        ForumLayoutType::Unknown(u) => format!("Unknown({})", u),
+        ForumLayoutType::Unknown(u) => format!("Unknown({u})"),
         _ => String::from("?"),
     }
 }
@@ -100,7 +100,7 @@ pub fn sort_order_to_string(sort_order: SortOrder) -> String {
     match sort_order {
         SortOrder::LatestActivity => String::from("Latest Activity"),
         SortOrder::CreationDate => String::from("Creation Date"),
-        SortOrder::Unknown(u) => format!("Unknown({})", u),
+        SortOrder::Unknown(u) => format!("Unknown({u})"),
         _ => String::from("?"),
     }
 }

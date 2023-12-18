@@ -1,6 +1,3 @@
-use std::fs;
-
-use crate::config::JamespyConfig;
 use crate::{Context, Error};
 
 #[poise::command(
@@ -8,7 +5,7 @@ use crate::{Context, Error};
     category = "VCStatus",
     hide_in_help,
     check = "servermanager",
-    subcommands("toggle", "reload_regex")
+    subcommands("toggle")
 )]
 pub async fn vcstatus(ctx: Context<'_>) -> Result<(), Error> {
     let vcstatus = {
@@ -60,49 +57,6 @@ pub async fn toggle(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say(content).await?;
 
     Ok(())
-}
-
-#[poise::command(
-    rename = "reload-regex",
-    aliases("enable"),
-    prefix_command,
-    category = "Glow",
-    hide_in_help,
-    owners_only
-)]
-pub async fn reload_regex(ctx: Context<'_>) -> Result<(), Error> {
-    new_regex(&ctx).await;
-    Ok(())
-}
-
-pub async fn new_regex(ctx: &Context<'_>) {
-    let config_result = fs::read_to_string("config/config.toml");
-    match config_result {
-        Ok(config_file) => {
-            if let Ok(config) = toml::from_str::<JamespyConfig>(&config_file) {
-                if let Some(ref regex_patterns) = config.vcstatus.regex_patterns {
-                    {
-                        let mut write_lock = ctx.data().jamespy_config.write().unwrap();
-                        let cloned_regex_patterns: Vec<regex::Regex> = regex_patterns.clone();
-                        write_lock.vcstatus.regex_patterns = Some(cloned_regex_patterns);
-                    }
-                    let _ = ctx
-                        .say(format!(
-                            "Successfully updated {} regex patterns!",
-                            regex_patterns.len()
-                        ))
-                        .await;
-                } else {
-                    println!("No regex patterns found in config.toml.");
-                }
-            } else {
-                eprintln!("Failed to parse the configuration!");
-            }
-        }
-        Err(_) => {
-            eprintln!("Failed to read the configuration!");
-        }
-    }
 }
 
 pub async fn servermanager(ctx: Context<'_>) -> Result<bool, Error> {

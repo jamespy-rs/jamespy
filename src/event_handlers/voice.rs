@@ -104,7 +104,7 @@ pub async fn voice_state_update(
             println!(
                 "\x1B[32m[{}] {}: {} (ID:{}) -> {} (ID:{})\x1B[0m",
                 guild_name, user_name, old_channel, old_channel_id_, new_channel, new_channel_id_
-            )
+            );
         } else if new.channel_id.is_none() {
             let mut guild_name = String::from("Unknown");
             let mut user_name = String::from("Unknown User");
@@ -130,7 +130,7 @@ pub async fn voice_state_update(
             println!(
                 "\x1B[32m[{}] {} left {} (ID:{})\x1B[0m",
                 guild_name, user_name, old_channel, old_channel_id_
-            )
+            );
         } else {
             // mutes, unmutes, deafens, etc are here.
         }

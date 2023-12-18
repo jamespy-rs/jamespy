@@ -231,9 +231,6 @@ pub async fn guild_audit_log_entry_create(
                             697738506944118814 => {
                                 format!("{} tried to set an inappropriate status", user_name)
                             }
-                            158484765136125952 => {
-                                format!("{} set a possibly inappropriate status", user_name)
-                            }
                             _ => {
                                 format!("{} set a possibly inappropriate status", user_name)
                             }

@@ -41,10 +41,10 @@ pub async fn guild_flags(
         outcome.push_str("Member has started onboarding.\n");
     }
 
-    if !outcome.is_empty() {
-        ctx.say(outcome).await?;
-    } else {
+    if outcome.is_empty() {
         ctx.say("Member has no special flags.").await?;
+    } else {
+        ctx.say(outcome).await?;
     }
 
     Ok(())
@@ -88,8 +88,7 @@ pub async fn last_reactions(ctx: Context<'_>) -> Result<(), Error> {
                 let username = ctx
                     .cache()
                     .user(user_id)
-                    .map(|user| user.name.clone())
-                    .unwrap_or_else(|| "Unknown User".to_string());
+                    .map_or_else(|| "Unknown User".to_string(), |user| user.name.clone());
 
                 format!(
                     "**{}** {} {} Message ID: {}",
@@ -206,7 +205,7 @@ pub async fn playing(ctx: Context<'_>) -> Result<(), Error> {
         .map(|&(name, count)| (*name, *count))
         .collect::<Vec<(&str, u32)>>()
         .chunks(15)
-        .map(|chunk| chunk.to_vec())
+        .map(<[(&str, u32)]>::to_vec)
         .collect();
 
     crate::utils::cache::presence_builder(ctx, pages, total_members, total_games).await?;

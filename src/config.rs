@@ -16,6 +16,7 @@ pub struct EventsConfig {
     pub no_log_channels: Option<Vec<u64>>,
     pub no_log_users: Option<Vec<u64>>,
     #[serde(deserialize_with = "deserialize_regex_patterns")]
+    #[serde(rename = "base64_regexes")]
     pub regex_patterns: Option<Vec<Regex>>,
     #[serde(deserialize_with = "deserialize_words_file_to_words")]
     pub badlist: Option<HashSet<String>>,
@@ -30,19 +31,27 @@ pub struct VCStatus {
     pub blacklist_detection: bool,
     pub announce_channel: Option<ChannelId>,
     #[serde(deserialize_with = "deserialize_regex_patterns")]
+    #[serde(rename = "base64_regexes")]
     pub regex_patterns: Option<Vec<Regex>>,
     pub guilds: Option<Vec<GuildId>>,
 }
+
+use base64::{engine::general_purpose, Engine as _};
 
 fn deserialize_regex_patterns<'de, D>(deserializer: D) -> Result<Option<Vec<Regex>>, D::Error>
 where
     D: Deserializer<'de>,
 {
     let patterns: Option<Vec<String>> = Option::deserialize(deserializer)?;
+
     let regex_patterns = patterns.map(|patterns| {
         patterns
             .into_iter()
-            .filter_map(|pattern| Regex::new(&pattern).ok())
+            .filter_map(|pattern| {
+                let bytes = general_purpose::STANDARD.decode(pattern).unwrap();
+                let pattern = String::from_utf8(bytes).unwrap();
+                Regex::new(&pattern).ok()
+            })
             .collect()
     });
     Ok(regex_patterns)
@@ -91,22 +100,20 @@ impl Default for JamespyConfig {
 pub fn load_config() -> JamespyConfig {
     let default_config = JamespyConfig::new();
 
-    let config_result = fs::read_to_string("config/config.toml");
-    match config_result {
-        Ok(config_file) => {
-            if let Ok(config) = toml::from_str::<JamespyConfig>(&config_file) {
-                config
-            } else {
-                eprintln!("Error: Failed to parse config.toml. Using default configuration.");
-                if let Err(err) = toml::from_str::<JamespyConfig>(&config_file) {
-                    eprintln!("Parse error details: {}", err);
-                }
-                default_config
+    let config_result = fs::read_to_string("config/config.json");
+    if let Ok(config_file) = config_result {
+        if let Ok(config) = serde_json::from_str::<JamespyConfig>(&config_file) {
+            println!("config: {config:?}");
+            config
+        } else {
+            eprintln!("Error: Failed to parse config.json. Using default configuration.");
+            if let Err(err) = serde_json::from_str::<JamespyConfig>(&config_file) {
+                eprintln!("Parse error details: {err}");
             }
-        }
-        Err(_) => {
-            eprintln!("Error: Failed to read config.toml. Using default configuration.");
             default_config
         }
+    } else {
+        eprintln!("Error: Failed to read config.json. Using default configuration.");
+        default_config
     }
 }

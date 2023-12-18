@@ -1,7 +1,6 @@
-use std::{fs::File, io::Read, time::Instant};
+use std::time::Instant;
 
 use poise::serenity_prelude as serenity;
-use toml::Value;
 
 use crate::{Context, Error};
 
@@ -33,66 +32,6 @@ pub async fn source(ctx: Context<'_>) -> Result<(), Error> {
         "<https://github.com/jamespy-rs/jamespy>\n<https://github.com/jamespy-rs/jamespy-client>",
     )
     .await?;
-    Ok(())
-}
-
-/// About jamespy!
-#[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 3)]
-pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
-    let version = {
-        let mut file = File::open("Cargo.toml")?;
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)?;
-
-        let data = contents.parse::<Value>().unwrap();
-        let version = data["package"]["version"].as_str().unwrap();
-        version.to_string()
-    };
-
-    let cache = ctx.cache();
-    let uptime = ctx.data().time_started.elapsed();
-    let calculation = |a, b| (a / b, a % b);
-
-    let seconds = uptime.as_secs();
-    let (minutes, _seconds) = calculation(seconds, 60);
-    let (hours, minutes) = calculation(minutes, 60);
-    let (days, hours) = calculation(hours, 24);
-    let uptime_string = format!("{}d{}h{}m", days, hours, minutes);
-
-    let bot_user = cache.current_user().clone();
-    let bot_name = bot_user.name.clone();
-    let bot_avatar = bot_user.avatar_url();
-
-    let guild_num = cache.guilds().len();
-    let channel_num = cache.guild_channel_count();
-    let user_num = cache.user_count();
-
-    let mut embed = serenity::CreateEmbed::default()
-        .title(format!("**{} - v{}**", bot_name, version))
-        .description("A general spy bot that only exists to spy! It has no other purpose.")
-        .field(
-            "Stats:",
-            format!(
-                "Guilds: {}\n Channels: {}\n Users: {}",
-                guild_num, channel_num, user_num
-            ),
-            true,
-        )
-        .field(
-            "Usage stats:",
-            format!("Uptime:\n `{}`", uptime_string),
-            true,
-        )
-        .field("Memory stats:", "Not implemented", true);
-    // Add footer
-
-    if let Some(avatar_url) = bot_avatar {
-        embed = embed.thumbnail(avatar_url);
-    }
-
-    let msg = poise::CreateReply::default().embed(embed);
-
-    ctx.send(msg).await?;
     Ok(())
 }
 

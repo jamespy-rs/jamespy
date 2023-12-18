@@ -160,26 +160,26 @@ pub async fn message(
     }
 
     let attachments = new_message.attachments.clone();
-    let attachments_fmt: Option<String> = if !attachments.is_empty() {
+    let attachments_fmt: Option<String> = if attachments.is_empty() {
+        None
+    } else {
         let attachment_names: Vec<String> = attachments
             .iter()
             .map(|attachment| attachment.filename.clone())
             .collect();
         Some(format!(" <{}>", attachment_names.join(", ")))
-    } else {
-        None
     };
 
     let embeds = new_message.embeds.clone();
-    let embeds_fmt: Option<String> = if !embeds.is_empty() {
+    let embeds_fmt: Option<String> = if embeds.is_empty() {
+        None
+    } else {
         let embed_types: Vec<String> = embeds
             .iter()
             .map(|embed| embed.kind.clone().unwrap_or("Unknown Type".to_string()))
             .collect();
 
         Some(format!(" {{{}}}", embed_types.join(", ")))
-    } else {
-        None
     };
     let messagewords: Vec<String> = new_message
         .content
@@ -200,7 +200,17 @@ pub async fn message(
         })
         .collect();
 
-    if !blacklisted_words.is_empty() {
+    if blacklisted_words.is_empty() {
+        println!(
+            "\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[36m{}{}\x1B[0m",
+            guild_name,
+            channel_name,
+            new_message.author.name,
+            new_message.content,
+            attachments_fmt.as_deref().unwrap_or(""),
+            embeds_fmt.as_deref().unwrap_or("")
+        );
+    } else {
         let flagged_words: Vec<String> = blacklisted_words
             .iter()
             .map(|word| (*word).clone())
@@ -211,16 +221,6 @@ pub async fn message(
         );
         println!(
             "\x1B[90m[{}] [#{}]\x1B[0m {}: \x1B[1m\x1B[31m{}{}{}\x1B[0m",
-            guild_name,
-            channel_name,
-            new_message.author.name,
-            new_message.content,
-            attachments_fmt.as_deref().unwrap_or(""),
-            embeds_fmt.as_deref().unwrap_or("")
-        );
-    } else {
-        println!(
-            "\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[36m{}{}\x1B[0m",
             guild_name,
             channel_name,
             new_message.author.name,
@@ -302,26 +302,26 @@ pub async fn message_edit(
 
             if old_message.content != new_message.content {
                 let attachments = new_message.attachments.clone();
-                let attachments_fmt: Option<String> = if !attachments.is_empty() {
+                let attachments_fmt: Option<String> = if attachments.is_empty() {
+                    None
+                } else {
                     let attachment_names: Vec<String> = attachments
                         .iter()
                         .map(|attachment| attachment.filename.clone())
                         .collect();
                     Some(format!(" <{}>", attachment_names.join(", ")))
-                } else {
-                    None
                 };
 
                 let embeds = new_message.embeds.clone();
-                let embeds_fmt: Option<String> = if !embeds.is_empty() {
+                let embeds_fmt: Option<String> = if embeds.is_empty() {
+                    None
+                } else {
                     let embed_types: Vec<String> = embeds
                         .iter()
                         .map(|embed| embed.kind.clone().unwrap_or("Unknown Type".to_string()))
                         .collect();
 
                     Some(format!(" {{{}}}", embed_types.join(", ")))
-                } else {
-                    None
                 };
 
                 println!(
@@ -423,26 +423,26 @@ pub async fn message_delete(
         let content = message.content.clone();
 
         let attachments = message.attachments.clone();
-        let attachments_fmt: Option<String> = if !attachments.is_empty() {
+        let attachments_fmt: Option<String> = if attachments.is_empty() {
+            None
+        } else {
             let attachment_names: Vec<String> = attachments
                 .iter()
                 .map(|attachment| attachment.filename.clone())
                 .collect();
             Some(format!(" <{}>", attachment_names.join(", ")))
-        } else {
-            None
         };
 
         let embeds = message.embeds.clone();
-        let embeds_fmt: Option<String> = if !embeds.is_empty() {
+        let embeds_fmt: Option<String> = if embeds.is_empty() {
+            None
+        } else {
             let embed_types: Vec<String> = embeds
                 .iter()
                 .map(|embed| embed.kind.clone().unwrap_or("Unknown Type".to_string()))
                 .collect();
 
             Some(format!(" {{{}}}", embed_types.join(", ")))
-        } else {
-            None
         };
 
         println!("\x1B[91m\x1B[2m[{}] [#{}] A message from \x1B[0m{}\x1B[91m\x1B[2m was deleted: {}{}{}\x1B[0m",

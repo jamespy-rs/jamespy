@@ -79,10 +79,10 @@ pub async fn channel_update(
 
         // Differences
         if old.name != new.name {
-            diff.push_str(&format!("Name: {} -> {}\n", old.name, new.name))
+            diff.push_str(&format!("Name: {} -> {}\n", old.name, new.name));
         }
         if old.nsfw != new.nsfw {
-            diff.push_str(&format!("NSFW: {} -> {}\n", old.nsfw, new.nsfw))
+            diff.push_str(&format!("NSFW: {} -> {}\n", old.nsfw, new.nsfw));
         }
         // Check if the channel is in a category.
         if let (Some(old_parent_id), Some(new_parent_id)) = (old.parent_id, new.parent_id) {
@@ -149,7 +149,6 @@ pub async fn channel_update(
             (Some(old_value), None) if !old_value.is_empty() => {
                 diff.push_str(&format!("Topic: {} -> None\n", old_value));
             }
-            (None, None) => {}
             _ => {}
         }
 
@@ -222,9 +221,10 @@ pub async fn channel_update(
         if old.flags.contains(ChannelFlags::REQUIRE_TAG)
             != new.flags.contains(ChannelFlags::REQUIRE_TAG)
         {
-            match new.flags.contains(ChannelFlags::REQUIRE_TAG) {
-                true => diff.push_str("REQUIRE_TAG was enabled!"),
-                false => diff.push_str("REQUIRE_TAG was disabled!"),
+            if new.flags.contains(ChannelFlags::REQUIRE_TAG) {
+                diff.push_str("REQUIRE_TAG was enabled!");
+            } else {
+                diff.push_str("REQUIRE_TAG was disabled!");
             }
         }
 
@@ -248,7 +248,6 @@ pub async fn channel_update(
                     forum_layout_to_string(old_value)
                 ));
             }
-            (None, None) => {}
             _ => {}
         }
 
@@ -272,7 +271,7 @@ pub async fn channel_update(
                     sort_order_to_string(old_value)
                 ));
             }
-            (None, None) => {}
+
             _ => {}
         }
         // Forum tags doesn't implement what i want, I refuse to do it until this is matched.
@@ -390,7 +389,7 @@ pub async fn thread_update(
 
     if let Some(old) = old {
         if old.name != new.name {
-            diff.push_str(&format!("Name: {} -> {}\n", old.name, new.name))
+            diff.push_str(&format!("Name: {} -> {}\n", old.name, new.name));
         }
 
         match (old.rate_limit_per_user, new.rate_limit_per_user) {
@@ -401,9 +400,10 @@ pub async fn thread_update(
         }
 
         if old.flags.contains(ChannelFlags::PINNED) != new.flags.contains(ChannelFlags::PINNED) {
-            match new.flags.contains(ChannelFlags::PINNED) {
-                true => diff.push_str("Pinned: true"),
-                false => diff.push_str("Pinned: false"),
+            if new.flags.contains(ChannelFlags::PINNED) {
+                diff.push_str("Pinned: true");
+            } else {
+                diff.push_str("Pinned: false");
             }
         }
 
@@ -492,12 +492,12 @@ pub async fn thread_delete(
         println!(
             "\x1B[94m[{}] An unknown thread was deleted!\x1B[0m",
             guild_name
-        )
+        );
     } else {
         println!(
             "\x1B[94m[{}] Thread #{} ({}) was deleted from #{}!\x1B[0m",
             guild_name, channel_name, kind, parent_channel_name
-        )
+        );
     }
     Ok(())
 }

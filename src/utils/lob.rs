@@ -32,7 +32,10 @@ pub async fn update_lob() -> Result<(usize, usize), Error> {
 
     {
         let mut loblist = get_loblist().write().unwrap();
-        let lines: HashSet<String> = new_lob.lines().map(|s| s.to_string()).collect();
+        let lines: HashSet<String> = new_lob
+            .lines()
+            .map(std::string::ToString::to_string)
+            .collect();
         old_count = loblist.len();
         *loblist = lines;
         new_count = loblist.len();
@@ -83,10 +86,10 @@ pub async fn remove_lob(target: &str) -> Result<bool, Error> {
 
         for line in reader.lines() {
             let line = line?;
-            if line.trim() != target {
-                lines.push(line);
-            } else {
+            if line.trim() == target {
                 line_removed = true;
+            } else {
+                lines.push(line);
             }
         }
     }

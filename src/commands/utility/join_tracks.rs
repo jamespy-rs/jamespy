@@ -87,7 +87,7 @@ pub async fn list_tracked(
             let userid = UserId::new(row.user_id.unwrap() as u64);
             // future me will check for error.
             let user = userid.to_user(ctx).await?;
-            description = format!("\n{} (ID:{})", user.name, user.id)
+            description = format!("\n{} (ID:{})", user.name, user.id);
         }
     } else {
         ctx.say("You aren't tracking any users!").await?;
