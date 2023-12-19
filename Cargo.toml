@@ -18,10 +18,11 @@ regex = "1.9.3"
 lazy_static = "1.4.0"
 chrono = "0.4.28"
 serde_json = "1.0.108"
+base64 = "0.21.5"
+
 # Optional dependencies
 tokio-tungstenite = { version = "0.20", features = ["rustls-tls-native-roots"], optional = true  }
 typesize = { version = "0.1.2", features = ["url", "time", "serde_json", "secrecy", "dashmap", "parking_lot", "details"] }
-base64 = "0.21.5"
 
 # serenity patch for developing.
 #[patch.'https://github.com/serenity-rs/serenity']
@@ -36,6 +37,7 @@ version = "0.12"
 
 [features]
 websocket = ["tokio-tungstenite"]
+castle = []
 
 [profile.release]
 strip = true

@@ -1,7 +1,8 @@
 use poise::serenity_prelude::{
     self as serenity, AutoArchiveDuration, ChannelId, ChannelType, ForumLayoutType, GuildId,
-    PermissionOverwriteType, SortOrder,
+    PermissionOverwriteType, SortOrder, Message
 };
+use crate::Data;
 use std::collections::HashSet;
 
 pub fn read_words_from_file(filename: &str) -> HashSet<String> {
@@ -103,4 +104,63 @@ pub fn sort_order_to_string(sort_order: SortOrder) -> String {
         SortOrder::Unknown(u) => format!("Unknown({u})"),
         _ => String::from("?"),
     }
+}
+
+#[cfg(feature = "castle")]
+pub async fn download_attachments(message: Message, data: &Data) -> Result<(), std::io::Error> {
+    use std::io::Write;
+
+    let castle_conf = {
+        let data = data.jamespy_config.read().unwrap();
+
+        data.castle_conf.clone()
+    };
+
+    if let Some(castle) = &castle_conf {
+        if castle.base.as_ref().unwrap().setup_complete
+            && castle.media.as_ref().unwrap().media_stashing_post
+        {
+            let folder_location = "data/attachments";
+            for attachment in message.attachments.clone() {
+                println!("Downloading file: {} ({}kb)", &attachment.filename, &attachment.size / 1000);
+                let attach = attachment.download().await;
+
+                let guild_folder = if let Some(guild_id) = &message.guild_id {
+                    guild_id.get()
+                } else {
+                    0
+                };
+
+                let path = format!(
+                    "{}/{}",
+                    folder_location,
+                    guild_folder,
+                );
+                std::fs::DirBuilder::new().recursive(true).create(path)?;
+
+
+                let file_loc = format!(
+                    "{}/{}/{}_{}_{}_{}",
+                    folder_location,
+                    guild_folder,
+                    message.channel_id,
+                    message.id,
+                    message.author.id,
+                    attachment.filename
+                );
+                let mut file = match std::fs::OpenOptions::new().create(true).write(true).open(file_loc) {
+                    Ok(file) => file,
+                    Err(err) => {
+                        eprintln!("Error opening or creating file: {}", err);
+                        return Err(err);
+                    }
+                };
+
+
+                file.write_all(&attach.unwrap())?;
+            }
+        };
+    };
+
+    Ok(())
 }

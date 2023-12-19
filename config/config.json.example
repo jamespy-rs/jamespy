@@ -12,8 +12,6 @@
         "YmFzZTY0",
         "d2hlcmUgcmF3IHN0cmluZw===="
       ],
-      "badlist": "data/badwords.txt",
-      "fixlist": "data/fixwords.txt"
     },
     "vcstatus": {
       "action": true,
