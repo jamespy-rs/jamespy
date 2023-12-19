@@ -464,7 +464,7 @@ pub async fn message_delete(
             )
             .execute(db_pool)
             .await;
-
+        #[cfg(feature = "castle")]
             crate::utils::misc::download_attachments(message, data).await?;
 
     } else {

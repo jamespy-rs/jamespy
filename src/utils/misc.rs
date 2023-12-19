@@ -1,9 +1,14 @@
 use poise::serenity_prelude::{
     self as serenity, AutoArchiveDuration, ChannelId, ChannelType, ForumLayoutType, GuildId,
-    PermissionOverwriteType, SortOrder, Message
+    PermissionOverwriteType, SortOrder
 };
-use crate::Data;
 use std::collections::HashSet;
+
+#[cfg(feature = "castle")]
+use poise::serenity_prelude::Message;
+
+#[cfg(feature = "castle")]
+use crate::Data;
 
 pub fn read_words_from_file(filename: &str) -> HashSet<String> {
     std::fs::read_to_string(filename)
