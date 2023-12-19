@@ -78,6 +78,9 @@ pub struct SelfRegex {
 pub struct MediaStashingStatus {
     pub media_stashing_post: bool,
     pub media_stash_channel: Option<ChannelId>,
+    pub single_limit: Option<u64>,
+    pub soft_limit: Option<u64>,
+    pub hard_limit: Option<u64>,
 }
 
 use base64::{engine::general_purpose, Engine as _};

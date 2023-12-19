@@ -179,6 +179,22 @@ async fn main() {
     };
 
     let framework = poise::Framework::new(options, move |ctx, ready, framework| {
+        #[cfg(feature = "castle")]
+        let ctx_clone = ctx.clone();
+        #[cfg(feature = "castle")]
+        let data_clone = data.clone();
+
+        //
+        #[cfg(feature = "castle")]
+        tokio::spawn(async move {
+            let mut interval: tokio::time::Interval =
+                tokio::time::interval(std::time::Duration::from_secs(60 * 60));
+            loop {
+                interval.tick().await;
+                let _ = crate::utils::tasks::check_space(&ctx_clone, &data_clone).await;
+            }
+        });
+
         Box::pin(async move {
             println!("Logged in as {}", ready.user.name);
             poise::builtins::register_globally(ctx, &framework.options().commands).await?;

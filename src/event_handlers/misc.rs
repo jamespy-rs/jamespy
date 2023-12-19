@@ -24,6 +24,7 @@ pub async fn cache_ready(
     data: &Data,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
+
     for guild in guilds {
         let guild_name = get_guild_name(ctx, guild);
         let result = query!(

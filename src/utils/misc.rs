@@ -1,6 +1,6 @@
 use poise::serenity_prelude::{
     self as serenity, AutoArchiveDuration, ChannelId, ChannelType, ForumLayoutType, GuildId,
-    PermissionOverwriteType, SortOrder
+    PermissionOverwriteType, SortOrder,
 };
 use std::collections::HashSet;
 
@@ -127,7 +127,18 @@ pub async fn download_attachments(message: Message, data: &Data) -> Result<(), s
         {
             let folder_location = "data/attachments";
             for attachment in message.attachments.clone() {
-                println!("Downloading file: {} ({}kb)", &attachment.filename, &attachment.size / 1000);
+                if let Some(single_limit) = castle.media.as_ref().unwrap().single_limit {
+                    if (attachment.size / 1_000_000) as u64 > single_limit {
+                        println!("Cannot download attachment '{}' as it exceeds the single file limit! ({}MB/{}MB)", attachment.filename, attachment.size / 1_000_000, single_limit);
+                        return Ok(());
+                    }
+                }
+
+                println!(
+                    "Downloading file: {} ({}kb)",
+                    &attachment.filename,
+                    &attachment.size / 1000
+                );
                 let attach = attachment.download().await;
 
                 let guild_folder = if let Some(guild_id) = &message.guild_id {
@@ -136,31 +147,30 @@ pub async fn download_attachments(message: Message, data: &Data) -> Result<(), s
                     0
                 };
 
-                let path = format!(
-                    "{}/{}",
-                    folder_location,
-                    guild_folder,
-                );
+                let path = format!("{}/{}", folder_location, guild_folder,);
                 std::fs::DirBuilder::new().recursive(true).create(path)?;
 
-
                 let file_loc = format!(
-                    "{}/{}/{}_{}_{}_{}",
+                    "{}/{}/{}_{}_{}_{}_{}",
                     folder_location,
                     guild_folder,
                     message.channel_id,
                     message.id,
                     message.author.id,
-                    attachment.filename
+                    attachment.filename,
+                    attachment.id
                 );
-                let mut file = match std::fs::OpenOptions::new().create(true).write(true).open(file_loc) {
+                let mut file = match std::fs::OpenOptions::new()
+                    .create(true)
+                    .write(true)
+                    .open(file_loc)
+                {
                     Ok(file) => file,
                     Err(err) => {
                         eprintln!("Error opening or creating file: {}", err);
                         return Err(err);
                     }
                 };
-
 
                 file.write_all(&attach.unwrap())?;
             }
