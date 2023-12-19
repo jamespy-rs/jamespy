@@ -191,8 +191,10 @@ async fn main() {
             let mut interval: tokio::time::Interval =
                 tokio::time::interval(std::time::Duration::from_secs(60 * 60));
             loop {
+                // TODO: eventually move this to its own function.
                 interval.tick().await;
                 let _ = crate::utils::tasks::check_space(&ctx_clone, &data_clone).await;
+                let _ = crate::utils::tasks::update_stats(&ctx_clone, &data_clone).await;
             }
         });
 
