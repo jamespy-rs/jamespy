@@ -5,3 +5,6 @@ pub mod lists;
 pub mod other;
 pub mod presence;
 pub mod vcstatus;
+
+#[cfg(feature = "castle")]
+pub mod castle;

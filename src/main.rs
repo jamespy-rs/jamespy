@@ -135,6 +135,8 @@ async fn main() {
             owner::lists::unload_lists(),
             owner::vcstatus::vcstatus(),
             owner::current_user::jamespy(),
+            #[cfg(feature = "castle")]
+            owner::castle::init_conf(),
             meta::source(),
             meta::help(),
             meta::uptime(),
@@ -184,7 +186,6 @@ async fn main() {
         #[cfg(feature = "castle")]
         let data_clone = data.clone();
 
-        //
         #[cfg(feature = "castle")]
         tokio::spawn(async move {
             let mut interval: tokio::time::Interval =

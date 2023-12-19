@@ -68,6 +68,7 @@ pub struct StatsStatus {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SelfRegex {
     pub regex_self: bool,
+    pub regex_channel: Option<ChannelId>,
     pub regex_self_ping: bool,
     #[serde(deserialize_with = "deserialize_regex_patterns")]
     #[serde(serialize_with = "serialize_regex")]
