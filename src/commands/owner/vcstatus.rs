@@ -66,3 +66,7 @@ pub async fn servermanager(ctx: Context<'_>) -> Result<bool, Error> {
 
     Ok(trontin)
 }
+
+pub fn commands() -> [crate::Command; 2] {
+    [vcstatus(), toggle()]
+}

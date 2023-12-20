@@ -205,3 +205,7 @@ async fn setup_settings(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
+
+pub fn commands() -> [crate::Command; 1] {
+    [init_conf()]
+}

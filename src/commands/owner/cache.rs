@@ -367,3 +367,14 @@ pub async fn cachestats(ctx: Context<'_>) -> Result<bool, Error> {
 
     Ok(cachestats)
 }
+
+pub fn commands() -> [crate::Command; 6] {
+    [
+        max_messages(),
+        cache_stats(),
+        guild_message_cache(),
+        cached_users_raw(),
+        cached_users(),
+        cache_stats(),
+    ]
+}

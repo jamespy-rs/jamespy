@@ -85,3 +85,14 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
+
+#[poise::command(prefix_command, hide_in_help)]
+async fn register(ctx: Context<'_>) -> Result<(), Error> {
+    poise::builtins::register_application_commands_buttons(ctx).await?;
+
+    Ok(())
+}
+
+pub fn commands() -> [crate::Command; 5] {
+    [uptime(), source(), help(), ping(), register()]
+}

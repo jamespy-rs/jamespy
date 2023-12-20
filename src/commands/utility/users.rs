@@ -212,3 +212,7 @@ pub async fn playing(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
+
+pub fn commands() -> [crate::Command; 4] {
+    [guild_flags(), last_reactions(), statuses(), playing()]
+}

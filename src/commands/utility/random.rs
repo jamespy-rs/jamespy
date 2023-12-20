@@ -52,4 +52,6 @@ pub async fn choose(
     Ok(())
 }
 
-// TODO: Add roll command!
+pub fn commands() -> [crate::Command; 1] {
+    [choose()]
+}

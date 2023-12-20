@@ -93,3 +93,7 @@ pub async fn unload_lists(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say("Unloaded lists!").await?;
     Ok(())
 }
+
+pub fn commands() -> [crate::Command; 2] {
+    [update_lists(), unload_lists()]
+}

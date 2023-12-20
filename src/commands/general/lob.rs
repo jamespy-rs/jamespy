@@ -149,3 +149,15 @@ pub async fn send_lobs(ctx: Context<'_>) -> Result<(), Error> {
         .await?;
     Ok(())
 }
+
+pub fn commands() -> [crate::Command; 7] {
+    [
+        lob(),
+        reload_lob(),
+        no_lob(),
+        new_lob(),
+        delete_lob(),
+        total_lobs(),
+        send_lobs(),
+    ]
+}

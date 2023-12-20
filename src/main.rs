@@ -13,7 +13,6 @@
 )]
 
 mod commands;
-use commands::*;
 mod database;
 mod event_handler;
 mod event_handlers;
@@ -31,6 +30,7 @@ use std::{env::var, time::Duration};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
+pub type Command = poise::Command<Data, Error>;
 
 #[derive(Clone)]
 pub struct Data(pub Arc<DataInner>);
@@ -53,13 +53,6 @@ pub struct DataInner {
 #[derive(Clone, Debug, Deserialize)]
 pub struct GuildConfig {
     pub prefix: Option<String>,
-}
-
-#[poise::command(prefix_command, hide_in_help)]
-async fn register(ctx: Context<'_>) -> Result<(), Error> {
-    poise::builtins::register_application_commands_buttons(ctx).await?;
-
-    Ok(())
 }
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
@@ -89,49 +82,7 @@ async fn main() {
     }));
 
     let options = poise::FrameworkOptions {
-        commands: vec![
-            register(),
-            owner::other::shutdown(),
-            owner::other::say(),
-            owner::other::dm(),
-            owner::other::react(),
-            owner::cache::cached_users_raw(),
-            owner::cache::cached_users(),
-            owner::cache::max_messages(),
-            owner::cache::cache_stats(),
-            owner::presence::status(),
-            owner::presence::reset_presence(),
-            owner::presence::set_activity(),
-            owner::database::dbstats(),
-            owner::database::sql(),
-            owner::cache::guild_message_cache(),
-            owner::lists::update_lists(),
-            owner::lists::unload_lists(),
-            owner::vcstatus::vcstatus(),
-            owner::current_user::jamespy(),
-            #[cfg(feature = "castle")]
-            owner::castle::init_conf(),
-            meta::source(),
-            meta::help(),
-            meta::uptime(),
-            meta::ping(),
-            general::lob::lob(),
-            general::lob::reload_lob(),
-            general::lob::no_lob(),
-            general::lob::new_lob(),
-            general::lob::delete_lob(),
-            general::lob::total_lobs(),
-            general::lob::send_lobs(),
-            utility::random::choose(),
-            utility::users::guild_flags(),
-            utility::users::last_reactions(),
-            utility::users::statuses(),
-            utility::users::playing(),
-            utility::info::role_info(),
-            utility::join_tracks::track_join(),
-            utility::join_tracks::list_tracked(),
-            utility::join_tracks::remove_track(),
-        ],
+        commands: commands::commands(),
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
             edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(

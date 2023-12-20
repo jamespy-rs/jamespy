@@ -119,3 +119,7 @@ async fn owner(error: poise::FrameworkError<'_, Data, Error>) {
         }
     }
 }
+
+pub fn commands() -> [crate::Command; 2] {
+    [dbstats(), sql()]
+}

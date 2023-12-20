@@ -100,3 +100,7 @@ pub async fn role_info(
     ctx.send(message).await?;
     Ok(())
 }
+
+pub fn commands() -> [crate::Command; 1] {
+    [role_info()]
+}
