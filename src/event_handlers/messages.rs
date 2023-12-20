@@ -1,16 +1,9 @@
 use crate::utils::misc::{get_channel_name, get_guild_name};
 
-#[cfg(feature = "websocket")]
-use crate::event_handlers::{broadcast_message, WebSocketEvent};
-#[cfg(feature = "websocket")]
-use crate::websocket::get_peers;
-
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, CreateMessage, GuildId, Message,
     MessageId, MessageUpdateEvent, Timestamp, UserId,
 };
-#[cfg(feature = "websocket")]
-use tokio_tungstenite::tungstenite;
 
 use crate::{Data, Error};
 
@@ -232,20 +225,6 @@ pub async fn message(
     let timestamp: NaiveDateTime =
         NaiveDateTime::from_timestamp_opt(new_message.timestamp.timestamp(), 0).unwrap();
 
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::NewMessage {
-            message: new_message.clone(),
-            guild_name,
-            channel_name,
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
-
     let _ = query!(
                 "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
@@ -276,23 +255,6 @@ pub async fn message_edit(
     let guild_id = event.guild_id.unwrap_or_default();
     let guild_name = get_guild_name(ctx, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, event.channel_id).await;
-
-    #[cfg(feature = "websocket")]
-    {
-        let edit_event = WebSocketEvent::MessageEdit {
-            old_if_available: old_if_available.clone(),
-            new: new.clone(),
-            event: event.clone(),
-            guild_name: Some(guild_name.clone()),
-            channel_name: Some(channel_name.clone()),
-        };
-
-        let message = serde_json::to_string(&edit_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
 
     match (old_if_available, new) {
         (Some(old_message), Some(new_message)) => {
@@ -387,30 +349,6 @@ pub async fn message_delete(
     let guild_name = get_guild_name(ctx, guild_id_default);
 
     let channel_name = get_channel_name(ctx, guild_id_default, channel_id).await;
-
-    #[cfg(feature = "websocket")]
-    {
-        // This works but might not be optimal.
-        let serenity_message = ctx
-            .cache
-            .message(channel_id, deleted_message_id)
-            .map(|message_ref| message_ref.clone());
-
-        let delete_event = WebSocketEvent::MessageDelete {
-            channel_id,
-            deleted_message_id,
-            guild_id,
-            message: serenity_message,
-            guild_name: guild_name.clone(),
-            channel_name: channel_name.clone(),
-        };
-
-        let message = serde_json::to_string(&delete_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
 
     // This works but might not be optimal.
     let message = ctx

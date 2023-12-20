@@ -1,71 +1,11 @@
-#[cfg(feature = "websocket")]
-use crate::event_handlers::{broadcast_message, WebSocketEvent};
-#[cfg(feature = "websocket")]
-use crate::websocket::get_peers;
-
-use poise::serenity_prelude::{self as serenity, VoiceState};
-#[cfg(feature = "websocket")]
-use tokio_tungstenite::tungstenite;
-
 use crate::Error;
+use poise::serenity_prelude::{self as serenity, VoiceState};
 
 pub async fn voice_state_update(
     ctx: &serenity::Context,
     old: Option<VoiceState>,
     new: VoiceState,
 ) -> Result<(), Error> {
-    #[cfg(feature = "websocket")]
-    {
-        let mut old_guild_name = None;
-        let mut old_channel_name = None;
-        let mut new_guild_name = None;
-        let mut new_channel_name = None;
-        let mut user_name = None;
-
-        if let Some(old) = &old {
-            if let Some(old_channel_id) = &old.channel_id {
-                old_channel_name = Some(old_channel_id.name(ctx).await?);
-            }
-
-            if let Some(old_guild_id) = &old.guild_id {
-                old_guild_name = Some(match old_guild_id.name(ctx) {
-                    Some(name) => name,
-                    None => "Unknown".to_string(),
-                });
-            }
-        }
-
-        if let Some(new_channel_id) = &new.channel_id {
-            new_channel_name = Some(new_channel_id.name(ctx).await?);
-        }
-
-        if let Some(new_guild_id) = &new.guild_id {
-            new_guild_name = Some(match new_guild_id.name(ctx) {
-                Some(name) => name,
-                None => "Unknown".to_string(),
-            });
-        }
-
-        if let Some(member) = &new.member {
-            user_name = Some(member.user.name.clone());
-        }
-
-        let new_message_event = WebSocketEvent::VoiceStateUpdate {
-            old: old.clone(),
-            new: new.clone(),
-            old_guild_name,
-            old_channel_name,
-            new_guild_name,
-            new_channel_name,
-            user_name,
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
-
     if let Some(old) = old {
         if old.channel_id != new.channel_id && new.channel_id.is_some() {
             let mut guild_name = String::from("Unknown");

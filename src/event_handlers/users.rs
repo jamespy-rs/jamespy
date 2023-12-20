@@ -1,12 +1,4 @@
-#[cfg(feature = "websocket")]
-use crate::event_handlers::{broadcast_message, WebSocketEvent};
-
-#[cfg(feature = "websocket")]
-use crate::websocket::get_peers;
-
 use poise::serenity_prelude::{self as serenity, GuildMemberUpdateEvent, Member};
-#[cfg(feature = "websocket")]
-use tokio_tungstenite::tungstenite;
 
 use crate::Error;
 
@@ -26,20 +18,6 @@ pub async fn guild_member_update(
         }
     };
 
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::GuildMemberUpdate {
-            old_if_available: old_if_available.clone(),
-            new: new.clone(),
-            event: event.clone(),
-            guild_name: guild_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
     if let Some(old_member) = old_if_available {
         if let Some(new_member) = new {
             let old_nickname = old_member.nick.as_deref().unwrap_or("None");

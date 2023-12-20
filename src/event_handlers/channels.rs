@@ -1,5 +1,3 @@
-#[cfg(feature = "websocket")]
-use crate::event_handlers::{broadcast_message, WebSocketEvent};
 use crate::utils::misc::{
     auto_archive_duration_to_string, channel_type_to_string, forum_layout_to_string,
     get_guild_name, sort_order_to_string,
@@ -8,16 +6,11 @@ use crate::utils::permissions::get_permission_changes;
 
 use crate::{Data, Error};
 
-#[cfg(feature = "websocket")]
-use crate::websocket::get_peers;
-
 use poise::serenity_prelude::audit_log::Action::VoiceChannelStatus;
 use poise::serenity_prelude::{
     self as serenity, ChannelFlags, ChannelId, ChannelType, ForumEmoji, GuildChannel, GuildId,
     PartialGuildChannel, UserId, VoiceChannelStatusAction,
 };
-#[cfg(feature = "websocket")]
-use tokio_tungstenite::tungstenite;
 
 use std::time::Duration;
 
@@ -26,19 +19,6 @@ pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> R
         .guild_id
         .name(ctx)
         .unwrap_or("Unknown Guild".to_string());
-
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::ChannelCreate {
-            channel: channel.clone(),
-            guild_name: guild_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
 
     let kind = channel_type_to_string(channel.kind);
     println!(
@@ -58,20 +38,6 @@ pub async fn channel_update(
     let mut diff = String::new();
 
     let guild_name = get_guild_name(ctx, new.guild_id);
-
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::ChannelUpdate {
-            old: old.clone(),
-            new: new.clone(),
-            guild_name: guild_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
 
     if let Some(old) = old {
         channel_name = new.name.clone();
@@ -293,19 +259,6 @@ pub async fn channel_delete(ctx: &serenity::Context, channel: GuildChannel) -> R
         .name(ctx)
         .unwrap_or("Unknown Guild".to_string());
 
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::ChannelDelete {
-            channel: channel.clone(),
-            guild_name: guild_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
-
     println!(
         "\x1B[34m[{}] #{} ({}) was deleted!\x1B[0m",
         guild_name, channel.name, kind
@@ -325,19 +278,6 @@ pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Res
         "Unknown Channel".to_string()
     };
 
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::ThreadCreate {
-            thread: thread.clone(),
-            guild_name: guild_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
-
     println!(
         "\x1B[94m[{}] Thread #{} ({}) was created in #{}!\x1B[0m",
         guild_name, thread.name, kind, parent_channel_name
@@ -355,37 +295,11 @@ pub async fn thread_update(
     let kind = channel_type_to_string(new.kind);
     let mut diff = String::new();
 
-    #[cfg(feature = "websocket")]
-    let (parent_channel_name, parent_channel) = if let Some(parent_id) = new.parent_id {
-        let channel = parent_id.to_channel(ctx).await?;
-        let name = parent_id.name(ctx).await?;
-        (name, Some(channel))
-    } else {
-        ("Unknown Channel".to_string(), None)
-    };
-
-    // fix this mess later.
-    #[cfg(not(feature = "websocket"))]
     let parent_channel_name = if let Some(parent_id) = new.parent_id {
         parent_id.name(ctx).await?
     } else {
         "Unknown Channel".to_string()
     };
-
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::ThreadUpdate {
-            old: old.clone(),
-            new: new.clone(),
-            parent_channel: parent_channel.clone(),
-            guild_name: guild_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
 
     if let Some(old) = old {
         if old.name != new.name {
@@ -462,20 +376,6 @@ pub async fn thread_delete(
     let mut parent_channel_name: String = String::new();
     let mut kind = String::new();
     let guild_name = get_guild_name(ctx, guild_id);
-
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::ThreadDelete {
-            thread: thread.clone(),
-            full_thread_data: full_thread_data.clone(),
-            guild_name: guild_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
 
     if let Some(full_thread) = full_thread_data {
         channel_name = full_thread.name;

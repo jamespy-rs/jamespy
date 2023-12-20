@@ -1,10 +1,3 @@
-#[cfg(feature = "websocket")]
-use crate::event_handlers::{broadcast_message, WebSocketEvent};
-#[cfg(feature = "websocket")]
-use crate::websocket::get_peers;
-#[cfg(feature = "websocket")]
-use tokio_tungstenite::tungstenite;
-
 use crate::{
     utils::misc::{get_channel_name, get_guild_name},
     Data, Error,
@@ -34,21 +27,6 @@ pub async fn reaction_add(
         Ok(user) => user.name,
         Err(_) => "Unknown User".to_string(),
     };
-
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::ReactionAdd {
-            add_reaction: add_reaction.clone(),
-            user_name: user_name.clone(),
-            guild_name: guild_name.clone(),
-            channel_name: channel_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
 
     println!(
         "\x1B[95m[{}] [#{}] {} added a reaction: {}\x1B[0m",
@@ -91,21 +69,6 @@ pub async fn reaction_remove(
         Ok(user) => user.name,
         Err(_) => "Unknown User".to_string(),
     };
-
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::ReactionRemove {
-            removed_reaction: removed_reaction.clone(),
-            user_name: user_name.clone(),
-            guild_name: guild_name.clone(),
-            channel_name: channel_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
 
     println!(
         "\x1B[95m[{}] [#{}] {} removed a reaction: {}\x1B[0m",

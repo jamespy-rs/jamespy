@@ -1,14 +1,6 @@
 use std::collections::HashMap;
 
-#[cfg(feature = "websocket")]
-use crate::event_handlers::broadcast_message;
-
-#[cfg(feature = "websocket")]
-use crate::{event_handlers::WebSocketEvent, websocket::get_peers};
-
 use sqlx::query;
-#[cfg(feature = "websocket")]
-use tokio_tungstenite::tungstenite;
 
 use crate::Error;
 use crate::{utils::misc::get_guild_name, Data};
@@ -24,19 +16,6 @@ pub async fn guild_create(
     is_new: Option<bool>,
     //data: &Data,
 ) -> Result<(), Error> {
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::GuildCreate {
-            guild: guild.clone(),
-            is_new,
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
-
     if let Some(true) = is_new {
         println!(
             "\x1B[33mJoined {} (ID:{})!\nNow in {} guild(s)\x1B[0m",
@@ -58,19 +37,6 @@ pub async fn guild_member_addition(
     let joined_user_id = new_member.user.id;
 
     let guild_name = get_guild_name(ctx, guild_id);
-
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::GuildMemberAddition {
-            new_member: new_member.clone(),
-            guild_name: guild_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has joined!\x1B[0m",
@@ -122,20 +88,6 @@ pub async fn guild_member_removal(
 ) -> Result<(), Error> {
     let db_pool = &data.db;
     let guild_name = get_guild_name(ctx, guild_id);
-
-    #[cfg(feature = "websocket")]
-    {
-        let new_message_event = WebSocketEvent::GuildMemberRemoval {
-            guild_id,
-            user: user.clone(),
-            guild_name: guild_name.clone(),
-        };
-        let message = serde_json::to_string(&new_message_event).unwrap();
-        let peers = { get_peers().lock().unwrap().clone() };
-
-        let message = tungstenite::protocol::Message::Text(message);
-        broadcast_message(peers, message).await;
-    }
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m",

@@ -19,9 +19,6 @@ mod event_handler;
 mod event_handlers;
 mod utils;
 
-#[cfg(feature = "websocket")]
-mod websocket;
-
 mod config;
 
 use database::init_data;
@@ -31,13 +28,6 @@ use serde::Deserialize;
 use std::sync::Arc;
 use std::sync::RwLock;
 use std::{env::var, time::Duration};
-
-#[cfg(feature = "websocket")]
-use std::env;
-#[cfg(feature = "websocket")]
-use tokio::net::TcpListener;
-#[cfg(feature = "websocket")]
-use websocket::{get_peers, handle_connection};
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -91,22 +81,6 @@ async fn main() {
     let db_pool = init_data().await;
     let redis_pool = init_redis_pool().await;
 
-    #[cfg(feature = "websocket")]
-    {
-        let addr = env::args()
-            .nth(1)
-            .unwrap_or_else(|| "0.0.0.0:8080".to_string());
-
-        let try_socket = TcpListener::bind(&addr).await;
-        let listener = try_socket.expect("Failed to bind");
-        println!("Listening on: {}", addr);
-
-        tokio::spawn(async move {
-            while let Ok((stream, addr)) = listener.accept().await {
-                tokio::spawn(handle_connection(get_peers().clone(), stream, addr));
-            }
-        });
-    }
     let data = Data(Arc::new(DataInner {
         db: db_pool,
         redis: redis_pool,

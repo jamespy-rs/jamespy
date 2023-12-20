@@ -126,7 +126,7 @@ pub async fn download_attachments(message: Message, data: &Data) -> Result<(), s
             && castle.media.as_ref().unwrap().media_stashing_post
         {
             let folder_location = "data/attachments";
-            for attachment in message.attachments.clone() {
+            for (index, attachment) in message.attachments.clone().into_iter().enumerate() {
                 if let Some(single_limit) = castle.media.as_ref().unwrap().single_limit {
                     if (attachment.size / 1_000_000) as u64 > single_limit {
                         println!("Cannot download attachment '{}' as it exceeds the single file limit! ({}MB/{}MB)", attachment.filename, attachment.size / 1_000_000, single_limit);
@@ -151,14 +151,8 @@ pub async fn download_attachments(message: Message, data: &Data) -> Result<(), s
                 std::fs::DirBuilder::new().recursive(true).create(path)?;
 
                 let file_loc = format!(
-                    "{}/{}/{}_{}_{}_{}_{}",
-                    folder_location,
-                    guild_folder,
-                    message.channel_id,
-                    message.id,
-                    message.author.id,
-                    attachment.filename,
-                    attachment.id
+                    "{}/{}/{}_{}_{}",
+                    folder_location, guild_folder, message.id, index, attachment.filename
                 );
                 let mut file = match std::fs::OpenOptions::new()
                     .create(true)

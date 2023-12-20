@@ -78,8 +78,6 @@ pub async fn check_space(ctx: &serenity::Context, data: &Data) -> Result<(), cra
     Ok(())
 }
 
-
-
 pub async fn update_stats(ctx: &serenity::Context, data: &Data) -> Result<(), crate::Error> {
     let castle_conf = {
         let data = data.jamespy_config.read().unwrap();
@@ -88,32 +86,34 @@ pub async fn update_stats(ctx: &serenity::Context, data: &Data) -> Result<(), cr
     };
 
     if let Some(castle) = &castle_conf {
-
         if let Some(castle_stats) = &castle.stats {
             if castle_stats.stats_enabled {
                 if let Some(msg) = castle_stats.stats_message {
-                    let msg = ctx.http.get_message(castle_stats.stats_channel.unwrap(), msg).await;
+                    let msg = ctx
+                        .http
+                        .get_message(castle_stats.stats_channel.unwrap(), msg)
+                        .await;
                     match msg {
                         Ok(mut msg) => {
                             let embed = serenity::CreateEmbed::default().title("Stats");
-                            msg.edit(ctx, serenity::EditMessage::default().content("").embed(embed)).await?;
-                        },
+                            msg.edit(
+                                ctx,
+                                serenity::EditMessage::default().content("").embed(embed),
+                            )
+                            .await?;
+                        }
                         Err(err) => {
                             let user_id =
-                            UserId::from(NonZeroU64::new(158567567487795200).unwrap());
-                        let user = user_id.to_user(ctx.clone()).await?;
-                        user.dm(
-                            &ctx,
-                            serenity::CreateMessage::default().content(format!(
-                                "Failure to get stats message: {err}"
-                            )),
-                        )
-                        .await?;
-                        },
-
+                                UserId::from(NonZeroU64::new(158567567487795200).unwrap());
+                            let user = user_id.to_user(ctx.clone()).await?;
+                            user.dm(
+                                &ctx,
+                                serenity::CreateMessage::default()
+                                    .content(format!("Failure to get stats message: {err}")),
+                            )
+                            .await?;
+                        }
                     }
-
-
                 }
             }
         }
