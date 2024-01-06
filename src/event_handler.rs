@@ -110,7 +110,8 @@ pub async fn event_handler(
             new,
             event,
         } => {
-            event_handlers::users::guild_member_update(ctx, old_if_available, new, event).await?;
+            event_handlers::users::guild_member_update(ctx, old_if_available, new, event, data)
+                .await?;
         }
         serenity::FullEvent::GuildAuditLogEntryCreate { entry, guild_id } => {
             event_handlers::guilds::guild_audit_log_entry_create(ctx, entry, guild_id).await?;

@@ -21,7 +21,7 @@ pub async fn voice_state_update(
                     .unwrap_or_else(|| guild_name.clone());
             }
             if let Some(member) = new.member {
-                user_name = member.user.name;
+                user_name = member.user.name.to_string();
             }
 
             if let Some(old_channel_id) = old.channel_id {
@@ -42,8 +42,7 @@ pub async fn voice_state_update(
                 }
             }
             println!(
-                "\x1B[32m[{}] {}: {} (ID:{}) -> {} (ID:{})\x1B[0m",
-                guild_name, user_name, old_channel, old_channel_id_, new_channel, new_channel_id_
+                "\x1B[32m[{guild_name}] {user_name}: {old_channel} (ID:{old_channel_id_}) -> {new_channel} (ID:{new_channel_id_})\x1B[0m"
             );
         } else if new.channel_id.is_none() {
             let mut guild_name = String::from("Unknown");
@@ -57,7 +56,7 @@ pub async fn voice_state_update(
                     .unwrap_or_else(|| guild_name.clone());
             }
             if let Some(member) = new.member {
-                user_name = member.user.name;
+                user_name = member.user.name.to_string();
             }
             if let Some(old_channel_id) = old.channel_id {
                 old_channel_id_ = old_channel_id.get().to_string();
@@ -68,8 +67,7 @@ pub async fn voice_state_update(
                 }
             }
             println!(
-                "\x1B[32m[{}] {} left {} (ID:{})\x1B[0m",
-                guild_name, user_name, old_channel, old_channel_id_
+                "\x1B[32m[{guild_name}] {user_name} left {old_channel} (ID:{old_channel_id_})\x1B[0m"
             );
         } else {
             // mutes, unmutes, deafens, etc are here.
@@ -86,7 +84,7 @@ pub async fn voice_state_update(
                 .unwrap_or_else(|| guild_name.clone());
         }
         if let Some(member) = new.member {
-            user_name = member.user.name;
+            user_name = member.user.name.to_string();
         }
         if let Some(new_channel_id) = new.channel_id {
             new_channel_id_ = new_channel_id.get().to_string();
@@ -98,8 +96,7 @@ pub async fn voice_state_update(
         }
 
         println!(
-            "\x1B[32m[{}] {} joined {} (ID:{})\x1B[0m",
-            guild_name, user_name, new_channel, new_channel_id_
+            "\x1B[32m[{guild_name}] {user_name} joined {new_channel} (ID:{new_channel_id_})\x1B[0m"
         );
     }
 

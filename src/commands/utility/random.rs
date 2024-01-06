@@ -42,7 +42,7 @@ pub async fn choose(
     ctx.send(
         poise::CreateReply::default().embed(
             serenity::CreateEmbed::default()
-                .author(CreateEmbedAuthor::new(&author.name).icon_url(image_url))
+                .author(CreateEmbedAuthor::new(&*author.name).icon_url(image_url))
                 .description(chosen_option.to_string())
                 .color(Colour::from_rgb(0, 255, 0)),
         ),

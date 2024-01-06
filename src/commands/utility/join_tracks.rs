@@ -33,7 +33,7 @@ pub async fn track_join(
     .fetch_one(db_pool)
     .await;
 
-    println!("{:?}", result);
+    println!("{result:?}");
     if result.is_ok() {
         ctx.say("You are already tracking this user!").await?;
         return Ok(());

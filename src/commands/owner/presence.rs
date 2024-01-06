@@ -38,8 +38,7 @@ pub async fn status(
     };
 
     ctx.say(format!(
-        "Updating status to: **{}**. (this could take a moment)",
-        new_status
+        "Updating status to: **{new_status}**. (this could take a moment)"
     ))
     .await?;
 
@@ -83,10 +82,12 @@ pub async fn set_activity(
         _ => ActivityType::Playing,
     };
 
+    let status = custom_status.map(std::convert::Into::into);
+
     let activity_data = ActivityData {
-        name,
+        name: name.into(),
         kind: activity_type_enum,
-        state: custom_status,
+        state: status,
         url: None,
     };
 

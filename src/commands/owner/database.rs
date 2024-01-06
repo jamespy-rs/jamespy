@@ -23,7 +23,7 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
     let mut embed = serenity::CreateEmbed::default().title("Database Stats");
 
     for (table_name, pk_column) in table_info {
-        let sql_query = format!("SELECT COUNT({}) FROM {}", pk_column, table_name);
+        let sql_query = format!("SELECT COUNT({pk_column}) FROM {table_name}");
 
         let row = query(&sql_query).fetch_one(db_pool).await?;
 
@@ -37,10 +37,7 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
     let db_size_bytes: i64 = row.get(0);
     let db_size = format!("{:.2} MB", db_size_bytes / (1024 * 1024));
 
-    embed = embed.footer(CreateEmbedFooter::new(format!(
-        "Database size: {}",
-        db_size
-    )));
+    embed = embed.footer(CreateEmbedFooter::new(format!("Database size: {db_size}")));
     ctx.send(poise::CreateReply::default().embed(embed)).await?;
     Ok(())
 }
@@ -74,22 +71,22 @@ pub async fn sql(
         Ok(Some(row)) => {
             if row.len() == 1 && row.try_get::<i64, _>(0).is_ok() {
                 let count = row.get::<i64, _>(0);
-                let formatted = format!("Counted {} rows in {}ms", count, elapsed);
+                let formatted = format!("Counted {count} rows in {elapsed}ms");
                 let message = poise::CreateReply::default().content(formatted);
                 ctx.send(message).await?;
             } else {
-                let formatted = format!("Query executed successfully in {}ms", elapsed);
+                let formatted = format!("Query executed successfully in {elapsed}ms");
                 let message = poise::CreateReply::default().content(formatted);
                 ctx.send(message).await?;
             }
         }
         Ok(None) => {
-            let formatted = format!("Query executed successfully in {}ms", elapsed);
+            let formatted = format!("Query executed successfully in {elapsed}ms");
             let message = poise::CreateReply::default().content(formatted);
             ctx.send(message).await?;
         }
         Err(err) => {
-            let error_message = format!("Error executing query: {:?}", err);
+            let error_message = format!("Error executing query: {err:?}");
             let message = poise::CreateReply::default().content(error_message);
             ctx.send(message).await?;
         }
@@ -114,7 +111,7 @@ async fn owner(error: poise::FrameworkError<'_, Data, Error>) {
         }
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
-                println!("Error while handling error: {}", e);
+                println!("Error while handling error: {e}");
             }
         }
     }

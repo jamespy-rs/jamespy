@@ -40,7 +40,7 @@ pub async fn channel_update(
     let guild_name = get_guild_name(ctx, new.guild_id);
 
     if let Some(old) = old {
-        channel_name = new.name.clone();
+        channel_name = new.name.to_string();
         kind = channel_type_to_string(new.kind);
 
         // Differences
@@ -78,8 +78,8 @@ pub async fn channel_update(
             (Some(old_value), Some(new_value)) if old_value != new_value => {
                 diff.push_str(&format!(
                     "Bitrate: {}kbps -> {}kbps\n",
-                    old_value / 1000,
-                    new_value / 1000
+                    u32::from(old_value) / 1000,
+                    u32::from(new_value) / 1000
                 ));
             }
             _ => {}
@@ -91,6 +91,7 @@ pub async fn channel_update(
                     if old_overwrite.kind == new_overwrite.kind {
                         let changes_str = get_permission_changes(
                             ctx.clone(),
+                            new.guild_id,
                             old_overwrite.allow,
                             new_overwrite.allow,
                             old_overwrite.deny,
@@ -107,33 +108,33 @@ pub async fn channel_update(
         // If both the old and new topic are the same, it shouldn't print.
         match (old.topic, new.topic) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!("Topic: {} -> {}\n", old_value, new_value));
+                diff.push_str(&format!("Topic: {old_value} -> {new_value}\n"));
             }
             (None, Some(new_value)) if !new_value.is_empty() => {
-                diff.push_str(&format!("Topic: None -> {}\n", new_value));
+                diff.push_str(&format!("Topic: None -> {new_value}\n"));
             }
             (Some(old_value), None) if !old_value.is_empty() => {
-                diff.push_str(&format!("Topic: {} -> None\n", old_value));
+                diff.push_str(&format!("Topic: {old_value} -> None\n"));
             }
             _ => {}
         }
 
         match (old.user_limit, new.user_limit) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!("User Limit: {} -> {}\n", old_value, new_value));
+                diff.push_str(&format!("User Limit: {old_value} -> {new_value}\n"));
             }
             (None, Some(new_value)) => {
-                diff.push_str(&format!("User Limit: None -> {}\n", new_value));
+                diff.push_str(&format!("User Limit: None -> {new_value}\n"));
             }
             (Some(old_value), None) => {
-                diff.push_str(&format!("User Limit: {} -> None\n", old_value));
+                diff.push_str(&format!("User Limit: {old_value} -> None\n"));
             }
             _ => {}
         }
 
         match (old.rate_limit_per_user, new.rate_limit_per_user) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!("Slowmode: {}s -> {}s\n", old_value, new_value));
+                diff.push_str(&format!("Slowmode: {old_value}s -> {new_value}s\n"));
             }
             _ => {}
         }
@@ -144,8 +145,7 @@ pub async fn channel_update(
         ) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
                 diff.push_str(&format!(
-                    "Default Thread Slowmode: {}s -> {}s\n",
-                    old_value, new_value
+                    "Default Thread Slowmode: {old_value}s -> {new_value}s\n"
                 ));
             }
             _ => {}
@@ -159,8 +159,7 @@ pub async fn channel_update(
                 let old_duration = auto_archive_duration_to_string(old_value);
                 let new_duration = auto_archive_duration_to_string(new_value);
                 diff.push_str(&format!(
-                    "Default Archive Duration: {} -> {}\n",
-                    old_duration, new_duration
+                    "Default Archive Duration: {old_duration} -> {new_duration}\n"
                 ));
             }
             _ => {}
@@ -171,15 +170,14 @@ pub async fn channel_update(
                 if old_name != new_name =>
             {
                 diff.push_str(&format!(
-                    "Default Reaction Emoji: {} -> {}\n",
-                    old_name, new_name
+                    "Default Reaction Emoji: {old_name} -> {new_name}\n"
                 ));
             }
             (None, Some(ForumEmoji::Name(new_name))) => {
-                diff.push_str(&format!("Default Reaction Emoji: None -> {}\n", new_name));
+                diff.push_str(&format!("Default Reaction Emoji: None -> {new_name}\n"));
             }
             (Some(ForumEmoji::Name(old_name)), None) => {
-                diff.push_str(&format!("Default Reaction Emoji: {} -> None\n", old_name));
+                diff.push_str(&format!("Default Reaction Emoji: {old_name} -> None\n"));
             }
             _ => {}
         }
@@ -245,8 +243,7 @@ pub async fn channel_update(
     diff = diff.trim_end_matches('\n').to_string();
     if !diff.is_empty() {
         println!(
-            "\x1B[34m[{}] #{} was updated! ({})\x1B[0m\n{}",
-            guild_name, channel_name, kind, diff
+            "\x1B[34m[{guild_name}] #{channel_name} was updated! ({kind})\x1B[0m\n{diff}"
         );
     }
     Ok(())
@@ -308,7 +305,7 @@ pub async fn thread_update(
 
         match (old.rate_limit_per_user, new.rate_limit_per_user) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!("Slowmode: {}s -> {}s\n", old_value, new_value));
+                diff.push_str(&format!("Slowmode: {old_value}s -> {new_value}s\n"));
             }
             _ => {}
         }
@@ -324,19 +321,19 @@ pub async fn thread_update(
         if let (Some(old_metadata), Some(new_metadata)) = (old.thread_metadata, new.thread_metadata)
         {
             if old.kind == ChannelType::PrivateThread {
-                match (old_metadata.invitable, new_metadata.invitable) {
+                match (old_metadata.invitable(), new_metadata.invitable()) {
                     (true, false) => diff.push_str("Invitable: false\n"),
                     (false, true) => diff.push_str("Invitable: true\n"),
                     _ => {}
                 }
             }
 
-            match (old_metadata.archived, new_metadata.archived) {
+            match (old_metadata.archived(), new_metadata.archived()) {
                 (true, false) => diff.push_str("Archived: false\n"),
                 (false, true) => diff.push_str("Archived: true\n"),
                 _ => {}
             }
-            match (old_metadata.locked, new_metadata.locked) {
+            match (old_metadata.locked(), new_metadata.locked()) {
                 (true, false) => diff.push_str("Locked: false\n"),
                 (false, true) => diff.push_str("Locked: true\n"),
                 _ => {}
@@ -348,8 +345,7 @@ pub async fn thread_update(
                 let new_duration =
                     auto_archive_duration_to_string(new_metadata.auto_archive_duration);
                 diff.push_str(&format!(
-                    "Archive Duration: {} -> {}\n",
-                    old_duration, new_duration
+                    "Archive Duration: {old_duration} -> {new_duration}\n"
                 ));
             }
         }
@@ -378,7 +374,7 @@ pub async fn thread_delete(
     let guild_name = get_guild_name(ctx, guild_id);
 
     if let Some(full_thread) = full_thread_data {
-        channel_name = full_thread.name;
+        channel_name = full_thread.name.to_string();
         kind = channel_type_to_string(full_thread.kind);
 
         if let Some(parent_id) = full_thread.parent_id {
@@ -390,13 +386,11 @@ pub async fn thread_delete(
 
     if channel_name.is_empty() {
         println!(
-            "\x1B[94m[{}] An unknown thread was deleted!\x1B[0m",
-            guild_name
+            "\x1B[94m[{guild_name}] An unknown thread was deleted!\x1B[0m"
         );
     } else {
         println!(
-            "\x1B[94m[{}] Thread #{} ({}) was deleted from #{}!\x1B[0m",
-            guild_name, channel_name, kind, parent_channel_name
+            "\x1B[94m[{guild_name}] Thread #{channel_name} ({kind}) was deleted from #{parent_channel_name}!\x1B[0m"
         );
     }
     Ok(())
@@ -529,7 +523,7 @@ pub async fn add(
                 post.send_message(
                     ctx,
                     serenity::CreateMessage::default()
-                        .content(format!("<@{}>", user_id))
+                        .content(format!("<@{user_id}>"))
                         .embed(embed),
                 )
                 .await?;
@@ -537,7 +531,7 @@ pub async fn add(
                 post.send_message(
                     ctx,
                     serenity::CreateMessage::default()
-                        .content(format!("<@{}>: **Blacklisted word in status!**", user_id))
+                        .content(format!("<@{user_id}>: **Blacklisted word in status!**"))
                         .embed(embed.clone()),
                 )
                 .await?;
@@ -545,7 +539,7 @@ pub async fn add(
                     .send_message(
                         ctx,
                         serenity::CreateMessage::default()
-                            .content(format!("<@{}>: **Blacklisted word in status!**", user_id))
+                            .content(format!("<@{user_id}>: **Blacklisted word in status!**"))
                             .embed(embed),
                     )
                     .await?;

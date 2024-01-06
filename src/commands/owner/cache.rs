@@ -1,12 +1,10 @@
-use std::borrow::Cow;
-
-use poise::serenity_prelude::{self as serenity, ChannelType, GuildId};
+use poise::serenity_prelude::{self as serenity, ChannelType};
+use std::collections::HashMap;
 
 use crate::{
     utils::{self, misc::channel_type_to_string},
     Context, Error,
 };
-use typesize::TypeSize;
 
 /// View/set max messages cached per channel
 #[poise::command(
@@ -35,188 +33,6 @@ pub async fn max_messages(
         ))
         .await?;
     }
-    Ok(())
-}
-
-struct CacheData {
-    name: String,
-    size: usize,
-    is_collection: bool,
-    value: String,
-}
-
-#[poise::command(
-    rename = "cache-stats",
-    aliases("cache_stats", "cache_status", "cache-status"),
-    prefix_command,
-    category = "Cache",
-    check = "cachestats",
-    hide_in_help,
-    subcommands("guild", "settings", "legacy")
-)]
-pub async fn cache_stats(ctx: Context<'_>) -> Result<(), Error> {
-    let cache = &ctx.cache();
-
-    let mut sum_size: usize = 0;
-    let mut fields = Vec::new();
-    for field in cache.get_size_details() {
-        let name = format!("`{}`", field.name);
-        let size = field.size;
-        sum_size += size;
-        if let Some(count) = field.collection_items {
-            let (count, size_per): (Cow<'_, str>, Cow<'_, str>) = if count == 0 {
-                (Cow::Owned("0".to_string()), Cow::Owned("N/A".to_string()))
-            } else {
-                let size_of = format!("{}", (field.size / count));
-                let count_fmt = count.to_string();
-                (Cow::Owned(count_fmt), Cow::Owned(size_of))
-            };
-
-            fields.push(CacheData {
-                name,
-                size,
-                is_collection: true,
-                value: format!("Count: `{count}`\nSize: `{size}b`\nAverage size: `{size_per}b`"),
-            });
-        } else {
-            fields.push(CacheData {
-                name,
-                size,
-                is_collection: false,
-                value: format!("Size: `{size}b`"),
-            });
-        }
-    }
-
-    fields.sort_by_key(|field| field.size);
-    fields.sort_by_key(|field| field.is_collection);
-    fields.reverse();
-
-    let embed = serenity::CreateEmbed::default()
-        .title("Cache Statistics")
-        .fields(fields.into_iter().map(|f| (f.name, f.value, true)))
-        .footer(serenity::CreateEmbedFooter::new(format!(
-            "Total size: {}b",
-            sum_size
-        )));
-
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
-
-    Ok(())
-}
-
-#[poise::command(prefix_command, category = "Cache", hide_in_help, owners_only)]
-pub async fn guild(ctx: Context<'_>, guild_id: GuildId) -> Result<(), Error> {
-    let cache = &ctx.cache();
-
-    let mut sum_size: usize = 0;
-    let mut fields = Vec::new();
-    if cache.guild(guild_id).is_some() {
-        for field in cache.guild(guild_id).unwrap().get_size_details() {
-            let name = format!("`{}`", field.name);
-            let size = field.size;
-            sum_size += size;
-            if let Some(count) = field.collection_items {
-                let (count, size_per): (Cow<'_, str>, Cow<'_, str>) = if count == 0 {
-                    (Cow::Owned("0".to_string()), Cow::Owned("N/A".to_string()))
-                } else {
-                    let size_of = format!("{}b", (field.size / count));
-                    let count_fmt = count.to_string();
-                    (Cow::Owned(count_fmt), Cow::Owned(size_of))
-                };
-
-                fields.push(CacheData {
-                    name,
-                    size,
-                    is_collection: true,
-                    value: format!("Count: `{count}`\nSize: `{size}`\nAverage size: `{size_per}b`"),
-                });
-            } else {
-                fields.push(CacheData {
-                    name,
-                    size,
-                    is_collection: false,
-                    value: format!("Size: `{size}b`"),
-                });
-            }
-        }
-
-        fields.sort_by_key(|field| field.size);
-        fields.sort_by_key(|field| field.is_collection);
-        fields.reverse();
-
-        let embed = serenity::CreateEmbed::default()
-            .title("Cache Statistics")
-            .fields(fields.into_iter().map(|f| (f.name, f.value, true)))
-            .footer(serenity::CreateEmbedFooter::new(format!(
-                "Total size: {}b",
-                sum_size
-            )));
-
-        ctx.send(poise::CreateReply::default().embed(embed)).await?;
-    }
-
-    Ok(())
-}
-
-#[poise::command(prefix_command, category = "Cache", hide_in_help, owners_only)]
-pub async fn legacy(ctx: Context<'_>) -> Result<(), Error> {
-    let cache = &ctx.serenity_context().cache;
-
-    let guilds = cache.guild_count();
-    let users = cache.user_count();
-    let channels = cache.guild_channel_count();
-    let shards = cache.shard_count();
-
-    let unknown_members = cache.unknown_members();
-    let unavailable_guilds_len = cache.unavailable_guilds().len();
-
-    let settings = cache.settings().clone();
-    let max_messages = settings.max_messages;
-    let cache_guilds = settings.cache_guilds;
-    let cache_channels = settings.cache_channels;
-    let cache_users = settings.cache_users;
-    let time_to_live = settings.time_to_live;
-
-    let normal_stats = format!(
-        "Guilds: **{}**\nUsers: **{}**\nChannels: **{}**\nShards: **{}**",
-        guilds, users, channels, shards
-    );
-    let unknown_stats = format!(
-        "Unknown Members: **{}**\nUnavailable Guilds: **{}**",
-        unknown_members, unavailable_guilds_len
-    );
-    let settings_value = format!("Max Messages: **{}**\nCache Guilds?: **{}**\nCache Channels?: **{}**\nCache Users?: **{}**\nTime to Live: **{:?}**", max_messages, cache_guilds, cache_channels, cache_users, time_to_live);
-
-    let embed = serenity::CreateEmbed::default()
-        .title("Cache Statistics")
-        .field("Normal Stats", normal_stats, true)
-        .field("Unknown Cache Stats", unknown_stats, true)
-        .field("Cache Settings", settings_value, true);
-
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
-
-    Ok(())
-}
-
-#[poise::command(prefix_command, category = "Cache", hide_in_help, owners_only)]
-pub async fn settings(ctx: Context<'_>) -> Result<(), Error> {
-    let cache = &ctx.cache();
-
-    let settings = cache.settings().clone();
-    let max_messages = settings.max_messages;
-    let cache_guilds = settings.cache_guilds;
-    let cache_channels = settings.cache_channels;
-    let cache_users = settings.cache_users;
-    let time_to_live = settings.time_to_live;
-
-    let settings_value = format!("Max Messages: **{}**\nCache Guilds?: **{}**\nCache Channels?: **{}**\nCache Users?: **{}**\nTime to Live: **{:?}**", max_messages, cache_guilds, cache_channels, cache_users, time_to_live);
-
-    let embed = serenity::CreateEmbed::default()
-        .title("Cache settings")
-        .description(settings_value);
-    ctx.send(poise::CreateReply::default().embed(embed)).await?;
-
     Ok(())
 }
 
@@ -299,63 +115,26 @@ pub async fn guild_message_cache(
     hide_in_help
 )]
 pub async fn cached_users_raw(ctx: Context<'_>) -> Result<(), Error> {
-    let users = ctx.cache().users();
-    let user_count = ctx.cache().user_count();
+    let mut users = HashMap::new();
+    {
+        for guild in ctx.cache().guilds() {
+            for member in &ctx.cache().guild(guild).unwrap().members {
+                users.insert(*member.0, member.1.user.to_string());
+            }
+        }
+    };
+
+    let bytes: Vec<u8> = format!("{users:?}").into();
+
     ctx.send(
         poise::CreateReply::default()
-            .content(format!("The cache contains **{}** users", user_count))
+            .content(format!("The cache contains **{}** users", users.len()))
             .attachment(serenity::CreateAttachment::bytes(
-                format!("{:?}", users),
+                bytes,
                 "raw_users.txt".to_string(),
             )),
     )
     .await?;
-    Ok(())
-}
-
-/// Prints a formatted list of cached users.
-#[poise::command(
-    rename = "cached-users",
-    prefix_command,
-    category = "Cache",
-    check = "cachestats",
-    hide_in_help
-)]
-pub async fn cached_users(ctx: Context<'_>) -> Result<(), Error> {
-    let cache = ctx.cache();
-    let user_count = cache.user_count();
-
-    let mut user_info = String::new();
-
-    let user_ids = cache.users();
-
-    for entry in user_ids.iter() {
-        let user_id = entry.key();
-        let user = entry.value().clone();
-
-        let user_name = &user.name;
-        let discriminator = user
-            .discriminator
-            .map_or_else(|| "0000".to_owned(), |d| d.to_string());
-        let global_name = user.global_name.as_deref().unwrap_or("None");
-        let avatar_url = &user.avatar_url().unwrap_or("None".to_owned());
-        let bot = &user.bot;
-        let public_flags = &user.public_flags.unwrap_or_default();
-
-        user_info.push_str(&format!(
-            "ID: {}\nNAME: {}\nDISCRIMINATOR: {}\nDISPLAY NAME: {}\nAVATAR_URL: {}\nBOT: {}\nFLAGS: {:?}\n----------\n",
-            user_id, user_name, discriminator, global_name, avatar_url, bot, public_flags
-        ));
-    }
-    let attachment =
-        serenity::CreateAttachment::bytes(user_info.to_string(), "users.txt".to_string());
-    ctx.send(
-        poise::CreateReply::default()
-            .content(format!("The cache contains **{}** users", user_count))
-            .attachment(attachment),
-    )
-    .await?;
-
     Ok(())
 }
 
@@ -368,13 +147,6 @@ pub async fn cachestats(ctx: Context<'_>) -> Result<bool, Error> {
     Ok(cachestats)
 }
 
-pub fn commands() -> [crate::Command; 6] {
-    [
-        max_messages(),
-        cache_stats(),
-        guild_message_cache(),
-        cached_users_raw(),
-        cached_users(),
-        cache_stats(),
-    ]
+pub fn commands() -> [crate::Command; 3] {
+    [max_messages(), guild_message_cache(), cached_users_raw()]
 }

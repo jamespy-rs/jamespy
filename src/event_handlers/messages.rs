@@ -8,7 +8,7 @@ use poise::serenity_prelude::{
 use crate::{Data, Error};
 
 use chrono::NaiveDateTime;
-use std::{collections::HashMap, num::NonZeroU64};
+use std::collections::HashMap;
 
 use sqlx::query;
 
@@ -84,7 +84,7 @@ pub async fn message(
     for pattern in patterns {
         if pattern.is_match(&new_message.content)
             && new_message.author.id != 158567567487795200
-            && !new_message.author.bot
+            && !new_message.author.bot()
         {
             any_pattern_matched = true;
             break;
@@ -92,7 +92,7 @@ pub async fn message(
     }
 
     if any_pattern_matched {
-        let user_id = UserId::from(NonZeroU64::new(158567567487795200).unwrap());
+        let user_id = UserId::from(158567567487795200);
         let user = user_id.to_user(ctx.clone()).await?;
         user.dm(
             &ctx.clone(),
@@ -126,7 +126,7 @@ pub async fn message(
         ]
         .contains(&new_message.author.id.get())
     {
-        let user_id = UserId::from(NonZeroU64::new(158567567487795200).unwrap());
+        let user_id = UserId::from(158567567487795200);
         let user = user_id.to_user(ctx.clone()).await?;
         user.dm(
             &ctx.clone(),
@@ -158,7 +158,7 @@ pub async fn message(
     } else {
         let attachment_names: Vec<String> = attachments
             .iter()
-            .map(|attachment| attachment.filename.clone())
+            .map(|attachment| attachment.filename.to_string())
             .collect();
         Some(format!(" <{}>", attachment_names.join(", ")))
     };
@@ -169,7 +169,7 @@ pub async fn message(
     } else {
         let embed_types: Vec<String> = embeds
             .iter()
-            .map(|embed| embed.kind.clone().unwrap_or("Unknown Type".to_string()))
+            .map(|embed| embed.kind.clone().unwrap_or_default().into_string())
             .collect();
 
         Some(format!(" {{{}}}", embed_types.join(", ")))
@@ -226,19 +226,20 @@ pub async fn message(
         NaiveDateTime::from_timestamp_opt(new_message.timestamp.timestamp(), 0).unwrap();
 
     let _ = query!(
-                "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
+        "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, \
+         embeds, timestamp)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-                i64::from(guild_id),
-                new_message.channel_id.get() as i64,
-                new_message.id.get() as i64,
-                new_message.author.id.get() as i64,
-                new_message.content,
-                attachments_fmt,
-                embeds_fmt,
-                timestamp
-            )
-            .execute(db_pool)
-            .await;
+        i64::from(guild_id),
+        new_message.channel_id.get() as i64,
+        new_message.id.get() as i64,
+        new_message.author.id.get() as i64,
+        new_message.content.to_string(),
+        attachments_fmt,
+        embeds_fmt,
+        timestamp
+    )
+    .execute(db_pool)
+    .await;
 
     Ok(())
 }
@@ -258,7 +259,7 @@ pub async fn message_edit(
 
     match (old_if_available, new) {
         (Some(old_message), Some(new_message)) => {
-            if new_message.author.bot {
+            if new_message.author.bot() {
                 return Ok(());
             }
 
@@ -269,7 +270,7 @@ pub async fn message_edit(
                 } else {
                     let attachment_names: Vec<String> = attachments
                         .iter()
-                        .map(|attachment| attachment.filename.clone())
+                        .map(|attachment| attachment.filename.to_string())
                         .collect();
                     Some(format!(" <{}>", attachment_names.join(", ")))
                 };
@@ -280,7 +281,7 @@ pub async fn message_edit(
                 } else {
                     let embed_types: Vec<String> = embeds
                         .iter()
-                        .map(|embed| embed.kind.clone().unwrap_or("Unknown Type".to_string()))
+                        .map(|embed| embed.kind.clone().unwrap_or_default().into_string())
                         .collect();
 
                     Some(format!(" {{{}}}", embed_types.join(", ")))
@@ -309,14 +310,15 @@ pub async fn message_edit(
                 .unwrap();
 
                 let _ = query!(
-                    "INSERT INTO msgs_edits (guild_id, channel_id, message_id, user_id, old_content, new_content, attachments, embeds, timestamp)
+                    "INSERT INTO msgs_edits (guild_id, channel_id, message_id, user_id, \
+                     old_content, new_content, attachments, embeds, timestamp)
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
                     i64::from(guild_id),
                     new_message.channel_id.get() as i64,
                     new_message.id.get() as i64,
                     new_message.author.id.get() as i64,
-                    old_message.content,
-                    new_message.content,
+                    old_message.content.to_string(),
+                    new_message.content.to_string(),
                     attachments_fmt,
                     embeds_fmt,
                     timestamp
@@ -366,7 +368,7 @@ pub async fn message_delete(
         } else {
             let attachment_names: Vec<String> = attachments
                 .iter()
-                .map(|attachment| attachment.filename.clone())
+                .map(|attachment| attachment.filename.to_string())
                 .collect();
             Some(format!(" <{}>", attachment_names.join(", ")))
         };
@@ -377,37 +379,45 @@ pub async fn message_delete(
         } else {
             let embed_types: Vec<String> = embeds
                 .iter()
-                .map(|embed| embed.kind.clone().unwrap_or("Unknown Type".to_string()))
+                .map(|embed| embed.kind.clone().unwrap_or_default().into_string())
                 .collect();
 
             Some(format!(" {{{}}}", embed_types.join(", ")))
         };
 
-        println!("\x1B[91m\x1B[2m[{}] [#{}] A message from \x1B[0m{}\x1B[91m\x1B[2m was deleted: {}{}{}\x1B[0m",
-            guild_name, channel_name, user_name, content, attachments_fmt.as_deref().unwrap_or(""), embeds_fmt.as_deref().unwrap_or(""));
+        println!(
+            "\x1B[91m\x1B[2m[{}] [#{}] A message from \x1B[0m{}\x1B[91m\x1B[2m was deleted: \
+             {}{}{}\x1B[0m",
+            guild_name,
+            channel_name,
+            user_name,
+            content,
+            attachments_fmt.as_deref().unwrap_or(""),
+            embeds_fmt.as_deref().unwrap_or("")
+        );
 
         let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
 
         let _ = query!(
-                "INSERT INTO msgs_deletions (guild_id, channel_id, message_id, user_id, content, attachments, embeds, timestamp)
+            "INSERT INTO msgs_deletions (guild_id, channel_id, message_id, user_id, content, \
+             attachments, embeds, timestamp)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-                i64::from(guild_id_default),
-                message.channel_id.get() as i64,
-                message.id.get() as i64,
-                message.author.id.get() as i64,
-                message.content,
-                attachments_fmt,
-                embeds_fmt,
-                timestamp
-            )
-            .execute(db_pool)
-            .await;
+            i64::from(guild_id_default),
+            message.channel_id.get() as i64,
+            message.id.get() as i64,
+            message.author.id.get() as i64,
+            message.content.to_string(),
+            attachments_fmt,
+            embeds_fmt,
+            timestamp
+        )
+        .execute(db_pool)
+        .await;
         #[cfg(feature = "castle")]
         crate::utils::misc::download_attachments(message, data).await?;
     } else {
         println!(
-            "\x1B[91m\x1B[2mA message (ID:{}) was deleted but was not in cache\x1B[0m",
-            deleted_message_id
+            "\x1B[91m\x1B[2mA message (ID:{deleted_message_id}) was deleted but was not in cache\x1B[0m"
         );
     }
     Ok(())

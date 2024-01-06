@@ -1,4 +1,4 @@
-use poise::serenity_prelude::{self as serenity, ChannelId, ReactionType};
+use poise::serenity_prelude::{self as serenity, ChannelId, Member, ReactionType};
 
 use crate::{Context, Error};
 
@@ -60,6 +60,17 @@ pub async fn react(
     Ok(())
 }
 
-pub fn commands() -> [crate::Command; 4] {
-    [shutdown(), say(), dm(), react()]
+/// wtf
+#[poise::command(prefix_command, rename = "get-member", owners_only, hide_in_help)]
+pub async fn get_member(
+    ctx: Context<'_>,
+    #[description = "a Member"] member: Member,
+) -> Result<(), Error> {
+    ctx.say(format!("{member:?}")).await?;
+
+    Ok(())
+}
+
+pub fn commands() -> [crate::Command; 5] {
+    [shutdown(), say(), dm(), react(), get_member()]
 }

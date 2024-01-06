@@ -7,7 +7,7 @@ pub async fn ready(ctx: &serenity::Context, _data: &Data) -> Result<(), Error> {
     ctx.cache.set_max_messages(350);
 
     let activity_data = ActivityData {
-        name: "you inside your home.".to_string(),
+        name: "you inside your home.".to_string().into(),
         kind: ActivityType::Watching,
         state: None,
         url: None,
@@ -23,6 +23,8 @@ pub async fn cache_ready(
     guilds: Vec<GuildId>,
     data: &Data,
 ) -> Result<(), Error> {
+    println!("{:?}", ctx.cache.settings().clone());
+    println!("done");
     let db_pool = &data.db;
 
     for guild in guilds {

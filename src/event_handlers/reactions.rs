@@ -11,10 +11,16 @@ pub async fn reaction_add(
     data: &Data,
 ) -> Result<(), Error> {
     let user_id = add_reaction.user_id.unwrap();
-    if ctx.cache.user(user_id).map_or(false, |user| user.bot) {
-        return Ok(());
-        // May merge with the one below.
-    }
+    let user_name = match user_id.to_user(ctx).await {
+        Ok(user) => {
+            if user.bot() {
+                return Ok(());
+            }
+            user.name
+        }
+        Err(_) => "Unknown User".to_string().into(),
+    };
+
     let guild_id = add_reaction.guild_id.unwrap_or_default();
     let guild_name = get_guild_name(ctx, guild_id);
 
@@ -23,17 +29,12 @@ pub async fn reaction_add(
     let redis_pool = &data.redis;
     let mut redis_conn = redis_pool.get().await?;
 
-    let user_name = match user_id.to_user(ctx).await {
-        Ok(user) => user.name,
-        Err(_) => "Unknown User".to_string(),
-    };
-
     println!(
         "\x1B[95m[{}] [#{}] {} added a reaction: {}\x1B[0m",
         guild_name, channel_name, user_name, add_reaction.emoji
     );
 
-    let reaction_key = format!("reactions:{}", guild_id);
+    let reaction_key = format!("reactions:{guild_id}");
     let reaction_info = (
         add_reaction.emoji.to_string(),
         user_id,
@@ -54,10 +55,15 @@ pub async fn reaction_remove(
     data: &Data,
 ) -> Result<(), Error> {
     let user_id = removed_reaction.user_id.unwrap();
-    if ctx.cache.user(user_id).map_or(false, |user| user.bot) {
-        return Ok(());
-        // May merge with the one below.
-    }
+    let user_name = match user_id.to_user(ctx).await {
+        Ok(user) => {
+            if user.bot() {
+                return Ok(());
+            }
+            user.name
+        }
+        Err(_) => "Unknown User".to_string().into(),
+    };
     let guild_id = removed_reaction.guild_id.unwrap_or_default();
     let guild_name = get_guild_name(ctx, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, removed_reaction.channel_id).await;
@@ -65,17 +71,12 @@ pub async fn reaction_remove(
     let redis_pool = &data.redis;
     let mut redis_conn = redis_pool.get().await?;
 
-    let user_name = match user_id.to_user(&ctx.http).await {
-        Ok(user) => user.name,
-        Err(_) => "Unknown User".to_string(),
-    };
-
     println!(
         "\x1B[95m[{}] [#{}] {} removed a reaction: {}\x1B[0m",
         guild_name, channel_name, user_name, removed_reaction.emoji
     );
 
-    let reaction_key = format!("reactions:{}", guild_id);
+    let reaction_key = format!("reactions:{guild_id}");
     let reaction_info = (
         removed_reaction.emoji.to_string(),
         user_id,

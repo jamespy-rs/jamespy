@@ -41,8 +41,8 @@ pub async fn update_lists(
                 let new_badlist_count = badlist.len();
 
                 format!(
-                    "Updated badlist successfully!\nWords currently in the list updated from {} to {}",
-                    old_badlist_count, new_badlist_count
+                    "Updated badlist successfully!\nWords currently in the list updated from \
+                     {old_badlist_count} to {new_badlist_count}"
                 )
             }
             Some(Lists::Fixlist) => {
@@ -51,8 +51,8 @@ pub async fn update_lists(
                 let new_fixlist_count = fixlist.len();
 
                 format!(
-                    "Updated fixlist successfully!\nWords currently in the list updated from {} to {}",
-                    old_fixlist_count, new_fixlist_count
+                    "Updated fixlist successfully!\nWords currently in the list updated from \
+                     {old_fixlist_count} to {new_fixlist_count}"
                 )
             }
             None => {
@@ -65,8 +65,8 @@ pub async fn update_lists(
                 let new_fixlist_count = fixlist.len();
 
                 format!(
-                    "Updated all lists successfully!\nbadlist: {} to {}\nfixlist: {} to {}",
-                    old_badlist_count, new_badlist_count, old_fixlist_count, new_fixlist_count
+                    "Updated all lists successfully!\nbadlist: {old_badlist_count} to \
+                     {new_badlist_count}\nfixlist: {old_fixlist_count} to {new_fixlist_count}"
                 )
             }
         }

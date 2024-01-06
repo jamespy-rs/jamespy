@@ -39,8 +39,7 @@ pub async fn lob(ctx: Context<'_>) -> Result<(), Error> {
 pub async fn reload_lob(ctx: Context<'_>) -> Result<(), Error> {
     let (old_count, new_count) = update_lob().await?;
     ctx.say(format!(
-        "Reloaded lobs.\nOld Count: {}\nNew Count: {}",
-        old_count, new_count
+        "Reloaded lobs.\nOld Count: {old_count}\nNew Count: {new_count}"
     ))
     .await?;
     Ok(())
@@ -78,7 +77,11 @@ pub async fn new_lob(
     item: String,
 ) -> Result<(), Error> {
     add_lob(&item).await?;
-    ctx.send(poise::CreateReply::default().content(format!("Added `{}` to loblist!\nChanges will not be applied until bot restart or until reload-lob is called!", item))).await?;
+    ctx.send(poise::CreateReply::default().content(format!(
+        "Added `{item}` to loblist!\nChanges will not be applied until bot restart or until \
+         reload-lob is called!"
+    )))
+    .await?;
     Ok(())
 }
 
@@ -98,11 +101,15 @@ pub async fn delete_lob(
     target: String,
 ) -> Result<(), Error> {
     if remove_lob(&target).await? {
-        ctx.send(poise::CreateReply::default().content(format!("Removed `{}` from loblist!\nChanges will not be applied until bot restart or until reload-lob is called!", target))).await?;
+        ctx.send(poise::CreateReply::default().content(format!(
+            "Removed `{target}` from loblist!\nChanges will not be applied until bot restart or \
+             until reload-lob is called!"
+        )))
+        .await?;
     } else {
         ctx.send(
             poise::CreateReply::default()
-                .content(format!("`{}` was not found in the loblist.", target)),
+                .content(format!("`{target}` was not found in the loblist.")),
         )
         .await?;
     }
@@ -128,7 +135,7 @@ pub async fn delete_lob(
 pub async fn total_lobs(ctx: Context<'_>) -> Result<(), Error> {
     let count = count_lob()?;
     ctx.send(
-        poise::CreateReply::default().content(format!("Currently, `{}` lobs are stored.", count)),
+        poise::CreateReply::default().content(format!("Currently, `{count}` lobs are stored.")),
     )
     .await?;
     Ok(())

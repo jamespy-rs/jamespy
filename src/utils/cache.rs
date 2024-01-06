@@ -11,13 +11,12 @@ pub async fn guild_message_cache_builder<U, E>(
     total_messages_cached: usize,
 ) -> Result<(), serenity::Error> {
     let ctx_id = ctx.id();
-    let prev_button_id = format!("{}prev", ctx_id);
-    let next_button_id = format!("{}next", ctx_id);
+    let prev_button_id = format!("{ctx_id}prev");
+    let next_button_id = format!("{ctx_id}next");
 
     let mut current_page = 0;
     let footer_text = format!(
-        "Total messages cached in the guild: {}",
-        total_messages_cached
+        "Total messages cached in the guild: {total_messages_cached}"
     );
 
     let msg = ctx
@@ -89,15 +88,14 @@ pub async fn presence_builder<U, E>(
     total_games: usize,
 ) -> Result<(), serenity::Error> {
     let ctx_id = ctx.id();
-    let prev_button_id = format!("{}prev", ctx_id);
-    let next_button_id = format!("{}next", ctx_id);
+    let prev_button_id = format!("{ctx_id}prev");
+    let next_button_id = format!("{ctx_id}next");
 
     let sctx = ctx.serenity_context();
 
     let mut current_page = 0;
     let footer = format!(
-        "{} members are playing {} games right now.",
-        total_members, total_games
+        "{total_members} members are playing {total_games} games right now."
     );
 
     let msg = ctx
@@ -149,11 +147,11 @@ pub async fn presence_builder<U, E>(
 }
 
 // This is split to make the code more pleasant
-fn create_presence_embed(
+fn create_presence_embed<'a>(
     current_page: usize,
     footer_text: &str,
     pages: &[Vec<(&str, u32)>],
-) -> serenity::CreateEmbed {
+) -> serenity::CreateEmbed<'a> {
     serenity::CreateEmbed::default()
         .title("Top games being played right now:")
         .description(format_pages(&pages[current_page]))
@@ -163,7 +161,7 @@ fn create_presence_embed(
 fn format_pages(pages: &[(&str, u32)]) -> String {
     pages
         .iter()
-        .map(|(name, count)| format!("{}: {}", name, count))
+        .map(|(name, count)| format!("{name}: {count}"))
         .collect::<Vec<String>>()
         .join("\n")
 }

@@ -1,4 +1,5 @@
 use crate::{Context, Error};
+use ::serenity::all::UserId;
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{
     self as serenity, ActivityType, Colour, GuildMemberFlags, Member, OnlineStatus,
@@ -68,47 +69,41 @@ pub async fn last_reactions(ctx: Context<'_>) -> Result<(), Error> {
 
     let reactions: Vec<String> = redis_conn.lrange(reaction_key, 0, 24).await?;
 
-    let formatted: String = reactions
-        .iter()
-        .map(|reaction| {
-            let components: Vec<&str> = reaction
-                .trim_matches(|c| c == '[' || c == ']' || c == '"')
-                .split(',')
-                .map(|component| component.trim_matches(|c| c == '"'))
-                .collect();
+    let mut formatted: Vec<String> = vec![];
+    for reaction in reactions {
+        let components: Vec<&str> = reaction
+            .trim_matches(|c| c == '[' || c == ']' || c == '"')
+            .split(',')
+            .map(|component| component.trim_matches(|c| c == '"'))
+            .collect();
 
-            if components.len() == 4 {
-                let (emoji, user_id, reaction_id, state) = (
-                    components[0],
-                    components[1].parse::<u64>().unwrap(),
-                    components[2].parse::<u64>().unwrap(),
-                    components[3].parse::<u32>().unwrap(),
-                );
+        if components.len() == 4 {
+            let (emoji, user_id, reaction_id, state) = (
+                components[0],
+                components[1].parse::<u64>().unwrap(),
+                components[2].parse::<u64>().unwrap(),
+                components[3].parse::<u32>().unwrap(),
+            );
 
-                let username = ctx
-                    .cache()
-                    .user(user_id)
-                    .map_or_else(|| "Unknown User".to_string(), |user| user.name.clone());
-
-                format!(
-                    "**{}** {} {} Message ID: {}",
-                    username,
-                    if state == 1 { "added" } else { "removed" },
-                    emoji,
-                    reaction_id
-                )
-            } else {
-                "Invalid reaction format".to_string()
-            }
-        })
-        .collect::<Vec<String>>()
-        .join("\n");
+            let username = UserId::new(user_id)
+                .to_user(ctx)
+                .await
+                .map_or_else(|_| "Unknown User".to_string(), |user| user.name.to_string());
+            formatted.push(format!(
+                "**{}** {} {} Message ID: {}",
+                username,
+                if state == 1 { "added" } else { "removed" },
+                emoji,
+                reaction_id
+            ));
+        }
+    }
 
     ctx.send(
         poise::CreateReply::default().embed(
             serenity::CreateEmbed::default()
                 .title("Last reaction events")
-                .description(formatted.to_string())
+                .description(formatted.join("\n"))
                 .color(Colour::from_rgb(0, 255, 0)),
         ),
     )
@@ -141,11 +136,11 @@ pub async fn statuses(ctx: Context<'_>) -> Result<(), Error> {
 
     for (status, count) in &status_counts {
         let status_message = match status {
-            OnlineStatus::DoNotDisturb => format!("Do Not Disturb: {}", count),
-            OnlineStatus::Idle => format!("Idle: {}", count),
-            OnlineStatus::Invisible => format!("Invisible: {}", count),
-            OnlineStatus::Offline => format!("Offline: {}", count),
-            OnlineStatus::Online => format!("Online: {}", count),
+            OnlineStatus::DoNotDisturb => format!("Do Not Disturb: {count}"),
+            OnlineStatus::Idle => format!("Idle: {count}"),
+            OnlineStatus::Invisible => format!("Invisible: {count}"),
+            OnlineStatus::Offline => format!("Offline: {count}"),
+            OnlineStatus::Online => format!("Online: {count}"),
             _ => String::new(),
         };
 

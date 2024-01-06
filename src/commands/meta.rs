@@ -16,11 +16,8 @@ pub async fn uptime(ctx: Context<'_>) -> Result<(), Error> {
     let (hours, minutes) = calculation(minutes, 60);
     let (days, hours) = calculation(hours, 24);
 
-    ctx.say(format!(
-        "`Uptime: {}d {}h {}m {}s`",
-        days, hours, minutes, seconds
-    ))
-    .await?;
+    ctx.say(format!("`Uptime: {days}d {hours}h {minutes}m {seconds}s`"))
+        .await?;
 
     Ok(())
 }
@@ -77,8 +74,8 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
             poise::CreateReply::default().content("").embed(
                 serenity::CreateEmbed::default()
                     .title("Pong!")
-                    .field("GET Latency", format!("{}ms", get_latency), false)
-                    .field("POST Latency", format!("{}ms", post_latency), false),
+                    .field("GET Latency", format!("{get_latency}ms"), false)
+                    .field("POST Latency", format!("{post_latency}ms"), false),
             ),
         )
         .await?;

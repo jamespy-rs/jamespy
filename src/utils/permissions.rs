@@ -1,8 +1,10 @@
 use crate::utils::misc::overwrite_to_string;
 use poise::serenity_prelude::{Context, PermissionOverwriteType, Permissions};
+use serenity::all::GuildId;
 
 pub async fn get_permission_changes(
     ctx: Context,
+    guild_id: GuildId,
     old_allow: Permissions,
     new_allow: Permissions,
     old_deny: Permissions,
@@ -11,11 +13,15 @@ pub async fn get_permission_changes(
 ) -> String {
     let name = match kind {
         PermissionOverwriteType::Member(user_id) => match user_id.to_user(ctx).await {
-            Ok(user) => user.name,
+            Ok(user) => user.name.to_string(),
             Err(_) => String::from("Unknown User"),
         },
-        PermissionOverwriteType::Role(role_id) => role_id
-            .to_role_cached(ctx)
+        PermissionOverwriteType::Role(role_id) => ctx
+            .cache
+            .guild(guild_id)
+            .unwrap()
+            .roles
+            .get(&role_id)
             .map_or_else(|| "Unknown Role".to_string(), |role| role.name.to_string()),
         _ => String::from("Unknown"),
     };
@@ -24,8 +30,7 @@ pub async fn get_permission_changes(
     let kind_string = overwrite_to_string(kind);
     if old_allow != new_allow || old_deny != new_deny {
         changes_str.push_str(&format!(
-            "Permission override for {} ({}) changed!\n",
-            name, kind_string
+            "Permission override for {name} ({kind_string}) changed!\n"
         ));
         let allow_changes_detail = get_permission_changes_detail(old_allow, new_allow, true);
         let deny_changes_detail = get_permission_changes_detail(old_deny, new_deny, false);

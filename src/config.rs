@@ -58,6 +58,7 @@ pub struct InitStatus {
     pub guild_id: Option<GuildId>,
 }
 
+#[allow(clippy::struct_field_names)]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct StatsStatus {
     pub stats_enabled: bool,

@@ -28,12 +28,12 @@ pub async fn role_info(
     show_all_permissions: Option<bool>,
 ) -> Result<(), Error> {
     let role_id = role.id.get().to_string();
-    let role_name = role.name;
+    let role_name = role.name.clone();
     let colour = format!("#{}", role.colour.hex());
-    let mention = format!("`<@&{}>`", role_id);
-    let hoisted = bool_converter(role.hoist);
-    let mentionable = bool_converter(role.mentionable);
-    let managed = bool_converter(role.managed);
+    let mention = format!("`<@&{role_id}>`");
+    let hoisted = bool_converter(role.hoist());
+    let mentionable = bool_converter(role.mentionable());
+    let managed = bool_converter(role.managed());
     let permissions = role.permissions;
     let permissions_title = if let Some(true) = show_all_permissions {
         "Permissions".to_string()
@@ -72,9 +72,9 @@ pub async fn role_info(
             if show_all_permissions.unwrap_or(false) || key_permissions.contains(&permission) {
                 Some(if key_permissions.contains(&permission) {
                     // Highlight key permissions
-                    format!("**{}**", permission)
+                    format!("**{permission}**")
                 } else {
-                    format!("{}", permission)
+                    format!("{permission}")
                 })
             } else {
                 None
@@ -86,7 +86,7 @@ pub async fn role_info(
 
     let embed = serenity::CreateEmbed::default()
         .field("ID", role_id, true)
-        .field("Name", role_name, true)
+        .field("Name", role_name.to_string(), true)
         .field("Colour", colour, true)
         .field("Mention", mention, true)
         .field("Hoisted?", hoisted, true)

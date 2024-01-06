@@ -33,7 +33,7 @@ pub async fn get_channel_name(
         let threads = &guild_cache.threads;
         for thread in threads {
             if thread.id == channel_id.get() {
-                channel_name = thread.name.clone();
+                channel_name = thread.name.clone().to_string();
                 break;
             }
         }
@@ -129,7 +129,13 @@ pub async fn download_attachments(message: Message, data: &Data) -> Result<(), s
             for (index, attachment) in message.attachments.clone().into_iter().enumerate() {
                 if let Some(single_limit) = castle.media.as_ref().unwrap().single_limit {
                     if (attachment.size / 1_000_000) as u64 > single_limit {
-                        println!("Cannot download attachment '{}' as it exceeds the single file limit! ({}MB/{}MB)", attachment.filename, attachment.size / 1_000_000, single_limit);
+                        println!(
+                            "Cannot download attachment '{}' as it exceeds the single file limit! \
+                             ({}MB/{}MB)",
+                            attachment.filename,
+                            attachment.size / 1_000_000,
+                            single_limit
+                        );
                         return Ok(());
                     }
                 }
@@ -147,7 +153,7 @@ pub async fn download_attachments(message: Message, data: &Data) -> Result<(), s
                     0
                 };
 
-                let path = format!("{}/{}", folder_location, guild_folder,);
+                let path = format!("{folder_location}/{guild_folder}",);
                 std::fs::DirBuilder::new().recursive(true).create(path)?;
 
                 let file_loc = format!(
@@ -161,7 +167,7 @@ pub async fn download_attachments(message: Message, data: &Data) -> Result<(), s
                 {
                     Ok(file) => file,
                     Err(err) => {
-                        eprintln!("Error opening or creating file: {}", err);
+                        eprintln!("Error opening or creating file: {err}");
                         return Err(err);
                     }
                 };

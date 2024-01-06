@@ -35,8 +35,9 @@ pub async fn vcstatus(ctx: Context<'_>) -> Result<(), Error> {
     }
     // show regex later.
     let message = format!(
-        "Enabled:{}\nPost Channel: {} (ID:{})\nBlacklist detection: {}\nBlacklist Channel: {} (ID:{})\n\nTry the arguments \"toggle\" and \"reload-regex\".",
-        action, post_channel_name, post_channel_id, blacklist_detection, announce_channel_name, announce_channel_id
+        "Enabled:{action}\nPost Channel: {post_channel_name} (ID:{post_channel_id})\nBlacklist \
+         detection: {blacklist_detection}\nBlacklist Channel: {announce_channel_name} \
+         (ID:{announce_channel_id})\n\nTry the arguments \"toggle\" and \"reload-regex\"."
     );
     ctx.say(message).await?;
 
@@ -53,7 +54,11 @@ pub async fn toggle(ctx: Context<'_>) -> Result<(), Error> {
         write_lock
     };
 
-    let content = format!("Toggling VCStatus tracking (blacklist is not touched):\nEnabled: {}\nBlacklist Enabled: {}", vcstatus.action, vcstatus.blacklist_detection);
+    let content = format!(
+        "Toggling VCStatus tracking (blacklist is not touched):\nEnabled: {}\nBlacklist Enabled: \
+         {}",
+        vcstatus.action, vcstatus.blacklist_detection
+    );
     ctx.say(content).await?;
 
     Ok(())

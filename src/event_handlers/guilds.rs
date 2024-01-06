@@ -68,7 +68,15 @@ pub async fn guild_member_addition(
                 Ok(member) => {
                     member.user.dm(ctx, reply_builder).await?;
                     // in the future i should check for if this fails and why, and remove depending on the situation.
-                    let _ = query!("DELETE FROM join_tracks WHERE guild_id = $1 AND author_id = $2 AND user_id = $3", i64::from(guild_id), i64::from(authorid), i64::from(joined_user_id)).execute(db_pool).await;
+                    let _ = query!(
+                        "DELETE FROM join_tracks WHERE guild_id = $1 AND author_id = $2 AND \
+                         user_id = $3",
+                        i64::from(guild_id),
+                        i64::from(authorid),
+                        i64::from(joined_user_id)
+                    )
+                    .execute(db_pool)
+                    .await;
                 }
                 Err(_err) => {
                     // In the future the user should be removed if the user isn't valid, but checking that is a bit of a pain.
@@ -115,12 +123,9 @@ pub async fn guild_audit_log_entry_create(
         if let Action::AutoMod(serenity::AutoModAction::FlagToChannel) = &entry.action {
             if let Some(reason) = entry.reason {
                 if reason.starts_with("Voice Channel Status") {
-                    let (user_name, avatar_url) = match entry.user_id.to_user(&ctx).await {
-                        Ok(user) => (user.name.clone(), user.avatar_url().unwrap_or_default()),
-                        Err(_) => (
-                            "Unknown User".to_string(),
-                            String::from("https://cdn.discordapp.com/embed/avatars/0.png"),
-                        ),
+                    let (user_name, avatar_url) = {
+                        let user = entry.user_id.to_user(&ctx).await.unwrap();
+                        (user.name.clone(), user.face())
                     };
 
                     let mut cloned_messages = HashMap::new();
@@ -164,7 +169,7 @@ pub async fn guild_audit_log_entry_create(
                         for message in messages {
                             if message.author.id == entry.user_id {
                                 if let Some(kind) =
-                                    &message.embeds.get(0).and_then(|e| e.kind.clone())
+                                    &message.embeds.first().and_then(|e| e.kind.clone())
                                 {
                                     if kind == "auto_moderation_message" {
                                         if let Some(description) = &message.embeds[0].description {
@@ -181,10 +186,10 @@ pub async fn guild_audit_log_entry_create(
                         // alert = war room
                         let author_title = match id {
                             697738506944118814 => {
-                                format!("{} tried to set an inappropriate status", user_name)
+                                format!("{user_name} tried to set an inappropriate status")
                             }
                             _ => {
-                                format!("{} set a possibly inappropriate status", user_name)
+                                format!("{user_name} set a possibly inappropriate status")
                             }
                         };
 

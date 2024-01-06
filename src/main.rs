@@ -20,9 +20,11 @@ mod utils;
 
 mod config;
 
+use dashmap::DashMap;
 use database::init_data;
 use database::init_redis_pool;
 use poise::serenity_prelude as serenity;
+use poise::serenity_prelude::UserId;
 use serde::Deserialize;
 use std::sync::Arc;
 use std::sync::RwLock;
@@ -48,6 +50,7 @@ pub struct DataInner {
     pub redis: database::RedisPool,
     pub time_started: std::time::Instant,
     pub jamespy_config: RwLock<config::JamespyConfig>,
+    pub dm_activity: DashMap<UserId, serenity::Timestamp>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -57,13 +60,13 @@ pub struct GuildConfig {
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
-        poise::FrameworkError::Setup { error, .. } => panic!("Failed to start bot: {:?}", error),
+        poise::FrameworkError::Setup { error, .. } => panic!("Failed to start bot: {error:?}"),
         poise::FrameworkError::Command { error, ctx, .. } => {
             println!("Error in command `{}`: {:?}", ctx.command().name, error,);
         }
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
-                println!("Error while handling error: {}", e);
+                println!("Error while handling error: {e}");
             }
         }
     }
@@ -71,6 +74,8 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+
     let db_pool = init_data().await;
     let redis_pool = init_redis_pool().await;
 
@@ -79,6 +84,7 @@ async fn main() {
         redis: redis_pool,
         time_started: std::time::Instant::now(),
         jamespy_config: config::load_config().into(),
+        dm_activity: DashMap::new(),
     }));
 
     let options = poise::FrameworkOptions {

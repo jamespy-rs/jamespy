@@ -1,5 +1,3 @@
-use std::num::NonZeroU64;
-
 use crate::Data;
 
 use poise::serenity_prelude::{self as serenity, UserId};
@@ -23,8 +21,7 @@ pub async fn check_space(ctx: &serenity::Context, data: &Data) -> Result<(), cra
                         Ok(folder_size) => {
                             if let Some(soft_limit) = media.soft_limit {
                                 if folder_size > soft_limit * 1_000_000 {
-                                    let user_id =
-                                        UserId::from(NonZeroU64::new(158567567487795200).unwrap());
+                                    let user_id = UserId::from(158567567487795200);
                                     let user = user_id.to_user(ctx.clone()).await?;
                                     user.dm(
                                         &ctx,
@@ -39,8 +36,7 @@ pub async fn check_space(ctx: &serenity::Context, data: &Data) -> Result<(), cra
                             }
                             if let Some(hard_limit) = media.hard_limit {
                                 if folder_size > hard_limit * 1_000_000 {
-                                    let user_id =
-                                        UserId::from(NonZeroU64::new(158567567487795200).unwrap());
+                                    let user_id = UserId::from(58567567487795200);
                                     let user = user_id.to_user(ctx.clone()).await?;
                                     user.dm(
                                         &ctx,
@@ -103,8 +99,7 @@ pub async fn update_stats(ctx: &serenity::Context, data: &Data) -> Result<(), cr
                             .await?;
                         }
                         Err(err) => {
-                            let user_id =
-                                UserId::from(NonZeroU64::new(158567567487795200).unwrap());
+                            let user_id = UserId::from(158567567487795200);
                             let user = user_id.to_user(ctx.clone()).await?;
                             user.dm(
                                 &ctx,

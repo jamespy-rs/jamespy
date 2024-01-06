@@ -25,7 +25,11 @@ pub async fn init_conf(ctx: Context<'_>) -> Result<(), Error> {
     if let Some(conf) = conf.castle_conf {
         if let Some(base) = conf.base {
             if base.setup_complete {
-                ctx.say("A setup has already been completed! Will not continue unless `force` is passed.").await?;
+                ctx.say(
+                    "A setup has already been completed! Will not continue unless `force` is \
+                     passed.",
+                )
+                .await?;
             } else {
                 setup(ctx).await?;
             }
@@ -62,8 +66,8 @@ async fn setup(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     let ctx_id = ctx.id();
-    let not_okay_id = format!("{}init_not_okay", ctx_id);
-    let okay_id = format!("{}init_okay", ctx_id);
+    let not_okay_id = format!("{ctx_id}init_not_okay");
+    let okay_id = format!("{ctx_id}init_okay");
     let okay = CreateActionRow::Buttons(vec![
         CreateButton::new(&not_okay_id)
             .label("No.")
@@ -74,8 +78,16 @@ async fn setup(ctx: Context<'_>) -> Result<(), Error> {
     let mut response = false;
 
     // Check if this guild is okay, run through settings, modify config.
-    let msg = ctx.send(poise::CreateReply::default().content("This may create multiple categories and create channels **in the current guild** depending on the config, is this okay?")
-        .components(vec![okay])).await?;
+    let msg = ctx
+        .send(
+            poise::CreateReply::default()
+                .content(
+                    "This may create multiple categories and create channels **in the current \
+                     guild** depending on the config, is this okay?",
+                )
+                .components(vec![okay]),
+        )
+        .await?;
 
     while let Some(press) = ComponentInteractionCollector::new(ctx)
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
