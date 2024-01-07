@@ -15,7 +15,6 @@
 mod commands;
 mod database;
 mod event_handler;
-mod event_handlers;
 mod utils;
 
 mod config;
@@ -25,7 +24,6 @@ use database::init_data;
 use database::init_redis_pool;
 use poise::serenity_prelude as serenity;
 use poise::serenity_prelude::UserId;
-use serde::Deserialize;
 use std::sync::Arc;
 use std::sync::RwLock;
 use std::{env::var, time::Duration};
@@ -153,11 +151,6 @@ impl Data {
         .execute(&self.db)
         .await;
     }
-}
-
-#[derive(Clone, Debug, Deserialize)]
-pub struct GuildConfig {
-    pub prefix: Option<String>,
 }
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
