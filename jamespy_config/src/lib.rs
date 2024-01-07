@@ -3,7 +3,13 @@ use regex::Regex;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{collections::HashSet, fs};
 
-use crate::utils::misc::read_words_from_file;
+pub fn read_words_from_file(filename: &str) -> HashSet<String> {
+    std::fs::read_to_string(filename)
+        .expect("Failed to read the file")
+        .lines()
+        .map(|line| line.trim().to_lowercase())
+        .collect()
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct JamespyConfig {
@@ -145,8 +151,8 @@ impl JamespyConfig {
                 no_log_channels: None,
                 no_log_users: None,
                 regex_patterns: None,
-                badlist: Some(read_words_from_file("data/badwords.txt")),
-                fixlist: Some(read_words_from_file("data/fixwords.txt")),
+                badlist: Some(read_words_from_file("config/lists/badwords.txt")),
+                fixlist: Some(read_words_from_file("config/lists/fixwords.txt")),
             },
             castle_conf: Some(Castle {
                 base: Some(InitStatus {
@@ -194,8 +200,8 @@ pub fn load_config() -> JamespyConfig {
     if let Ok(config_file) = config_result {
         if let Ok(mut config) = serde_json::from_str::<JamespyConfig>(&config_file) {
             // stupid hardcode until i can be bothered to fix and rewrite this.
-            config.events_config.badlist = Some(read_words_from_file("data/badwords.txt"));
-            config.events_config.fixlist = Some(read_words_from_file("data/fixwords.txt"));
+            config.events_config.badlist = Some(read_words_from_file("config/lists/badwords.txt"));
+            config.events_config.fixlist = Some(read_words_from_file("config/lists/fixwords.txt"));
             config
         } else {
             eprintln!("Error: Failed to parse config.json. Using default configuration.");

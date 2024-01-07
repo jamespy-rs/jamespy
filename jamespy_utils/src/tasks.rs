@@ -15,7 +15,7 @@ pub async fn check_space(ctx: &serenity::Context, data: &Data) -> Result<(), cra
         {
             if let Some(media) = &castle.media {
                 if media.soft_limit.is_some() || media.hard_limit.is_some() {
-                    let folder_size_result = fs_extra::dir::get_size("data/attachments");
+                    let folder_size_result = fs_extra::dir::get_size("config/attachments");
 
                     match folder_size_result {
                         Ok(folder_size) => {

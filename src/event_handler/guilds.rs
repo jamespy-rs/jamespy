@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use sqlx::query;
 
-use crate::Error;
-use crate::{utils::misc::get_guild_name, Data};
+use crate::{Data, Error};
+use jamespy_utils::misc::get_guild_name;
 use poise::serenity_prelude::{
     self as serenity, AuditLogEntry, ChannelId, CreateEmbedAuthor, Guild, GuildId, Member, User,
     UserId,

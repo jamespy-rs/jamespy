@@ -203,7 +203,7 @@ pub async fn playing(ctx: Context<'_>) -> Result<(), Error> {
         .map(<[(&str, u32)]>::to_vec)
         .collect();
 
-    crate::utils::cache::presence_builder(ctx, pages, total_members, total_games).await?;
+    jamespy_utils::cache::presence_builder(ctx, pages, total_members, total_games).await?;
 
     Ok(())
 }

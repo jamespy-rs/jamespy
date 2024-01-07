@@ -1,0 +1,15 @@
+[package]
+name = "jamespy_data"
+version = "0.1.2-rc1"
+edition = "2021"
+
+[dependencies]
+jamespy_config = { path = "../jamespy_config" }
+
+serenity = { git = "https://github.com/serenity-rs/serenity", branch = "next" }
+poise = { git = "https://github.com/serenity-rs/poise", branch = "serenity-next" }
+tokio = { version = "1.33.0", features = ["macros", "signal", "rt-multi-thread", "net", "io-util"] }
+sqlx = { version = "0.7.1", features = ["macros", "runtime-tokio-rustls", "postgres", "time", "chrono"] }
+bb8-redis = "0.13.1"
+dashmap = "5.5.3"
+tracing = "0.1.40"

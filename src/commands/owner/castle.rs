@@ -1,7 +1,7 @@
 use crate::{
-    config::{Castle, InitStatus, MediaStashingStatus, SelfRegex, StatsStatus},
     Context, Error,
 };
+use jamespy_config::{Castle, InitStatus, MediaStashingStatus, SelfRegex, StatsStatus};
 
 use poise::serenity_prelude::{
     ButtonStyle, ChannelType, ComponentInteractionCollector, CreateActionRow, CreateButton,

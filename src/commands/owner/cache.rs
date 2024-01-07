@@ -1,10 +1,10 @@
 use poise::serenity_prelude::{self as serenity, ChannelType};
 use std::collections::HashMap;
 
-use crate::{
-    utils::{self, misc::channel_type_to_string},
-    Context, Error,
+use jamespy_utils::{
+    {self, misc::channel_type_to_string},
 };
+use crate::{Error, Context};
 
 /// View/set max messages cached per channel
 #[poise::command(
@@ -102,7 +102,7 @@ pub async fn guild_message_cache(
     }
 
     let pages_ref: Vec<&str> = pages.iter().map(String::as_str).collect();
-    utils::cache::guild_message_cache_builder(ctx, &pages_ref, total_messages_cached).await?;
+    jamespy_utils::cache::guild_message_cache_builder(ctx, &pages_ref, total_messages_cached).await?;
     Ok(())
 }
 

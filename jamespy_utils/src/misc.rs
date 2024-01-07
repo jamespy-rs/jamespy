@@ -1,20 +1,10 @@
+use crate::Data;
 use poise::serenity_prelude::{
     self as serenity, AutoArchiveDuration, ChannelId, ChannelType, ForumLayoutType, GuildId,
-    PermissionOverwriteType, SortOrder,
+    PermissionOverwriteType, SortOrder, Message
 };
-use std::collections::HashSet;
 
-use poise::serenity_prelude::Message;
 
-use crate::Data;
-
-pub fn read_words_from_file(filename: &str) -> HashSet<String> {
-    std::fs::read_to_string(filename)
-        .expect("Failed to read the file")
-        .lines()
-        .map(|line| line.trim().to_lowercase())
-        .collect()
-}
 
 pub async fn get_channel_name(
     ctx: &serenity::Context,
@@ -122,7 +112,7 @@ pub async fn download_attachments(message: Message, data: &Data) -> Result<(), s
         if castle.base.as_ref().unwrap().setup_complete
             && castle.media.as_ref().unwrap().media_stashing_post
         {
-            let folder_location = "data/attachments";
+            let folder_location = "config/attachments";
             for (index, attachment) in message.attachments.clone().into_iter().enumerate() {
                 if let Some(single_limit) = castle.media.as_ref().unwrap().single_limit {
                     if (attachment.size / 1_000_000) as u64 > single_limit {

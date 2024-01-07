@@ -1,7 +1,7 @@
 use poise::serenity_prelude::{self as serenity, ActivityData, ActivityType, GuildId, UserId};
 use sqlx::query;
-
-use crate::{utils::misc::get_guild_name, Data, Error};
+use crate::{Data, Error};
+use jamespy_utils::misc::get_guild_name;
 
 pub async fn ready(ctx: &serenity::Context, _data: &Data) -> Result<(), Error> {
     ctx.cache.set_max_messages(350);

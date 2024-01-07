@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::utils::misc::read_words_from_file;
+use jamespy_config::read_words_from_file;
 use crate::{Context, Error};
 
 #[derive(Debug, poise::ChoiceParameter)]
@@ -27,8 +27,8 @@ pub async fn update_lists(
     ctx: Context<'_>,
     #[description = "What list to unload"] choice: Option<Lists>,
 ) -> Result<(), Error> {
-    let new_bad_words = read_words_from_file("data/badwords.txt");
-    let new_fix_words = read_words_from_file("data/fixwords.txt");
+    let new_bad_words = read_words_from_file("config/lists/badwords.txt");
+    let new_fix_words = read_words_from_file("config/lists/fixwords.txt");
     let updated_list_description = {
         let mut config = ctx.data().jamespy_config.write().unwrap();
         let badlist = config.events_config.badlist.clone().unwrap_or_default();

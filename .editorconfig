@@ -8,5 +8,5 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 
-[data/loblist.txt]
+[config/lists/loblist.txt]
 insert_final_newline = false

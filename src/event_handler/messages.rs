@@ -1,4 +1,4 @@
-use crate::utils::misc::{get_channel_name, get_guild_name};
+use jamespy_utils::misc::{get_channel_name, get_guild_name};
 
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, CreateMessage, GuildId, Message,
@@ -413,7 +413,7 @@ pub async fn message_delete(
         )
         .execute(db_pool)
         .await;
-        crate::utils::misc::download_attachments(message, data).await?;
+        jamespy_utils::misc::download_attachments(message, data).await?;
     } else {
         println!(
             "\x1B[91m\x1B[2mA message (ID:{deleted_message_id}) was deleted but was not in cache\x1B[0m"

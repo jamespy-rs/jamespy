@@ -1012,14 +1012,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1a46d1a171d865aa5f83f92695765caa047a9b4cbae2cbf37dbd613a793fd4c"
 
 [[package]]
-name = "jamespy-rs"
-version = "0.1.1"
+name = "jamespy"
+version = "0.1.2-rc1"
 dependencies = [
  "base64",
  "bb8-redis",
  "chrono",
  "dashmap",
  "fs_extra",
+ "jamespy_config",
+ "jamespy_data",
+ "jamespy_utils",
  "poise",
  "rand",
  "regex",
@@ -1031,6 +1034,44 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "jamespy_config"
+version = "0.1.2-rc1"
+dependencies = [
+ "base64",
+ "poise",
+ "regex",
+ "serde",
+ "serde_json",
+ "serenity",
+ "tokio",
+]
+
+[[package]]
+name = "jamespy_data"
+version = "0.1.2-rc1"
+dependencies = [
+ "bb8-redis",
+ "dashmap",
+ "jamespy_config",
+ "poise",
+ "serenity",
+ "sqlx",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "jamespy_utils"
+version = "0.1.2-rc1"
+dependencies = [
+ "fs_extra",
+ "jamespy_data",
+ "poise",
+ "rand",
+ "serenity",
 ]
 
 [[package]]

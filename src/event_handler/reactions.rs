@@ -1,7 +1,8 @@
 use crate::{
-    utils::misc::{get_channel_name, get_guild_name},
     Data, Error,
 };
+use jamespy_utils::misc::{get_channel_name, get_guild_name};
+
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{self as serenity, Reaction};
 

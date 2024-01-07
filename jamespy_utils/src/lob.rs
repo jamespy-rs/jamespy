@@ -4,13 +4,13 @@ use std::io::{BufRead, BufReader, Write};
 
 use std::sync::{OnceLock, RwLock};
 
-use crate::{Context, Error};
+use jamespy_data::structs::{Context, Error};
 use rand::seq::SliceRandom;
 
 fn get_loblist() -> &'static RwLock<HashSet<String>> {
     static LOBLIST: OnceLock<RwLock<HashSet<String>>> = OnceLock::new();
     LOBLIST.get_or_init(|| {
-        let data = std::fs::read_to_string("data/loblist.txt").unwrap_or_else(|_| String::new());
+        let data = std::fs::read_to_string("config/lists/loblist.txt").unwrap_or_else(|_| String::new());
         let words: HashSet<String> = data.lines().map(String::from).collect();
         RwLock::new(words)
     })
@@ -26,7 +26,7 @@ pub fn get_random_lob() -> Option<String> {
 }
 
 pub async fn update_lob() -> Result<(usize, usize), Error> {
-    let new_lob = std::fs::read_to_string("data/loblist.txt")?;
+    let new_lob = std::fs::read_to_string("config/lists/loblist.txt")?;
     let old_count;
     let new_count;
 
@@ -52,7 +52,7 @@ pub async fn unload_lob() -> Result<(), Error> {
 }
 
 pub async fn add_lob(content: &String) -> Result<(), Error> {
-    let loblist = "data/loblist.txt";
+    let loblist = "config/lists/loblist.txt";
     let mut file = OpenOptions::new().append(true).open(loblist)?;
 
     let content_with_newline = if file.metadata()?.len() > 0 {
@@ -76,7 +76,7 @@ pub async fn add_lob(content: &String) -> Result<(), Error> {
 }
 
 pub async fn remove_lob(target: &str) -> Result<bool, Error> {
-    let loblist = "data/loblist.txt";
+    let loblist = "config/lists/loblist.txt";
     let mut lines = Vec::new();
     let mut line_removed = false;
 
@@ -105,7 +105,7 @@ pub async fn remove_lob(target: &str) -> Result<bool, Error> {
 }
 
 pub fn count_lob() -> Result<usize, Error> {
-    let file = File::open("data/loblist.txt")?;
+    let file = File::open("config/lists/loblist.txt")?;
     let reader = BufReader::new(file);
 
     let mut count = 0;

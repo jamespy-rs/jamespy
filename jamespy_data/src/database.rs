@@ -2,10 +2,9 @@ use bb8_redis::{bb8::Pool, RedisConnectionManager};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::env;
 
-pub type DbPool = PgPool;
 pub type RedisPool = Pool<RedisConnectionManager>;
 
-pub async fn init_data() -> DbPool {
+pub async fn init_data() -> PgPool {
     let database_url =
         env::var("DATABASE_URL").expect("No database url found in environment variables!");
 
@@ -14,7 +13,7 @@ pub async fn init_data() -> DbPool {
         .await
         .expect("Failed to connect to database!");
 
-    sqlx::migrate!()
+    sqlx::migrate!("../migrations")
         .run(&database)
         .await
         .expect("Unable to apply migrations!");

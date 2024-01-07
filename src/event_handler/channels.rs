@@ -1,8 +1,8 @@
-use crate::utils::misc::{
+use jamespy_utils::misc::{
     auto_archive_duration_to_string, channel_type_to_string, forum_layout_to_string,
     get_guild_name, sort_order_to_string,
 };
-use crate::utils::permissions::get_permission_changes;
+use jamespy_utils::permissions::get_permission_changes;
 
 use crate::{Data, Error};
 
