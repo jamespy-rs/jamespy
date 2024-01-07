@@ -119,7 +119,7 @@ pub async fn cached_users_raw(ctx: Context<'_>) -> Result<(), Error> {
     {
         for guild in ctx.cache().guilds() {
             for member in &ctx.cache().guild(guild).unwrap().members {
-                users.insert(*member.0, member.1.user.to_string());
+                users.insert(*member.0, format!("{:?}", member.1));
             }
         }
     };

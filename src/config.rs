@@ -9,7 +9,6 @@ use crate::utils::misc::read_words_from_file;
 pub struct JamespyConfig {
     pub events_config: EventsConfig,
     pub vcstatus: VCStatus,
-    #[cfg(feature = "castle")]
     pub castle_conf: Option<Castle>,
 }
 
@@ -149,7 +148,6 @@ impl JamespyConfig {
                 badlist: Some(read_words_from_file("data/badwords.txt")),
                 fixlist: Some(read_words_from_file("data/fixwords.txt")),
             },
-            #[cfg(feature = "castle")]
             castle_conf: Some(Castle {
                 base: Some(InitStatus {
                     setup_complete: false,

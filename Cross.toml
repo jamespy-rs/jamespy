@@ -1,2 +1,0 @@
-[target.arm-unknown-linux-gnueabihf]
-image = "rustembedded/cross:arm-unknown-linux-gnueabihf"

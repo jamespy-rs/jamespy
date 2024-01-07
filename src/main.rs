@@ -214,12 +214,10 @@ async fn main() {
     };
 
     let framework = poise::Framework::new(options, move |ctx, ready, framework| {
-        #[cfg(feature = "castle")]
         let ctx_clone = ctx.clone();
-        #[cfg(feature = "castle")]
         let data_clone = data.clone();
 
-        #[cfg(feature = "castle")]
+
         tokio::spawn(async move {
             let mut interval: tokio::time::Interval =
                 tokio::time::interval(std::time::Duration::from_secs(60 * 60));
