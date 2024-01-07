@@ -92,7 +92,6 @@ pub async fn guild_member_update(
 
                     // If its newer than a minute, update.
                     if timestamp >= (until + 60) {
-                        dm_activity_updated(ctx, &event, old_stamp.2).await?;
                         data.updated_no_announce(event.user.id, now, timestamp, old_stamp.2 + 1)
                             .await;
                     }
