@@ -242,9 +242,7 @@ pub async fn channel_update(
     }
     diff = diff.trim_end_matches('\n').to_string();
     if !diff.is_empty() {
-        println!(
-            "\x1B[34m[{guild_name}] #{channel_name} was updated! ({kind})\x1B[0m\n{diff}"
-        );
+        println!("\x1B[34m[{guild_name}] #{channel_name} was updated! ({kind})\x1B[0m\n{diff}");
     }
     Ok(())
 }
@@ -385,9 +383,7 @@ pub async fn thread_delete(
     }
 
     if channel_name.is_empty() {
-        println!(
-            "\x1B[94m[{guild_name}] An unknown thread was deleted!\x1B[0m"
-        );
+        println!("\x1B[94m[{guild_name}] An unknown thread was deleted!\x1B[0m");
     } else {
         println!(
             "\x1B[94m[{guild_name}] Thread #{channel_name} ({kind}) was deleted from #{parent_channel_name}!\x1B[0m"
@@ -472,7 +468,7 @@ pub async fn add(
         let user: serenity::User = user_id.to_user(&ctx).await.unwrap();
         let author_title = format!("{} changed a channel status", user.name);
         let author = serenity::CreateEmbedAuthor::new(author_title)
-            .icon_url(user.avatar_url().unwrap_or_default());
+            .icon_url(user.face());
         let footer = serenity::CreateEmbedFooter::new(format!(
             "User ID: {} • Please check user manually in audit log.",
             user.id.get()

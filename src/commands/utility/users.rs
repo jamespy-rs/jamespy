@@ -1,5 +1,5 @@
 use crate::{Context, Error};
-use ::serenity::all::UserId;
+use ::serenity::all::{UserId, User};
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{
     self as serenity, ActivityType, Colour, GuildMemberFlags, Member, OnlineStatus,
@@ -208,6 +208,59 @@ pub async fn playing(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn commands() -> [crate::Command; 4] {
-    [guild_flags(), last_reactions(), statuses(), playing()]
+/// See what games people are playing!
+#[poise::command(
+    rename = "dm-activity-check",
+    aliases("dm-activity"),
+    prefix_command,
+    category = "Utility",
+    guild_only,
+    required_permissions = "MANAGE_MESSAGES"
+)]
+pub async fn dm_activity_check(ctx: Context<'_>, user: User) -> Result<(), Error> {
+    if ctx.guild_id().unwrap() != 98226572468690944 {
+        return Ok(())
+    }
+
+
+    let author = serenity::CreateEmbedAuthor::new(format!("{}'s unusual dm activity info", user.tag()))
+    .icon_url(user.avatar_url().unwrap_or_default());
+
+    let mut embed = serenity::CreateEmbed::default().author(author);
+
+
+    let result = ctx.data().get_activity_check(user.id).await;
+
+    if let Some(result) = result {
+
+        let until = if let Some(u) = result.1 {
+            format!("<t:{u}>")
+        } else {
+            String::from("None")
+        };
+
+        embed = embed.field("Announced last", format!("<t:{}>", result.0), true)
+        .field("Until", until, true)
+        .field("Count", result.2.to_string(), true);
+    }
+
+    if let Ok(member) = ctx.guild_id().unwrap().member(ctx, user.id).await {
+        let until = if let Some(activity) = member.unusual_dm_activity_until {
+            format!("<t:{}>", activity.unix_timestamp())
+        } else {
+            String::from("None")
+        };
+        embed = embed.field("Currently flagged until?", until, false);
+    }
+
+    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+
+
+    Ok(())
+}
+
+
+
+pub fn commands() -> [crate::Command; 5] {
+    [guild_flags(), last_reactions(), statuses(), playing(), dm_activity_check()]
 }

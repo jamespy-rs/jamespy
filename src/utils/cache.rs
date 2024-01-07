@@ -15,9 +15,7 @@ pub async fn guild_message_cache_builder<U, E>(
     let next_button_id = format!("{ctx_id}next");
 
     let mut current_page = 0;
-    let footer_text = format!(
-        "Total messages cached in the guild: {total_messages_cached}"
-    );
+    let footer_text = format!("Total messages cached in the guild: {total_messages_cached}");
 
     let msg = ctx
         .send(
@@ -94,9 +92,7 @@ pub async fn presence_builder<U, E>(
     let sctx = ctx.serenity_context();
 
     let mut current_page = 0;
-    let footer = format!(
-        "{total_members} members are playing {total_games} games right now."
-    );
+    let footer = format!("{total_members} members are playing {total_games} games right now.");
 
     let msg = ctx
         .send(

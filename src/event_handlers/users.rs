@@ -65,26 +65,47 @@ pub async fn guild_member_update(
         }
 
         if let Some(timestamp) = event.unusual_dm_activity_until {
+            let timestamp = timestamp.timestamp();
             if guild_id != 98226572468690944 {
                 return Ok(());
             }
 
-            if let Some(old_stamp) = data.dm_activity.get(&event.user.id) {
-                // if there is an old timestamp in there, but its in the past, remove.
-                if old_stamp.unix_timestamp() < Utc::now().timestamp() {
-                    data.dm_activity.remove(&event.user.id);
-                    return Ok(());
-                }
+            let now = Utc::now().timestamp();
 
-                if timestamp.timestamp() >= (old_stamp.timestamp() + 3600) {
-                    dm_activity_updated(ctx, &event, *old_stamp).await?;
-                    data.dm_activity.insert(event.user.id, timestamp);
-                    return Ok(());
+            // last_announced, activity until, times updated.
+            // they have a flag now, check if they had one before.
+            if let Some(old_stamp) = data.get_activity_check(event.user.id).await {
+                // they had a flag before.
+                if let Some(until) = old_stamp.1 {
+                    if until < now {
+                        data.remove_until(event.user.id).await;
+                        return Ok(());
+                    }
+
+                    // If its newer by an hour, announce.
+                    if timestamp >= (old_stamp.0 + 3600) {
+                        dm_activity_updated(ctx, &event, old_stamp.2).await?;
+                        data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.2 + 1))
+                            .await;
+                        return Ok(()); // its okay to return here because it'll be updated.
+                    }
+
+                    // If its newer than a minute, update.
+                    if timestamp >= (until + 60) {
+                        dm_activity_updated(ctx, &event, old_stamp.2).await?;
+                        data.updated_no_announce(event.user.id, now, timestamp, old_stamp.2 + 1)
+                            .await;
+                    }
+                } else {
+                    dm_activity_new(ctx, &event, old_stamp.2).await?;
+                    data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.2 + 1))
+                        .await;
                 }
-            } else if timestamp.unix_timestamp() >= Utc::now().timestamp() {
+            } else if timestamp >= Utc::now().timestamp() {
                 // add, no previous match but in future.
-                dm_activity_new(ctx, &event).await?;
-                data.dm_activity.insert(event.user.id, timestamp);
+                dm_activity_new(ctx, &event, 0).await?;
+                data.new_or_announced(event.user.id, now, timestamp, Some(1))
+                    .await;
             }
         }
     }
@@ -95,11 +116,35 @@ pub async fn guild_member_update(
 async fn dm_activity_new(
     ctx: &serenity::Context,
     event: &GuildMemberUpdateEvent,
+    count: i16
 ) -> Result<(), Error> {
     let user_ping = format!("<@{}>", event.user.id);
     let joined_at = event.joined_at.unix_timestamp();
     let created_at = event.user.created_at().unix_timestamp();
-    let embed = CreateEmbed::new()
+    let online_status = {
+        let guild = ctx.cache.guild(event.guild_id).unwrap();
+
+        guild
+            .presences
+            .get(&event.user.id)
+            .map(|p| p.client_status.clone())
+    };
+
+    let mut client_stat = vec![];
+    if let Some(Some(client)) = online_status {
+        if client.desktop.is_some() {
+            client_stat.push("Desktop");
+        }
+        if client.mobile.is_some() {
+            client_stat.push("Mobile");
+        }
+        if client.web.is_some() {
+            client_stat.push("Web");
+        }
+    }
+    let stats = client_stat.join(", ");
+
+    let mut embed = CreateEmbed::new()
         .author(
             CreateEmbedAuthor::new(format!(
                 "{} is flagged with unusual dm activity",
@@ -114,6 +159,17 @@ async fn dm_activity_new(
             "User ID: {}",
             event.user.id
         )));
+
+    if count != 0 {
+        embed = embed.footer(CreateEmbedFooter::new(format!(
+            "User ID: {} • Previous hits: {}",
+            event.user.id, count)));
+    }
+
+    if !stats.is_empty() {
+        embed = embed.description(format!("**Online on**:\n{stats}"));
+    }
+
     ChannelId::new(158484765136125952)
         .send_message(ctx, serenity::CreateMessage::default().embed(embed))
         .await?;
@@ -124,14 +180,36 @@ async fn dm_activity_new(
 async fn dm_activity_updated(
     ctx: &serenity::Context,
     event: &GuildMemberUpdateEvent,
-    old_stamp: serenity::Timestamp,
+    count: i16,
 ) -> Result<(), Error> {
     let user_ping = format!("<@{}>", event.user.id);
     let joined_at = event.joined_at.unix_timestamp();
     let created_at = event.user.created_at().unix_timestamp();
-    let old = old_stamp.unix_timestamp();
-    let new = event.unusual_dm_activity_until.unwrap().unix_timestamp();
-    let embed = CreateEmbed::new()
+
+    let online_status = {
+        let guild = ctx.cache.guild(event.guild_id).unwrap();
+
+        guild
+            .presences
+            .get(&event.user.id)
+            .map(|p| p.client_status.clone())
+    };
+
+    let mut client_stat = vec![];
+    if let Some(Some(client)) = online_status {
+        if client.desktop.is_some() {
+            client_stat.push("Desktop");
+        }
+        if client.mobile.is_some() {
+            client_stat.push("Mobile");
+        }
+        if client.web.is_some() {
+            client_stat.push("Web");
+        }
+    }
+    let stats = client_stat.join(", ");
+
+    let mut embed = CreateEmbed::new()
         .author(
             CreateEmbedAuthor::new(format!("{} dm activity flag updated!", event.user.name))
                 .icon_url(event.user.face()),
@@ -139,12 +217,21 @@ async fn dm_activity_updated(
         .field("User", user_ping, true)
         .field("Joined at", format!("<t:{joined_at}:R>"), true)
         .field("Creation Date", format!("<t:{created_at}:R>"), true)
-        .field("Old", format!("<t:{old}:R>"), true)
-        .field("New", format!("<t:{new}:R>"), true)
         .footer(CreateEmbedFooter::new(format!(
             "User ID: {}",
             event.user.id
         )));
+
+        if count != 0 {
+            embed = embed.footer(CreateEmbedFooter::new(format!(
+                "User ID: {} • Previous hits: {}",
+                event.user.id, count)));
+        }
+
+    if !stats.is_empty() {
+        embed = embed.description(format!("**Online on**:\n{stats}"));
+    }
+
     ChannelId::new(158484765136125952)
         .send_message(ctx, serenity::CreateMessage::default().embed(embed))
         .await?;
