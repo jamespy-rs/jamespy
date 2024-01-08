@@ -134,7 +134,6 @@ pub async fn guild_audit_log_entry_create(
                         match options.auto_moderation_rule_name {
                             Some(rule_name) => match rule_name.as_str() {
                                 "Bad Words ❌ [BLOCKED]" => Some(697738506944118814),
-                                "Bad Words 📫 [ALERT]" => Some(158484765136125952),
                                 _ => None,
                             },
                             None => None,
@@ -152,8 +151,7 @@ pub async fn guild_audit_log_entry_create(
                         if let Some(channel_messages) = ctx.cache.channel_messages(id) {
                             cloned_messages = channel_messages.clone();
                         }
-                        let mut messages: Vec<_> = cloned_messages.values().collect();
-                        messages.reverse();
+                        let messages: Vec<_> = cloned_messages.values().collect();
                         let last_8_messages = messages.iter().take(8);
                         let messages = last_8_messages;
 

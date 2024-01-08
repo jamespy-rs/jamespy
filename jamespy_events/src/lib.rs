@@ -6,15 +6,16 @@ pub mod reactions;
 pub mod users;
 pub mod voice;
 
-use crate::{Data, Error};
+use jamespy_data::structs::{Data, Error};
 use poise::serenity_prelude as serenity;
 
 pub async fn event_handler(
     ctx: &serenity::Context,
     event: serenity::FullEvent,
-    _framework: poise::FrameworkContext<'_, Data, Error>,
+    framework: poise::FrameworkContext<'_, Data, Error>,
     data: &Data,
 ) -> Result<(), Error> {
+    let _ = framework;
     match event {
         serenity::FullEvent::Message { new_message } => {
             messages::message(ctx, new_message, data).await?;

@@ -13,7 +13,6 @@
 )]
 
 mod commands;
-mod event_handler;
 
 
 use dashmap::DashMap;
@@ -70,7 +69,7 @@ async fn main() {
 
         skip_checks_for_owners: false,
         event_handler: |ctx: &serenity::Context, event: &serenity::FullEvent, framework, data| {
-            Box::pin(event_handler::event_handler(
+            Box::pin(jamespy_events::event_handler(
                 ctx,
                 event.clone(),
                 framework,
@@ -109,8 +108,10 @@ async fn main() {
         | serenity::GatewayIntents::GUILD_MEMBERS
         | serenity::GatewayIntents::GUILD_PRESENCES;
 
+    let mut settings = serenity::Settings::default();
+    settings.max_messages = 350;
     let mut client = serenity::Client::builder(token, intents)
-        .framework(framework)
+        .framework(framework).cache_settings(settings)
         .await
         .unwrap();
 

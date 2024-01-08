@@ -7,6 +7,7 @@ edition = "2021"
 jamespy_utils = { path = "jamespy_utils" }
 jamespy_data = { path = "jamespy_data" }
 jamespy_config = { path = "jamespy_config" }
+jamespy_events = { path = "jamespy_events" }
 
 
 serenity = { git = "https://github.com/serenity-rs/serenity", branch = "next" }
@@ -36,7 +37,8 @@ dashmap = "5.5.3"
 members = [
     "jamespy_utils",
     "jamespy_data",
-    "jamespy_config"
+    "jamespy_config",
+    "jamespy_events"
 ]
 
 

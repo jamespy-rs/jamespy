@@ -3,8 +3,8 @@ use sqlx::query;
 use crate::{Data, Error};
 use jamespy_utils::misc::get_guild_name;
 
-pub async fn ready(ctx: &serenity::Context, _data: &Data) -> Result<(), Error> {
-    ctx.cache.set_max_messages(350);
+pub async fn ready(ctx: &serenity::Context, data: &Data) -> Result<(), Error> {
+    let _ = data;
 
     let activity_data = ActivityData {
         name: "you inside your home.".to_string().into(),
