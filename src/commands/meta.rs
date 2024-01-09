@@ -25,10 +25,7 @@ pub async fn uptime(ctx: Context<'_>) -> Result<(), Error> {
 // Post a link to my source code!
 #[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 3)]
 pub async fn source(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.say(
-        "<https://github.com/jamespy-rs/jamespy>\n<https://github.com/jamespy-rs/jamespy-client>",
-    )
-    .await?;
+    ctx.say("<https://github.com/jamespy-rs/jamespy>").await?;
     Ok(())
 }
 

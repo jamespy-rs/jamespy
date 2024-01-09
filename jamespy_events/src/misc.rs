@@ -28,7 +28,7 @@ pub async fn cache_ready(
     let db_pool = &data.db;
 
     for guild in guilds {
-        let guild_name = get_guild_name(ctx, guild);
+        let guild_name = get_guild_name(ctx, Some(guild));
         let result = query!(
             "SELECT author_id, user_id FROM join_tracks WHERE guild_id = $1",
             i64::from(guild)

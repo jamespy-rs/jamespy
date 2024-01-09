@@ -272,17 +272,25 @@ pub async fn flag_lb(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     // poise will display an error if this goes wrong, though at the same time it'll show an error if nobody is on the list.
-    let result = sqlx::query!("SELECT user_id, count FROM dm_activity ORDER BY count DESC LIMIT 20")
-        .fetch_all(&ctx.data().db)
-        .await
-        .unwrap();
+    let result =
+        sqlx::query!("SELECT user_id, count FROM dm_activity ORDER BY count DESC LIMIT 20")
+            .fetch_all(&ctx.data().db)
+            .await
+            .unwrap();
 
     let mut description = String::new();
     for (index, record) in result.into_iter().enumerate() {
-        description.push_str(&format!("**{}**. <@{}>: **{}**\n", index + 1, record.user_id, record.count.unwrap()));
+        description.push_str(&format!(
+            "**{}**. <@{}>: **{}**\n",
+            index + 1,
+            record.user_id,
+            record.count.unwrap()
+        ));
     }
 
-    let embed = serenity::CreateEmbed::default().title("Top 20 users flagged with dm-activity").description(description);
+    let embed = serenity::CreateEmbed::default()
+        .title("Top 20 users flagged with dm-activity")
+        .description(description);
 
     ctx.send(poise::CreateReply::default().embed(embed)).await?;
 

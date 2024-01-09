@@ -20,7 +20,7 @@ pub async fn reaction_add(
         Err(_) => "Unknown User".to_string().into(),
     };
 
-    let guild_id = add_reaction.guild_id.unwrap_or_default();
+    let guild_id = add_reaction.guild_id;
     let guild_name = get_guild_name(ctx, guild_id);
 
     let channel_name = get_channel_name(ctx, guild_id, add_reaction.channel_id).await;
@@ -33,7 +33,7 @@ pub async fn reaction_add(
         guild_name, channel_name, user_name, add_reaction.emoji
     );
 
-    let reaction_key = format!("reactions:{guild_id}");
+    let reaction_key = format!("reactions:{}", guild_id.unwrap_or_default());
     let reaction_info = (
         add_reaction.emoji.to_string(),
         user_id,
@@ -63,7 +63,7 @@ pub async fn reaction_remove(
         }
         Err(_) => "Unknown User".to_string().into(),
     };
-    let guild_id = removed_reaction.guild_id.unwrap_or_default();
+    let guild_id = removed_reaction.guild_id;
     let guild_name = get_guild_name(ctx, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, removed_reaction.channel_id).await;
 
@@ -75,7 +75,7 @@ pub async fn reaction_remove(
         guild_name, channel_name, user_name, removed_reaction.emoji
     );
 
-    let reaction_key = format!("reactions:{guild_id}");
+    let reaction_key = format!("reactions:{}", guild_id.unwrap_or_default());
     let reaction_info = (
         removed_reaction.emoji.to_string(),
         user_id,

@@ -36,7 +36,7 @@ pub async fn guild_member_addition(
     let guild_id = new_member.guild_id;
     let joined_user_id = new_member.user.id;
 
-    let guild_name = get_guild_name(ctx, guild_id);
+    let guild_name = get_guild_name(ctx, Some(guild_id));
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has joined!\x1B[0m",
@@ -95,7 +95,7 @@ pub async fn guild_member_removal(
     data: &Data,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
-    let guild_name = get_guild_name(ctx, guild_id);
+    let guild_name = get_guild_name(ctx, Some(guild_id));
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m",

@@ -37,7 +37,7 @@ pub async fn channel_update(
     let mut kind = String::new();
     let mut diff = String::new();
 
-    let guild_name = get_guild_name(ctx, new.guild_id);
+    let guild_name = get_guild_name(ctx, Some(new.guild_id));
 
     if let Some(old) = old {
         channel_name = new.name.to_string();
@@ -264,7 +264,7 @@ pub async fn channel_delete(ctx: &serenity::Context, channel: GuildChannel) -> R
 
 pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Result<(), Error> {
     let guild_id = thread.guild_id;
-    let guild_name = get_guild_name(ctx, guild_id);
+    let guild_name = get_guild_name(ctx, Some(guild_id));
     let kind = channel_type_to_string(thread.kind);
 
     let parent_channel_name = if let Some(parent_id) = thread.parent_id {
@@ -286,7 +286,7 @@ pub async fn thread_update(
     new: GuildChannel,
 ) -> Result<(), Error> {
     let guild_id = new.guild_id;
-    let guild_name = get_guild_name(ctx, guild_id);
+    let guild_name = get_guild_name(ctx, Some(guild_id));
     let kind = channel_type_to_string(new.kind);
     let mut diff = String::new();
 
@@ -369,7 +369,7 @@ pub async fn thread_delete(
     let mut channel_name = String::new();
     let mut parent_channel_name: String = String::new();
     let mut kind = String::new();
-    let guild_name = get_guild_name(ctx, guild_id);
+    let guild_name = get_guild_name(ctx, Some(guild_id));
 
     if let Some(full_thread) = full_thread_data {
         channel_name = full_thread.name.to_string();

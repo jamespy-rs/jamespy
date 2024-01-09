@@ -6,36 +6,49 @@ use poise::serenity_prelude::{
 
 pub async fn get_channel_name(
     ctx: &serenity::Context,
-    guild_id: GuildId,
+    guild_id: Option<GuildId>,
     channel_id: ChannelId,
 ) -> String {
-    let mut channel_name = channel_id
-        .name(ctx)
-        .await
-        .unwrap_or("Unknown Channel".to_owned());
+    match channel_id.name(ctx).await {
+        Ok(name) => name,
+        Err(_) => get_channel_name_guild(ctx, guild_id, channel_id).await,
+    }
+}
 
-    if guild_id.get() != 0 && channel_name == "Unknown Channel" {
-        let guild_cache = ctx.cache.guild(guild_id).unwrap();
-        let threads = &guild_cache.threads;
-        for thread in threads {
-            if thread.id == channel_id.get() {
-                channel_name = thread.name.clone().to_string();
-                break;
-            }
+async fn get_channel_name_guild(
+    ctx: &serenity::Context,
+    guild_id: Option<GuildId>,
+    channel_id: ChannelId,
+) -> String {
+    if guild_id.is_none() {
+        return "Unknown Channel".to_string();
+    }
+
+    let id = guild_id.unwrap();
+    let guild_cache = match ctx.cache.guild(id) {
+        Some(cache) => cache,
+        None => return "Unknown Channel".to_string(),
+    };
+
+    let threads = &guild_cache.threads;
+
+    for thread in threads {
+        if thread.id == channel_id.get() {
+            return thread.name.to_string();
         }
     }
 
-    channel_name
+    "Unknown Channel".to_string()
 }
 
-pub fn get_guild_name(ctx: &serenity::Context, guild_id: GuildId) -> String {
-    if guild_id == 1 {
-        "None".to_owned()
-    } else {
-        match guild_id.name(ctx) {
+pub fn get_guild_name(ctx: &serenity::Context, guild_id: Option<GuildId>) -> String {
+    if let Some(id) = guild_id {
+        match id.name(ctx) {
             Some(name) => name,
             None => "Unknown".to_owned(),
         }
+    } else {
+        "None".to_string()
     }
 }
 
