@@ -32,14 +32,7 @@ pub async fn event_handler(
             deleted_message_id,
             guild_id,
         } => {
-            messages::message_delete(
-                ctx,
-                channel_id,
-                deleted_message_id,
-                guild_id,
-                data,
-            )
-            .await?;
+            messages::message_delete(ctx, channel_id, deleted_message_id, guild_id, data).await?;
         }
         serenity::FullEvent::GuildCreate { guild, is_new } => {
             guilds::guild_create(ctx, guild, is_new).await?;
@@ -91,10 +84,8 @@ pub async fn event_handler(
 
             if let Some(guilds) = guilds_opt {
                 if guilds.contains(&guild_id) {
-                    channels::voice_channel_status_update(
-                        ctx, old, status, id, guild_id, data,
-                    )
-                    .await?;
+                    channels::voice_channel_status_update(ctx, old, status, id, guild_id, data)
+                        .await?;
                 }
             }
         }
@@ -119,8 +110,7 @@ pub async fn event_handler(
             new,
             event,
         } => {
-            users::guild_member_update(ctx, old_if_available, new, event, data)
-                .await?;
+            users::guild_member_update(ctx, old_if_available, new, event, data).await?;
         }
         serenity::FullEvent::GuildAuditLogEntryCreate { entry, guild_id } => {
             guilds::guild_audit_log_entry_create(ctx, entry, guild_id).await?;

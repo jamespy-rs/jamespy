@@ -416,7 +416,8 @@ pub async fn message_delete(
         jamespy_utils::misc::download_attachments(message, data).await?;
     } else {
         println!(
-            "\x1B[91m\x1B[2mA message (ID:{deleted_message_id}) was deleted but was not in cache\x1B[0m"
+            "\x1B[91m\x1B[2mA message (ID:{deleted_message_id}) was deleted but was not in \
+             cache\x1B[0m"
         );
     }
     Ok(())

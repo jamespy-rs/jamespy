@@ -1015,11 +1015,8 @@ checksum = "b1a46d1a171d865aa5f83f92695765caa047a9b4cbae2cbf37dbd613a793fd4c"
 name = "jamespy"
 version = "0.1.2-rc1"
 dependencies = [
- "base64",
  "bb8-redis",
- "chrono",
  "dashmap",
- "fs_extra",
  "jamespy_config",
  "jamespy_data",
  "jamespy_events",
@@ -1028,8 +1025,6 @@ dependencies = [
  "rand",
  "regex",
  "reqwest",
- "serde",
- "serde_json",
  "serenity",
  "sqlx",
  "tokio",

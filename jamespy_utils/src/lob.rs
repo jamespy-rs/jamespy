@@ -10,7 +10,8 @@ use rand::seq::SliceRandom;
 fn get_loblist() -> &'static RwLock<HashSet<String>> {
     static LOBLIST: OnceLock<RwLock<HashSet<String>>> = OnceLock::new();
     LOBLIST.get_or_init(|| {
-        let data = std::fs::read_to_string("config/lists/loblist.txt").unwrap_or_else(|_| String::new());
+        let data =
+            std::fs::read_to_string("config/lists/loblist.txt").unwrap_or_else(|_| String::new());
         let words: HashSet<String> = data.lines().map(String::from).collect();
         RwLock::new(words)
     })

@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO dm_activity (user_id, last_announced, until, count)\n            VALUES ($1, $2, $3, $4)\n            ON CONFLICT (user_id) DO UPDATE\n            SET last_announced = $2, until = $3, count = $4",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Int8",
+        "Int8",
+        "Int2"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1f91f76a753688ef61937a907f665445107ec1813c0e1f79039e2504d6e571ff"
+}

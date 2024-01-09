@@ -1,5 +1,5 @@
 use crate::{Context, Error};
-use ::serenity::all::{UserId, User};
+use ::serenity::all::{User, UserId};
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{
     self as serenity, ActivityType, Colour, GuildMemberFlags, Member, OnlineStatus,
@@ -219,29 +219,28 @@ pub async fn playing(ctx: Context<'_>) -> Result<(), Error> {
 )]
 pub async fn dm_activity_check(ctx: Context<'_>, user: User) -> Result<(), Error> {
     if ctx.guild_id().unwrap() != 98226572468690944 {
-        return Ok(())
+        return Ok(());
     }
 
-
-    let author = serenity::CreateEmbedAuthor::new(format!("{}'s unusual dm activity info", user.tag()))
-    .icon_url(user.avatar_url().unwrap_or_default());
+    let author =
+        serenity::CreateEmbedAuthor::new(format!("{}'s unusual dm activity info", user.tag()))
+            .icon_url(user.avatar_url().unwrap_or_default());
 
     let mut embed = serenity::CreateEmbed::default().author(author);
-
 
     let result = ctx.data().get_activity_check(user.id).await;
 
     if let Some(result) = result {
-
         let until = if let Some(u) = result.1 {
             format!("<t:{u}>")
         } else {
             String::from("None")
         };
 
-        embed = embed.field("Announced last", format!("<t:{}>", result.0), true)
-        .field("Until", until, true)
-        .field("Count", result.2.to_string(), true);
+        embed = embed
+            .field("Announced last", format!("<t:{}>", result.0), true)
+            .field("Until", until, true)
+            .field("Count", result.2.to_string(), true);
     }
 
     if let Ok(member) = ctx.guild_id().unwrap().member(ctx, user.id).await {
@@ -255,12 +254,48 @@ pub async fn dm_activity_check(ctx: Context<'_>, user: User) -> Result<(), Error
 
     ctx.send(poise::CreateReply::default().embed(embed)).await?;
 
+    Ok(())
+}
+
+/// See what games people are playing!
+#[poise::command(
+    rename = "flag-lb",
+    aliases("flagged-lb", "dm-activity-lb"),
+    prefix_command,
+    category = "Utility",
+    guild_only,
+    required_permissions = "MANAGE_MESSAGES"
+)]
+pub async fn flag_lb(ctx: Context<'_>) -> Result<(), Error> {
+    if ctx.guild_id().unwrap() != 98226572468690944 {
+        return Ok(());
+    }
+
+    // poise will display an error if this goes wrong, though at the same time it'll show an error if nobody is on the list.
+    let result = sqlx::query!("SELECT user_id, count FROM dm_activity ORDER BY count DESC LIMIT 20")
+        .fetch_all(&ctx.data().db)
+        .await
+        .unwrap();
+
+    let mut description = String::new();
+    for (index, record) in result.into_iter().enumerate() {
+        description.push_str(&format!("**{}**. <@{}>: **{}**\n", index + 1, record.user_id, record.count.unwrap()));
+    }
+
+    let embed = serenity::CreateEmbed::default().title("Top 20 users flagged with dm-activity").description(description);
+
+    ctx.send(poise::CreateReply::default().embed(embed)).await?;
 
     Ok(())
 }
 
-
-
-pub fn commands() -> [crate::Command; 5] {
-    [guild_flags(), last_reactions(), statuses(), playing(), dm_activity_check()]
+pub fn commands() -> [crate::Command; 6] {
+    [
+        guild_flags(),
+        last_reactions(),
+        statuses(),
+        playing(),
+        dm_activity_check(),
+        flag_lb(),
+    ]
 }

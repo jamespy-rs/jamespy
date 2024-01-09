@@ -1,13 +1,10 @@
-use crate::{
-    Context, Error,
-};
+use crate::{Context, Error};
 use jamespy_config::{Castle, InitStatus, MediaStashingStatus, SelfRegex, StatsStatus};
 
 use poise::serenity_prelude::{
     ButtonStyle, ChannelType, ComponentInteractionCollector, CreateActionRow, CreateButton,
     CreateChannel, CreateInteractionResponse, CreateInteractionResponseMessage,
 };
-use regex::Regex;
 
 /// Init
 #[poise::command(
@@ -199,7 +196,7 @@ async fn setup_settings(ctx: Context<'_>) -> Result<(), Error> {
             regex_self: true,
             regex_channel: Some(regex_id),
             regex_self_ping: false,
-            self_regexes: Some(vec![Regex::new("placeholder")?]),
+            self_regexes: None,
         }),
         media: Some(MediaStashingStatus {
             media_stashing_post: true,

@@ -1,6 +1,4 @@
-use crate::{
-    Data, Error,
-};
+use crate::{Data, Error};
 use jamespy_utils::misc::{get_channel_name, get_guild_name};
 
 use bb8_redis::redis::AsyncCommands;

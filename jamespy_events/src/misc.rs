@@ -1,7 +1,7 @@
-use poise::serenity_prelude::{self as serenity, ActivityData, ActivityType, GuildId, UserId};
-use sqlx::query;
 use crate::{Data, Error};
 use jamespy_utils::misc::get_guild_name;
+use poise::serenity_prelude::{self as serenity, ActivityData, ActivityType, GuildId, UserId};
+use sqlx::query;
 
 pub async fn ready(ctx: &serenity::Context, data: &Data) -> Result<(), Error> {
     let _ = data;

@@ -115,7 +115,7 @@ pub async fn guild_member_update(
 async fn dm_activity_new(
     ctx: &serenity::Context,
     event: &GuildMemberUpdateEvent,
-    count: i16
+    count: i16,
 ) -> Result<(), Error> {
     let user_ping = format!("<@{}>", event.user.id);
     let joined_at = event.joined_at.unix_timestamp();
@@ -162,7 +162,8 @@ async fn dm_activity_new(
     if count != 0 {
         embed = embed.footer(CreateEmbedFooter::new(format!(
             "User ID: {} • Previous hits: {}",
-            event.user.id, count)));
+            event.user.id, count
+        )));
     }
 
     if !stats.is_empty() {
@@ -221,11 +222,12 @@ async fn dm_activity_updated(
             event.user.id
         )));
 
-        if count != 0 {
-            embed = embed.footer(CreateEmbedFooter::new(format!(
-                "User ID: {} • Previous hits: {}",
-                event.user.id, count)));
-        }
+    if count != 0 {
+        embed = embed.footer(CreateEmbedFooter::new(format!(
+            "User ID: {} • Previous hits: {}",
+            event.user.id, count
+        )));
+    }
 
     if !stats.is_empty() {
         embed = embed.description(format!("**Online on**:\n{stats}"));

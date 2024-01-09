@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT last_announced, until, count FROM dm_activity WHERE user_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "last_announced",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "until",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "count",
+        "type_info": "Int2"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "a582579caeb25d97aa18755605f147e0f0563daab4073d7e28d46d9fdaae0692"
+}

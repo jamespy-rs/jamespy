@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
-use jamespy_config::read_words_from_file;
 use crate::{Context, Error};
+use jamespy_config::read_words_from_file;
 
 #[derive(Debug, poise::ChoiceParameter)]
 pub enum Lists {

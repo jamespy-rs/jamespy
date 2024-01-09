@@ -386,7 +386,8 @@ pub async fn thread_delete(
         println!("\x1B[94m[{guild_name}] An unknown thread was deleted!\x1B[0m");
     } else {
         println!(
-            "\x1B[94m[{guild_name}] Thread #{channel_name} ({kind}) was deleted from #{parent_channel_name}!\x1B[0m"
+            "\x1B[94m[{guild_name}] Thread #{channel_name} ({kind}) was deleted from \
+             #{parent_channel_name}!\x1B[0m"
         );
     }
     Ok(())
@@ -467,8 +468,7 @@ pub async fn add(
     if user_id.get() != 1 {
         let user: serenity::User = user_id.to_user(&ctx).await.unwrap();
         let author_title = format!("{} changed a channel status", user.name);
-        let author = serenity::CreateEmbedAuthor::new(author_title)
-            .icon_url(user.face());
+        let author = serenity::CreateEmbedAuthor::new(author_title).icon_url(user.face());
         let footer = serenity::CreateEmbedFooter::new(format!(
             "User ID: {} • Please check user manually in audit log.",
             user.id.get()

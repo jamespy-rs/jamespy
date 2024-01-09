@@ -1,7 +1,6 @@
-use std::sync::{RwLock, Arc};
 use dashmap::DashMap;
 use serenity::all::UserId;
-
+use std::sync::{Arc, RwLock};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -17,7 +16,6 @@ impl std::ops::Deref for Data {
         &self.0
     }
 }
-
 
 pub struct DataInner {
     pub db: sqlx::PgPool,

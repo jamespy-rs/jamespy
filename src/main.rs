@@ -14,17 +14,13 @@
 
 mod commands;
 
-
 use dashmap::DashMap;
 use jamespy_data::database::{init_data, init_redis_pool};
-use jamespy_data::structs::{Data, DataInner, Command, Context, Error};
+use jamespy_data::structs::{Command, Context, Data, DataInner, Error};
 
-
-
-use poise::serenity_prelude::{self as serenity,};
-use std::{env::var, time::Duration, sync::Arc};
+use poise::serenity_prelude::{self as serenity};
+use std::{env::var, sync::Arc, time::Duration};
 use tracing::warn;
-
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
@@ -83,7 +79,6 @@ async fn main() {
         let ctx_clone = ctx.clone();
         let data_clone = data.clone();
 
-
         tokio::spawn(async move {
             let mut interval: tokio::time::Interval =
                 tokio::time::interval(std::time::Duration::from_secs(60 * 60));
@@ -91,7 +86,7 @@ async fn main() {
                 // TODO: eventually move this to its own function.
                 interval.tick().await;
                 let _ = jamespy_utils::tasks::check_space(&ctx_clone, &data_clone).await;
-                let _ =jamespy_utils::tasks::update_stats(&ctx_clone, &data_clone).await;
+                let _ = jamespy_utils::tasks::update_stats(&ctx_clone, &data_clone).await;
             }
         });
 
@@ -111,7 +106,8 @@ async fn main() {
     let mut settings = serenity::Settings::default();
     settings.max_messages = 350;
     let mut client = serenity::Client::builder(token, intents)
-        .framework(framework).cache_settings(settings)
+        .framework(framework)
+        .cache_settings(settings)
         .await
         .unwrap();
 
