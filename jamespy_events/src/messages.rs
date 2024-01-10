@@ -8,7 +8,7 @@ use poise::serenity_prelude::{
 use crate::{Data, Error};
 
 use chrono::NaiveDateTime;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use sqlx::query;
 
@@ -28,6 +28,10 @@ pub async fn message(
             config.regex_patterns.unwrap_or_default(),
         )
     };
+    let db_pool = &data.db;
+    let guild_id = new_message.guild_id;
+    let guild_name = get_guild_name(ctx, guild_id);
+    let channel_name = get_channel_name(&ctx.clone(), guild_id, new_message.channel_id).await;
 
     if no_log_user.contains(&new_message.author.id.get())
         || no_log_channel.contains(&new_message.channel_id.get())
@@ -41,88 +45,15 @@ pub async fn message(
         handle_mania(ctx, &new_message).await?;
     }
 
-    let db_pool = &data.db;
-    let guild_id = new_message.guild_id;
-    let guild_name = get_guild_name(ctx, guild_id);
-    let channel_name = get_channel_name(&ctx.clone(), guild_id, new_message.channel_id).await;
-
     handle_patterns(ctx, &new_message, guild_name.clone(), &patterns).await?;
 
-    if guild_id.is_none()
-        && ![
-            158567567487795200,
-            ctx.clone().cache.current_user().id.get(),
-        ]
-        .contains(&new_message.author.id.get())
-    {
-        let user_id = UserId::from(158567567487795200);
-        let user = user_id.to_user(ctx.clone()).await?;
-        user.dm(
-            &ctx.clone(),
-            serenity::CreateMessage::default()
-                .content(format!(
-                    "{} (ID:{}) messaged me",
-                    new_message.author.name, new_message.author.id
-                ))
-                .embed(
-                    serenity::CreateEmbed::default()
-                        .title("I was messaged!")
-                        .description(format!(
-                            "**{}**: {}",
-                            new_message.author.name, new_message.content
-                        ))
-                        .color(Colour::from_rgb(0, 255, 0))
-                        .footer(CreateEmbedFooter::new(format!(
-                            "{}",
-                            new_message.channel_id
-                        ))),
-                ),
-        )
-        .await?;
-    }
+    handle_dm(ctx, &new_message).await?;
 
-    let attachments = new_message.attachments.clone();
-    let attachments_fmt: Option<String> = if attachments.is_empty() {
-        None
-    } else {
-        let attachment_names: Vec<String> = attachments
-            .iter()
-            .map(|attachment| attachment.filename.to_string())
-            .collect();
-        Some(format!(" <{}>", attachment_names.join(", ")))
-    };
+    let (attachments_fmt, embeds_fmt) = attachments_embed_fmt(&new_message);
 
-    let embeds = new_message.embeds.clone();
-    let embeds_fmt: Option<String> = if embeds.is_empty() {
-        None
-    } else {
-        let embed_types: Vec<String> = embeds
-            .iter()
-            .map(|embed| embed.kind.clone().unwrap_or_default().into_string())
-            .collect();
+    let flagged_words = get_blacklisted_words(&new_message, badlist, fixlist);
 
-        Some(format!(" {{{}}}", embed_types.join(", ")))
-    };
-    let messagewords: Vec<String> = new_message
-        .content
-        .to_lowercase()
-        .split_whitespace()
-        .map(String::from)
-        .collect();
-
-    let blacklisted_words: Vec<&String> = messagewords
-        .iter()
-        .filter(|word| {
-            // Check if the word is in the badlist and not in the fixlist
-            let is_blacklisted = badlist.iter().any(|badword| {
-                word.contains(badword) && !fixlist.iter().any(|fixword| word.contains(fixword))
-            });
-
-            is_blacklisted
-        })
-        .collect();
-
-    if blacklisted_words.is_empty() {
+    if flagged_words.is_empty() {
         println!(
             "\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[36m{}{}\x1B[0m",
             guild_name,
@@ -133,10 +64,6 @@ pub async fn message(
             embeds_fmt.as_deref().unwrap_or("")
         );
     } else {
-        let flagged_words: Vec<String> = blacklisted_words
-            .iter()
-            .map(|word| (*word).clone())
-            .collect();
         println!(
             "Flagged for bad word(s): \x1B[1m\x1B[31m{}\x1B[0m",
             flagged_words.join(", ")
@@ -193,28 +120,7 @@ pub async fn message_edit(
             }
 
             if old_message.content != new_message.content {
-                let attachments = new_message.attachments.clone();
-                let attachments_fmt: Option<String> = if attachments.is_empty() {
-                    None
-                } else {
-                    let attachment_names: Vec<String> = attachments
-                        .iter()
-                        .map(|attachment| attachment.filename.to_string())
-                        .collect();
-                    Some(format!(" <{}>", attachment_names.join(", ")))
-                };
-
-                let embeds = new_message.embeds.clone();
-                let embeds_fmt: Option<String> = if embeds.is_empty() {
-                    None
-                } else {
-                    let embed_types: Vec<String> = embeds
-                        .iter()
-                        .map(|embed| embed.kind.clone().unwrap_or_default().into_string())
-                        .collect();
-
-                    Some(format!(" {{{}}}", embed_types.join(", ")))
-                };
+                let (attachments_fmt, embeds_fmt) = attachments_embed_fmt(&new_message);
 
                 println!(
                     "\x1B[36m[{}] [#{}] A message by \x1B[0m{}\x1B[36m was edited:",
@@ -290,28 +196,7 @@ pub async fn message_delete(
         let user_name = message.author.name.clone();
         let content = message.content.clone();
 
-        let attachments = message.attachments.clone();
-        let attachments_fmt: Option<String> = if attachments.is_empty() {
-            None
-        } else {
-            let attachment_names: Vec<String> = attachments
-                .iter()
-                .map(|attachment| attachment.filename.to_string())
-                .collect();
-            Some(format!(" <{}>", attachment_names.join(", ")))
-        };
-
-        let embeds = message.embeds.clone();
-        let embeds_fmt: Option<String> = if embeds.is_empty() {
-            None
-        } else {
-            let embed_types: Vec<String> = embeds
-                .iter()
-                .map(|embed| embed.kind.clone().unwrap_or_default().into_string())
-                .collect();
-
-            Some(format!(" {{{}}}", embed_types.join(", ")))
-        };
+        let (attachments_fmt, embeds_fmt) = attachments_embed_fmt(&message);
 
         println!(
             "\x1B[91m\x1B[2m[{}] [#{}] A message from \x1B[0m{}\x1B[91m\x1B[2m was deleted: \
@@ -434,4 +319,96 @@ async fn handle_mania(ctx: &serenity::Context, new_message: &Message) -> Result<
             .await?;
     }
     Ok(())
+}
+
+async fn handle_dm(ctx: &serenity::Context, new_message: &Message) -> Result<(), Error> {
+    if new_message.guild_id.is_none()
+        && ![158567567487795200, ctx.cache.current_user().id.get()]
+            .contains(&new_message.author.id.get())
+    {
+        let user_id = UserId::from(158567567487795200);
+        let user = user_id.to_user(ctx.clone()).await?;
+        user.dm(
+            &ctx.clone(),
+            serenity::CreateMessage::default()
+                .content(format!(
+                    "{} (ID:{}) messaged me",
+                    new_message.author.name, new_message.author.id
+                ))
+                .embed(
+                    serenity::CreateEmbed::default()
+                        .title("I was messaged!")
+                        .description(format!(
+                            "**{}**: {}",
+                            new_message.author.name, new_message.content
+                        ))
+                        .color(Colour::from_rgb(0, 255, 0))
+                        .footer(CreateEmbedFooter::new(format!(
+                            "{}",
+                            new_message.channel_id
+                        ))),
+                ),
+        )
+        .await?;
+    }
+    Ok(())
+}
+
+fn get_blacklisted_words(
+    new_message: &Message,
+    badlist: HashSet<String>,
+    fixlist: HashSet<String>,
+) -> Vec<String> {
+    let messagewords: Vec<String> = new_message
+        .content
+        .to_lowercase()
+        .split_whitespace()
+        .map(String::from)
+        .collect();
+
+    let blacklisted_words: Vec<String> = messagewords
+        .into_iter()
+        .filter(|word| {
+            // Check if the word is in the badlist and not in the fixlist
+            let is_blacklisted = badlist.iter().any(|badword| {
+                word.contains(badword) && !fixlist.iter().any(|fixword| word.contains(fixword))
+            });
+
+            is_blacklisted
+        })
+        .collect();
+
+    let flagged_words: Vec<String> = blacklisted_words
+        .iter()
+        .map(|word| (*word).clone())
+        .collect();
+
+    flagged_words
+}
+
+fn attachments_embed_fmt(new_message: &Message) -> (Option<String>, Option<String>) {
+    let attachments = &new_message.attachments;
+    let attachments_fmt: Option<String> = if attachments.is_empty() {
+        None
+    } else {
+        let attachment_names: Vec<String> = attachments
+            .iter()
+            .map(|attachment| attachment.filename.to_string())
+            .collect();
+        Some(format!(" <{}>", attachment_names.join(", ")))
+    };
+
+    let embeds = &new_message.embeds;
+    let embeds_fmt: Option<String> = if embeds.is_empty() {
+        None
+    } else {
+        let embed_types: Vec<String> = embeds
+            .iter()
+            .map(|embed| embed.kind.clone().unwrap_or_default().into_string())
+            .collect();
+
+        Some(format!(" {{{}}}", embed_types.join(", ")))
+    };
+
+    (attachments_fmt, embeds_fmt)
 }
