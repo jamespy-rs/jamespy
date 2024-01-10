@@ -1,14 +1,12 @@
 [package]
 name = "jamespy"
-version = "0.1.2-rc1"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
-jamespy_utils = { path = "jamespy_utils" }
 jamespy_data = { path = "jamespy_data" }
-jamespy_config = { path = "jamespy_config" }
 jamespy_events = { path = "jamespy_events" }
-
+jamespy_config = { path = "jamespy_config" }
 
 serenity = { git = "https://github.com/serenity-rs/serenity", branch = "next" }
 poise = { git = "https://github.com/serenity-rs/poise", branch = "serenity-next" }
@@ -29,11 +27,8 @@ tracing = "0.1.40"
 
 
 [workspace]
-members = [
-    "jamespy_utils",
-    "jamespy_data",
-    "jamespy_config",
-    "jamespy_events"
+members = [ "jamespy_config",
+    "jamespy_data", "jamespy_events", "jamespy_config"
 ]
 
 

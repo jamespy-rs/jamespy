@@ -8,9 +8,9 @@ use crate::{Data, Error};
 
 pub async fn guild_member_update(
     ctx: &serenity::Context,
-    old_if_available: Option<Member>,
-    new: Option<Member>,
-    event: GuildMemberUpdateEvent,
+    old_if_available: &Option<Member>,
+    new: &Option<Member>,
+    event: &GuildMemberUpdateEvent,
     data: &Data,
 ) -> Result<(), Error> {
     let guild_id = event.guild_id;
@@ -84,7 +84,7 @@ pub async fn guild_member_update(
 
                     // If its newer by an hour, announce.
                     if timestamp >= (old_stamp.0 + 3600) {
-                        dm_activity_updated(ctx, &event, old_stamp.2).await?;
+                        dm_activity_updated(ctx, event, old_stamp.2).await?;
                         data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.2 + 1))
                             .await;
                         return Ok(()); // its okay to return here because it'll be updated.
@@ -96,13 +96,13 @@ pub async fn guild_member_update(
                             .await;
                     }
                 } else {
-                    dm_activity_new(ctx, &event, old_stamp.2).await?;
+                    dm_activity_new(ctx, event, old_stamp.2).await?;
                     data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.2 + 1))
                         .await;
                 }
             } else if timestamp >= Utc::now().timestamp() {
                 // add, no previous match but in future.
-                dm_activity_new(ctx, &event, 0).await?;
+                dm_activity_new(ctx, event, 0).await?;
                 data.new_or_announced(event.user.id, now, timestamp, Some(1))
                     .await;
             }

@@ -1,8 +1,7 @@
-use jamespy_utils::misc::{
+use crate::helper::{
     auto_archive_duration_to_string, channel_type_to_string, forum_layout_to_string,
-    get_guild_name, sort_order_to_string,
+    get_guild_name, get_permission_changes, sort_order_to_string,
 };
-use jamespy_utils::permissions::get_permission_changes;
 
 use crate::{Data, Error};
 
@@ -14,11 +13,8 @@ use poise::serenity_prelude::{
 
 use std::time::Duration;
 
-pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> Result<(), Error> {
-    let guild_name = channel
-        .guild_id
-        .name(ctx)
-        .unwrap_or("Unknown Guild".to_string());
+pub async fn channel_create(ctx: &serenity::Context, channel: &GuildChannel) -> Result<(), Error> {
+    let guild_name = get_guild_name(ctx, Some(channel.guild_id));
 
     let kind = channel_type_to_string(channel.kind);
     println!(
@@ -30,8 +26,8 @@ pub async fn channel_create(ctx: &serenity::Context, channel: GuildChannel) -> R
 
 pub async fn channel_update(
     ctx: &serenity::Context,
-    old: Option<GuildChannel>,
-    new: GuildChannel,
+    old: &Option<GuildChannel>,
+    new: &GuildChannel,
 ) -> Result<(), Error> {
     let mut channel_name = String::new();
     let mut kind = String::new();
@@ -86,7 +82,7 @@ pub async fn channel_update(
         }
 
         if old.permission_overwrites != new.permission_overwrites {
-            for old_overwrite in old.permission_overwrites {
+            for old_overwrite in &old.permission_overwrites {
                 for new_overwrite in &new.permission_overwrites {
                     if old_overwrite.kind == new_overwrite.kind {
                         let changes_str = get_permission_changes(
@@ -106,7 +102,7 @@ pub async fn channel_update(
         }
 
         // If both the old and new topic are the same, it shouldn't print.
-        match (old.topic, new.topic) {
+        match (&old.topic, &new.topic) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
                 diff.push_str(&format!("Topic: {old_value} -> {new_value}\n"));
             }
@@ -165,7 +161,7 @@ pub async fn channel_update(
             _ => {}
         }
 
-        match (old.default_reaction_emoji, new.default_reaction_emoji) {
+        match (&old.default_reaction_emoji, &new.default_reaction_emoji) {
             (Some(ForumEmoji::Name(old_name)), Some(ForumEmoji::Name(new_name)))
                 if old_name != new_name =>
             {
@@ -247,12 +243,9 @@ pub async fn channel_update(
     Ok(())
 }
 
-pub async fn channel_delete(ctx: &serenity::Context, channel: GuildChannel) -> Result<(), Error> {
+pub async fn channel_delete(ctx: &serenity::Context, channel: &GuildChannel) -> Result<(), Error> {
     let kind = channel_type_to_string(channel.kind);
-    let guild_name = channel
-        .guild_id
-        .name(ctx)
-        .unwrap_or("Unknown Guild".to_string());
+    let guild_name = get_guild_name(ctx, Some(channel.guild_id));
 
     println!(
         "\x1B[34m[{}] #{} ({}) was deleted!\x1B[0m",
@@ -262,7 +255,7 @@ pub async fn channel_delete(ctx: &serenity::Context, channel: GuildChannel) -> R
     Ok(())
 }
 
-pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Result<(), Error> {
+pub async fn thread_create(ctx: &serenity::Context, thread: &GuildChannel) -> Result<(), Error> {
     let guild_id = thread.guild_id;
     let guild_name = get_guild_name(ctx, Some(guild_id));
     let kind = channel_type_to_string(thread.kind);
@@ -282,8 +275,8 @@ pub async fn thread_create(ctx: &serenity::Context, thread: GuildChannel) -> Res
 
 pub async fn thread_update(
     ctx: &serenity::Context,
-    old: Option<GuildChannel>,
-    new: GuildChannel,
+    old: &Option<GuildChannel>,
+    new: &GuildChannel,
 ) -> Result<(), Error> {
     let guild_id = new.guild_id;
     let guild_name = get_guild_name(ctx, Some(guild_id));
@@ -362,8 +355,8 @@ pub async fn thread_update(
 
 pub async fn thread_delete(
     ctx: &serenity::Context,
-    thread: PartialGuildChannel,
-    full_thread_data: Option<GuildChannel>,
+    thread: &PartialGuildChannel,
+    full_thread_data: &Option<GuildChannel>,
 ) -> Result<(), Error> {
     let guild_id = thread.guild_id;
     let mut channel_name = String::new();
@@ -395,14 +388,14 @@ pub async fn thread_delete(
 
 pub async fn voice_channel_status_update(
     ctx: &serenity::Context,
-    old: Option<String>,
-    status: Option<String>,
-    id: ChannelId,
-    guild_id: GuildId,
+    old: &Option<String>,
+    status: &Option<String>,
+    id: &ChannelId,
+    guild_id: &GuildId,
     data: &Data,
 ) -> Result<(), Error> {
     let vcstatus = {
-        let config = data.jamespy_config.read().unwrap();
+        let config = data.config.read().unwrap();
         config.vcstatus.clone()
     };
     if vcstatus.action {
@@ -415,16 +408,16 @@ pub async fn voice_channel_status_update(
                 add(ctx, id, guild_id, old_field, new_field, status, data).await?;
             }
             (Some(old), Some(status)) => {
-                old_field = Some(old);
+                old_field = Some(old.to_string());
                 new_field = Some(status.clone());
                 if old_field != new_field {
-                    add(ctx, id, guild_id, old_field, new_field, Some(status), data).await?;
+                    add(ctx, id, guild_id, old_field, new_field, &Some(status), data).await?;
                 }
             }
             (None, Some(status)) => {
                 old_field = None;
                 new_field = Some(status.clone());
-                add(ctx, id, guild_id, old_field, new_field, Some(status), data).await?;
+                add(ctx, id, guild_id, old_field, new_field, &Some(status), data).await?;
             }
             _ => {}
         }
@@ -434,11 +427,11 @@ pub async fn voice_channel_status_update(
 
 pub async fn add(
     ctx: &serenity::Context,
-    id: ChannelId,
-    guild_id: GuildId,
+    id: &ChannelId,
+    guild_id: &GuildId,
     old_field: Option<String>,
     new_field: Option<String>,
-    status: Option<String>,
+    status: &Option<String>,
     data: &Data,
 ) -> Result<(), Error> {
     tokio::time::sleep(Duration::from_secs(2)).await;
@@ -456,7 +449,7 @@ pub async fn add(
         if let Some(options) = &log.options {
             if let Some(status_str) = options.status.clone().map(String::from) {
                 if status_str == *status.as_deref().unwrap_or_default()
-                    && options.channel_id == Some(id)
+                    && options.channel_id == Some(*id)
                 {
                     user_id = log.user_id;
                     break;
@@ -475,12 +468,12 @@ pub async fn add(
         ));
 
         let vcstatus = {
-            let config = data.jamespy_config.read().unwrap();
+            let config = data.config.read().unwrap();
             config.vcstatus.clone()
         };
 
         let mut any_pattern_matched = false;
-        if let Some(regex_patterns) = &vcstatus.regex_patterns {
+        if let Some(regex_patterns) = &vcstatus.regex {
             if let Some(value) = &new_field {
                 for pattern in regex_patterns {
                     if pattern.is_match(value) {

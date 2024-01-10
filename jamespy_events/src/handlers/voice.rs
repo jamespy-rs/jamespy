@@ -3,8 +3,8 @@ use poise::serenity_prelude::{self as serenity, VoiceState};
 
 pub async fn voice_state_update(
     ctx: &serenity::Context,
-    old: Option<VoiceState>,
-    new: VoiceState,
+    old: &Option<VoiceState>,
+    new: &VoiceState,
 ) -> Result<(), Error> {
     if let Some(old) = old {
         if old.channel_id != new.channel_id && new.channel_id.is_some() {
@@ -20,7 +20,7 @@ pub async fn voice_state_update(
                     .name(ctx.clone())
                     .unwrap_or_else(|| guild_name.clone());
             }
-            if let Some(member) = new.member {
+            if let Some(member) = &new.member {
                 user_name = member.user.name.to_string();
             }
 
@@ -56,7 +56,7 @@ pub async fn voice_state_update(
                     .name(ctx.clone())
                     .unwrap_or_else(|| guild_name.clone());
             }
-            if let Some(member) = new.member {
+            if let Some(member) = &new.member {
                 user_name = member.user.name.to_string();
             }
             if let Some(old_channel_id) = old.channel_id {
@@ -85,7 +85,7 @@ pub async fn voice_state_update(
                 .name(ctx.clone())
                 .unwrap_or_else(|| guild_name.clone());
         }
-        if let Some(member) = new.member {
+        if let Some(member) = &new.member {
             user_name = member.user.name.to_string();
         }
         if let Some(new_channel_id) = new.channel_id {

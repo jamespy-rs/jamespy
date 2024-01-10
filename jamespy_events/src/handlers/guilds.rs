@@ -2,8 +2,7 @@ use std::collections::HashMap;
 
 use sqlx::query;
 
-use crate::{Data, Error};
-use jamespy_utils::misc::get_guild_name;
+use crate::{helper::get_guild_name, Data, Error};
 use poise::serenity_prelude::{
     self as serenity, AuditLogEntry, ChannelId, CreateEmbedAuthor, Guild, GuildId, Member, User,
     UserId,
@@ -12,9 +11,8 @@ use serenity::model::guild::audit_log::Action;
 
 pub async fn guild_create(
     ctx: &serenity::Context,
-    guild: Guild,
-    is_new: Option<bool>,
-    //data: &Data,
+    guild: &Guild,
+    is_new: &Option<bool>,
 ) -> Result<(), Error> {
     if let Some(true) = is_new {
         println!(
@@ -29,7 +27,7 @@ pub async fn guild_create(
 
 pub async fn guild_member_addition(
     ctx: &serenity::Context,
-    new_member: Member,
+    new_member: &Member,
     data: &Data,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
@@ -90,12 +88,12 @@ pub async fn guild_member_addition(
 
 pub async fn guild_member_removal(
     ctx: &serenity::Context,
-    guild_id: GuildId,
-    user: User,
+    guild_id: &GuildId,
+    user: &User,
     data: &Data,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
-    let guild_name = get_guild_name(ctx, Some(guild_id));
+    let guild_name = get_guild_name(ctx, Some(*guild_id));
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m",
@@ -106,7 +104,7 @@ pub async fn guild_member_removal(
     let _ = query!(
         "DELETE FROM join_tracks WHERE author_id = $1 AND guild_id = $2",
         i64::from(user.id),
-        i64::from(guild_id)
+        i64::from(*guild_id)
     )
     .execute(db_pool)
     .await;
@@ -116,12 +114,12 @@ pub async fn guild_member_removal(
 
 pub async fn guild_audit_log_entry_create(
     ctx: &serenity::Context,
-    entry: AuditLogEntry,
-    guild_id: GuildId,
+    entry: &AuditLogEntry,
+    guild_id: &GuildId,
 ) -> Result<(), Error> {
-    if guild_id == 98226572468690944 {
+    if *guild_id == 98226572468690944 {
         if let Action::AutoMod(serenity::AutoModAction::FlagToChannel) = &entry.action {
-            if let Some(reason) = entry.reason {
+            if let Some(reason) = &entry.reason {
                 if reason.starts_with("Voice Channel Status") {
                     let (user_name, avatar_url) = {
                         let user = entry.user_id.to_user(&ctx).await.unwrap();
@@ -130,8 +128,8 @@ pub async fn guild_audit_log_entry_create(
 
                     let mut cloned_messages = HashMap::new();
 
-                    let channel_id: Option<u64> = if let Some(options) = entry.options {
-                        match options.auto_moderation_rule_name {
+                    let channel_id: Option<u64> = if let Some(options) = &entry.options {
+                        match &options.auto_moderation_rule_name {
                             Some(rule_name) => match rule_name.as_str() {
                                 "Bad Words ❌ [BLOCKED]" => Some(697738506944118814),
                                 _ => None,

@@ -1,15 +1,14 @@
 #![warn(clippy::pedantic)]
+// clippy warns for u64 -> i64 conversions despite this being totally okay in this scenario.
 #![allow(
     clippy::cast_sign_loss,
     clippy::cast_possible_wrap,
     clippy::cast_lossless,
     clippy::cast_possible_truncation,
-    clippy::unused_async,
+    clippy::unused_async, // poise checks must be async.
     clippy::unreadable_literal,
     clippy::wildcard_imports,
     clippy::too_many_lines,
-    clippy::similar_names,
-    clippy::module_name_repetitions
 )]
 
 mod commands;
@@ -43,11 +42,12 @@ async fn main() {
     let db_pool = init_data().await;
     let redis_pool = init_redis_pool().await;
 
+    let config = jamespy_config::JamespyConfig::load_config();
     let data = Data(Arc::new(DataInner {
         db: db_pool,
         redis: redis_pool,
         time_started: std::time::Instant::now(),
-        jamespy_config: jamespy_config::load_config().into(),
+        config: config.into(),
         dm_activity: DashMap::new(),
     }));
 
@@ -65,12 +65,7 @@ async fn main() {
 
         skip_checks_for_owners: false,
         event_handler: |ctx: &serenity::Context, event: &serenity::FullEvent, framework, data| {
-            Box::pin(jamespy_events::event_handler(
-                ctx,
-                event.clone(),
-                framework,
-                data,
-            ))
+            Box::pin(jamespy_events::event_handler(ctx, event, framework, data))
         },
         ..Default::default()
     };
@@ -81,12 +76,10 @@ async fn main() {
 
         tokio::spawn(async move {
             let mut interval: tokio::time::Interval =
-                tokio::time::interval(std::time::Duration::from_secs(60 * 60));
+                tokio::time::interval(std::time::Duration::from_secs(60 * 10));
             loop {
-                // TODO: eventually move this to its own function.
                 interval.tick().await;
-                let _ = jamespy_utils::tasks::check_space(&ctx_clone, &data_clone).await;
-                let _ = jamespy_utils::tasks::update_stats(&ctx_clone, &data_clone).await;
+                let _ = jamespy_events::tasks::check_space(&ctx_clone, &data_clone).await;
             }
         });
 

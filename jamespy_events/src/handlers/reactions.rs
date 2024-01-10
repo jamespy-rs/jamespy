@@ -1,12 +1,12 @@
+use crate::helper::{get_channel_name, get_guild_name};
 use crate::{Data, Error};
-use jamespy_utils::misc::{get_channel_name, get_guild_name};
 
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{self as serenity, Reaction};
 
 pub async fn reaction_add(
     ctx: &serenity::Context,
-    add_reaction: Reaction,
+    add_reaction: &Reaction,
     data: &Data,
 ) -> Result<(), Error> {
     let user_id = add_reaction.user_id.unwrap();
@@ -50,7 +50,7 @@ pub async fn reaction_add(
 
 pub async fn reaction_remove(
     ctx: &serenity::Context,
-    removed_reaction: Reaction,
+    removed_reaction: &Reaction,
     data: &Data,
 ) -> Result<(), Error> {
     let user_id = removed_reaction.user_id.unwrap();
