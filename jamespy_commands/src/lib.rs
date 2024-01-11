@@ -5,6 +5,8 @@ pub mod owner;
 pub mod general;
 pub mod utility;
 
+pub mod utils;
+
 pub fn commands() -> Vec<Command> {
     meta::commands()
         .into_iter()

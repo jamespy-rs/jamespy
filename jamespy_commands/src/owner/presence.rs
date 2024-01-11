@@ -104,6 +104,6 @@ pub async fn set_activity(
 
 
 
-pub fn commands() -> [crate::Command; 2] {
-    [status(), reset_presence()]
+pub fn commands() -> [crate::Command; 3] {
+    [status(), reset_presence(), set_activity()]
 }
