@@ -1012,6 +1012,7 @@ version = "0.2.0"
 dependencies = [
  "bb8-redis",
  "dashmap",
+ "jamespy_commands",
  "jamespy_config",
  "jamespy_data",
  "jamespy_events",
@@ -1027,8 +1028,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "jamespy_commands"
+version = "0.2.0"
+dependencies = [
+ "bb8-redis",
+ "jamespy_config",
+ "jamespy_data",
+ "jamespy_events",
+ "poise",
+ "rand",
+ "reqwest",
+ "serenity",
+ "sqlx",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "jamespy_config"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64",
  "poise",
@@ -1046,6 +1064,7 @@ dependencies = [
  "dashmap",
  "jamespy_config",
  "poise",
+ "rand",
  "serenity",
  "sqlx",
  "tokio",

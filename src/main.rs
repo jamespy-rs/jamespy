@@ -11,15 +11,13 @@
     clippy::too_many_lines,
 )]
 
-mod commands;
-
-use dashmap::DashMap;
-use jamespy_data::database::{init_data, init_redis_pool};
-use jamespy_data::structs::{Command, Context, Data, DataInner, Error};
+use jamespy_data::{
+    database::{init_data, init_redis_pool},
+    structs::{Data, DataInner, Error},
+};
 
 use poise::serenity_prelude::{self as serenity};
 use std::{env::var, sync::Arc, time::Duration};
-use tracing::warn;
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
@@ -48,11 +46,11 @@ async fn main() {
         redis: redis_pool,
         time_started: std::time::Instant::now(),
         config: config.into(),
-        dm_activity: DashMap::new(),
+        dm_activity: dashmap::DashMap::new(),
     }));
 
     let options = poise::FrameworkOptions {
-        commands: commands::commands(),
+        commands: jamespy_commands::commands(),
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
             edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(

@@ -7,6 +7,7 @@ edition = "2021"
 jamespy_data = { path = "jamespy_data" }
 jamespy_events = { path = "jamespy_events" }
 jamespy_config = { path = "jamespy_config" }
+jamespy_commands = { path = "jamespy_commands" }
 
 serenity = { git = "https://github.com/serenity-rs/serenity", branch = "next" }
 poise = { git = "https://github.com/serenity-rs/poise", branch = "serenity-next" }
@@ -27,9 +28,7 @@ tracing = "0.1.40"
 
 
 [workspace]
-members = [ "jamespy_config",
-    "jamespy_data", "jamespy_events", "jamespy_config"
-]
+members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config", "jamespy_commands"]
 
 
 

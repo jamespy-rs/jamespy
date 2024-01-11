@@ -23,8 +23,6 @@ pub async fn cache_ready(
     guilds: &Vec<GuildId>,
     data: &Data,
 ) -> Result<(), Error> {
-    println!("{:?}", ctx.cache.settings().clone());
-    println!("done");
     let db_pool = &data.db;
 
     for guild in guilds {
