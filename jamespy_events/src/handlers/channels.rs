@@ -7,8 +7,8 @@ use crate::{Data, Error};
 
 use poise::serenity_prelude::audit_log::Action::VoiceChannelStatus;
 use poise::serenity_prelude::{
-    self as serenity, ChannelFlags, ChannelId, ChannelType, ForumEmoji, GuildChannel, GuildId,
-    PartialGuildChannel, UserId, VoiceChannelStatusAction,
+    self as serenity, ChannelFlags, ChannelId, ChannelType, CreateEmbed, ForumEmoji, GuildChannel,
+    GuildId, PartialGuildChannel, UserId, VoiceChannelStatusAction,
 };
 
 use std::time::Duration;
@@ -46,30 +46,25 @@ pub async fn channel_update(
         if old.nsfw != new.nsfw {
             diff.push_str(&format!("NSFW: {} -> {}\n", old.nsfw, new.nsfw));
         }
+
         // Check if the channel is in a category.
-        if let (Some(old_parent_id), Some(new_parent_id)) = (old.parent_id, new.parent_id) {
-            if old_parent_id != new_parent_id {
+        match (old.parent_id, new.parent_id) {
+            (Some(old_parent_id), Some(new_parent_id)) if old_parent_id != new_parent_id => {
                 diff.push_str(&format!(
                     "Parent: {} -> {}\n",
-                    old_parent_id.name(ctx.clone()).await?,
-                    new_parent_id.name(ctx.clone()).await?
+                    old_parent_id.name(ctx).await?,
+                    new_parent_id.name(ctx).await?
                 ));
             }
-        } else if old.parent_id.is_none() && new.parent_id.is_some() {
-            if let Some(parent_id) = new.parent_id {
-                diff.push_str(&format!(
-                    "Parent: None -> {}\n",
-                    parent_id.name(ctx.clone()).await?
-                ));
+            (None, Some(parent_id)) => {
+                diff.push_str(&format!("Parent: None -> {}\n", parent_id.name(ctx).await?));
             }
-        } else if old.parent_id.is_some() && new.parent_id.is_none() {
-            if let Some(parent_id) = old.parent_id {
-                diff.push_str(&format!(
-                    "Parent: {} -> None\n",
-                    parent_id.name(ctx.clone()).await?
-                ));
+            (Some(parent_id), None) => {
+                diff.push_str(&format!("Parent: {} -> None\n", parent_id.name(ctx).await?));
             }
+            _ => {}
         }
+
         match (old.bitrate, new.bitrate) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
                 diff.push_str(&format!(
@@ -81,6 +76,7 @@ pub async fn channel_update(
             _ => {}
         }
 
+        // TODO: show if permission overrides have been removed.
         if old.permission_overwrites != new.permission_overwrites {
             for old_overwrite in &old.permission_overwrites {
                 for new_overwrite in &new.permission_overwrites {
@@ -444,96 +440,139 @@ pub async fn add(
             Some(5),
         )
         .await?;
-    let mut user_id = UserId::new(1);
+    let mut user_id: Option<UserId> = None;
+
     for log in &logs.entries {
-        if let Some(options) = &log.options {
-            if let Some(status_str) = options.status.clone().map(String::from) {
-                if status_str == *status.as_deref().unwrap_or_default()
-                    && options.channel_id == Some(*id)
-                {
-                    user_id = log.user_id;
-                    break;
-                }
+        if log.options.is_none() {
+            continue;
+        }
+
+        let options = &log.options.as_ref().unwrap();
+
+        if let Some(str) = &options.status {
+            if str == status.as_deref().unwrap_or_default() && options.channel_id == Some(*id) {
+                user_id = Some(log.user_id);
+                break;
             }
         }
     }
 
-    if user_id.get() != 1 {
-        let user: serenity::User = user_id.to_user(&ctx).await.unwrap();
-        let author_title = format!("{} changed a channel status", user.name);
-        let author = serenity::CreateEmbedAuthor::new(author_title).icon_url(user.face());
-        let footer = serenity::CreateEmbedFooter::new(format!(
-            "User ID: {} • Please check user manually in audit log.",
-            user.id.get()
-        ));
+    // TODO: possibly improve.
+    if user_id.is_none() {
+        return Ok(());
+    }
 
-        let vcstatus = {
-            let config = data.config.read().unwrap();
-            config.vcstatus.clone()
-        };
+    let user_id = user_id.unwrap();
 
-        let mut any_pattern_matched = false;
-        if let Some(regex_patterns) = &vcstatus.regex {
-            if let Some(value) = &new_field {
-                for pattern in regex_patterns {
-                    if pattern.is_match(value) {
-                        any_pattern_matched = true;
-                        break;
-                    }
-                }
-            }
-        }
+    let vcstatus = {
+        let config = data.config.read().unwrap();
+        config.vcstatus.clone()
+    };
 
-        let embed = serenity::CreateEmbed::default()
-            .field("Channel", format!("<#{}>", id.get()), true)
-            .field(
-                "Old",
-                if let Some(value) = old_field.as_deref().filter(|s| !s.is_empty()) {
-                    value
-                } else {
-                    "None"
-                },
-                true,
-            )
-            .field(
-                "New",
-                if let Some(value) = new_field.as_deref().filter(|s| !s.is_empty()) {
-                    value
-                } else {
-                    "None"
-                },
-                true,
-            )
-            .author(author)
-            .footer(footer);
+    // check if regex for blacklists exist and if a new status exists.
+    let blacklisted = if let (Some(regex_patterns), Some(value)) = (&vcstatus.regex, &new_field) {
+        check_blacklisted(value, regex_patterns).await
+    } else {
+        false
+    };
 
-        if let Some(post) = vcstatus.post_channel {
-            if !any_pattern_matched {
-                post.send_message(
+    post_messages(
+        ctx,
+        data,
+        *id,
+        old_field.as_deref(),
+        new_field.as_deref(),
+        user_id,
+        blacklisted,
+    )
+    .await?;
+    Ok(())
+}
+
+async fn check_blacklisted(msg: &str, patterns: &[regex::Regex]) -> bool {
+    patterns.iter().any(|pattern| pattern.is_match(msg))
+}
+
+async fn post_messages(
+    ctx: &serenity::Context,
+    data: &Data,
+    id: ChannelId,
+    old: Option<&str>,
+    new: Option<&str>,
+    user_id: UserId,
+    blacklisted: bool,
+) -> Result<(), Error> {
+    let channel_str: &str = &format!("<#{}>", id.get());
+
+    let old_field = match old {
+        Some(value) if !value.is_empty() => ("Old", value, true),
+        _ => ("Old", "None", true),
+    };
+
+    let new_field = match new {
+        Some(value) if !value.is_empty() => ("New", value, true),
+        _ => ("New", "None", true),
+    };
+
+    let fields = [("Channel", channel_str, true), old_field, new_field];
+
+    let user: serenity::User = user_id.to_user(&ctx).await.unwrap();
+    let author_title = format!("{} changed a channel status", user.name);
+    let author = serenity::CreateEmbedAuthor::new(author_title).icon_url(user.face());
+    let footer = serenity::CreateEmbedFooter::new(format!(
+        "User ID: {} • Please check user manually in audit log.",
+        user.id.get()
+    ));
+
+    let embed = serenity::CreateEmbed::default()
+        .fields(fields)
+        .author(author)
+        .footer(footer);
+
+    send_msgs(ctx, data, user_id, embed, blacklisted).await?;
+
+    Ok(())
+}
+
+async fn send_msgs(
+    ctx: &serenity::Context,
+    data: &Data,
+    user_id: UserId,
+    embed: CreateEmbed<'_>,
+    blacklisted: bool,
+) -> Result<(), Error> {
+    let (post, announce) = {
+        let status = &data.config.read().unwrap().vcstatus;
+        (status.post_channel, status.announce_channel)
+    };
+
+    let content = if blacklisted {
+        format!("<@{user_id}>: **Blacklisted word in status!**")
+    } else {
+        format!("<@{user_id}>")
+    };
+
+    if blacklisted {
+        if let Some(announce) = announce {
+            announce
+                .send_message(
                     ctx,
                     serenity::CreateMessage::default()
-                        .content(format!("<@{user_id}>"))
-                        .embed(embed),
-                )
-                .await?;
-            } else if let Some(announce) = vcstatus.announce_channel {
-                post.send_message(
-                    ctx,
-                    serenity::CreateMessage::default()
-                        .content(format!("<@{user_id}>: **Blacklisted word in status!**"))
+                        .content(&content)
                         .embed(embed.clone()),
                 )
                 .await?;
-                announce
-                    .send_message(
-                        ctx,
-                        serenity::CreateMessage::default()
-                            .content(format!("<@{user_id}>: **Blacklisted word in status!**"))
-                            .embed(embed),
-                    )
-                    .await?;
-            }
         }
+    }
+
+    if let Some(post) = post {
+        post.send_message(
+            ctx,
+            serenity::CreateMessage::default()
+                .content(&content)
+                .embed(embed),
+        )
+        .await?;
     }
 
     Ok(())

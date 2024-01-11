@@ -16,7 +16,7 @@ pub async fn check_space(ctx: &serenity::Context, data: &Data) -> Result<(), Err
         if let Ok(folder_size_result) = fs_extra::dir::get_size("config/attachments") {
             folder_size_result
         } else {
-            return Ok(())
+            return Ok(());
         }
     } else {
         return Ok(());
@@ -25,7 +25,7 @@ pub async fn check_space(ctx: &serenity::Context, data: &Data) -> Result<(), Err
     if let Some(hard_limit) = attachments.hard_limit {
         if folder_size > hard_limit * 1_000_000 {
             hard_limit_hit(ctx, data, folder_size, hard_limit).await?;
-            return Ok(())
+            return Ok(());
         }
     }
 
@@ -33,13 +33,17 @@ pub async fn check_space(ctx: &serenity::Context, data: &Data) -> Result<(), Err
         if folder_size > soft_limit * 1_000_000 {
             soft_limit_hit(ctx, folder_size, soft_limit).await?;
         }
-        return Ok(())
+        return Ok(());
     }
 
     Ok(())
 }
 
-pub async fn soft_limit_hit(ctx: &serenity::Context, folder_size: u64, limit: u64) -> Result<(), Error> {
+pub async fn soft_limit_hit(
+    ctx: &serenity::Context,
+    folder_size: u64,
+    limit: u64,
+) -> Result<(), Error> {
     // TODO: make configurable or send to fw owner.
     let user_id = UserId::from(158567567487795200);
     let user = user_id.to_user(ctx.clone()).await?;
@@ -55,7 +59,12 @@ pub async fn soft_limit_hit(ctx: &serenity::Context, folder_size: u64, limit: u6
     Ok(())
 }
 
-pub async fn hard_limit_hit(ctx: &serenity::Context, data: &Data, folder_size: u64, limit: u64) -> Result<(), Error> {
+pub async fn hard_limit_hit(
+    ctx: &serenity::Context,
+    data: &Data,
+    folder_size: u64,
+    limit: u64,
+) -> Result<(), Error> {
     // Ditto.
     let user_id = UserId::from(58567567487795200);
     let user = user_id.to_user(ctx.clone()).await?;
@@ -75,8 +84,6 @@ pub async fn hard_limit_hit(ctx: &serenity::Context, data: &Data, folder_size: u
         attachments.enabled = false;
         config.write_config();
     }
-
-
 
     Ok(())
 }

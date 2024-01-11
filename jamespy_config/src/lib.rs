@@ -11,7 +11,7 @@ use serialize::*;
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct JamespyConfig {
     pub events: Events,     // configuration for the event handler.
-    pub vcstatus: VCStatus, // Tracking for osu!game.
+    pub vcstatus: VCStatus, // Tracking for osu!game, harshly hardcoded.
     pub spy_guild: Option<SpyGuild>,
     pub attachment_store: Option<Attachments>,
 }
