@@ -1,6 +1,7 @@
 use std::time::Instant;
 
 use poise::serenity_prelude as serenity;
+use ::serenity::all::ChannelId;
 
 use crate::{Context, Error};
 

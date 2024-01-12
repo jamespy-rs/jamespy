@@ -1,9 +1,7 @@
 use crate::{Context, Error};
 use ::serenity::all::{User, UserId};
 use bb8_redis::redis::AsyncCommands;
-use poise::serenity_prelude::{
-    self as serenity, ActivityType, Colour, GuildMemberFlags, Member, OnlineStatus,
-};
+use poise::serenity_prelude::{self as serenity, ActivityType, Colour, OnlineStatus};
 use std::collections::HashMap;
 
 #[poise::command(

@@ -60,7 +60,6 @@ pub async fn react(
     Ok(())
 }
 
-
 pub fn commands() -> [crate::Command; 4] {
     [shutdown(), say(), dm(), react()]
 }

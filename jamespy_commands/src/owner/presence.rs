@@ -21,10 +21,8 @@ pub enum OnlineStatus {
 )]
 pub async fn status(
     ctx: Context<'_>,
-    #[description = "What online status should I have?"]
-    status_type: OnlineStatus,
+    #[description = "What online status should I have?"] status_type: OnlineStatus,
 ) -> Result<(), Error> {
-
     let s = ctx.serenity_context();
     match status_type {
         OnlineStatus::Online => {
@@ -63,7 +61,6 @@ pub async fn reset_presence(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-
 #[poise::command(
     rename = "set-activity",
     prefix_command,
@@ -100,9 +97,6 @@ pub async fn set_activity(
 
     Ok(())
 }
-
-
-
 
 pub fn commands() -> [crate::Command; 3] {
     [status(), reset_presence(), set_activity()]

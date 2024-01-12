@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 
 use sqlx::query;
 
@@ -139,31 +138,29 @@ pub async fn guild_audit_log_entry_create(
         (user.name.clone(), user.face())
     };
 
-    let mut cloned_messages = HashMap::new();
+    let (check_contents, culprit_channel_id): (Option<u64>, Option<ChannelId>) =
+        if let Some(options) = &entry.options {
+            (
+                match &options.auto_moderation_rule_name {
+                    Some(rule_name) => match rule_name.as_str() {
+                        "Bad Words ❌ [BLOCKED]" => Some(697738506944118814),
+                        _ => None,
+                    },
+                    None => None,
+                },
+                options.channel_id, // culprit.
+            )
+        } else {
+            (None, None)
+        };
 
-    let channel_id: Option<u64> = if let Some(options) = &entry.options {
-        match &options.auto_moderation_rule_name {
-            Some(rule_name) => match rule_name.as_str() {
-                "Bad Words ❌ [BLOCKED]" => Some(697738506944118814),
-                _ => None,
-            },
-            None => None,
-        }
-    } else {
-        None
-    };
-
-    if let Some(id) = channel_id {
+    if let Some(id) = check_contents {
         tokio::time::sleep(
-            std::time::Duration::from_secs(1) + std::time::Duration::from_millis(500),
+            std::time::Duration::from_secs(1),
         )
         .await;
-        if let Some(channel_messages) = ctx.cache.channel_messages(id) {
-            cloned_messages = channel_messages.clone();
-        }
-        let messages: Vec<_> = cloned_messages.values().collect();
-        let last_8_messages = messages.iter().take(8);
-        let messages = last_8_messages;
+
+        let cloned_messages = ctx.cache.channel_messages(id).map(|c| c.clone());
 
         let mut status = format!(
             "Unknown (check #{})",
@@ -174,18 +171,28 @@ pub async fn guild_audit_log_entry_create(
         )
         .to_string();
 
-        for message in messages {
-            if message.author.id == entry.user_id {
-                if let Some(kind) = &message.embeds.first().and_then(|e| e.kind.clone()) {
-                    if kind == "auto_moderation_message" {
-                        if let Some(description) = &message.embeds[0].description {
-                            status = description.to_string();
-                            break;
+        // its rather expensive to iterate and sort upwards of 350 messages.
+        // so i'll fix it later.
+        // alongside the horrible usage of indents.
+        if let Some(msg_clones) = cloned_messages {
+
+            let mut sorted_msgs: Vec<_> = msg_clones.into_iter().collect();
+            sorted_msgs.sort_by(|a, b| b.0.cmp(&a.0));
+
+            for msg in sorted_msgs {
+                if msg.1.author.id == entry.user_id {
+                    if let Some(kind) = &msg.1.embeds.first().and_then(|e| e.kind.clone()) {
+                        if kind == "auto_moderation_message" {
+                            if let Some(description) = &msg.1.embeds[0].description {
+                                status = description.to_string();
+                                break;
+                            }
                         }
                     }
                 }
             }
-        }
+        };
+
 
         let author_title = format!("{user_name} tried to set an inappropriate status");
         let footer = serenity::CreateEmbedFooter::new(format!(
@@ -196,10 +203,15 @@ pub async fn guild_audit_log_entry_create(
                 .await
                 .unwrap_or("Unknown".to_string())
         ));
-        let embed = serenity::CreateEmbed::default()
+        let mut embed = serenity::CreateEmbed::default()
             .author(CreateEmbedAuthor::new(author_title).icon_url(avatar_url))
             .field("Status", status, true)
             .footer(footer);
+
+        if let Some(channel_id) = culprit_channel_id {
+            embed = embed.field("Channel", format!("<#{channel_id}>"), true);
+        }
+
         let builder = serenity::CreateMessage::default()
             .embed(embed)
             .content(format!("<@{}>", entry.user_id));

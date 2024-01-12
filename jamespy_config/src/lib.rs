@@ -35,7 +35,12 @@ impl JamespyConfig {
                 guilds: None,
             },
             spy_guild: Some(SpyGuild { event: 1 }),
-            attachment_store: None,
+            attachment_store: Some(Attachments {
+                enabled: true,
+                single_limit: Some(200),
+                soft_limit: Some(9000),
+                hard_limit: Some(10000),
+            }),
         }
     }
 
