@@ -8,99 +8,88 @@ pub async fn voice_state_update(
 ) -> Result<(), Error> {
     if let Some(old) = old {
         if old.channel_id != new.channel_id && new.channel_id.is_some() {
-            let mut guild_name = String::from("Unknown");
-            let mut user_name = String::from("Unknown User");
-            let mut old_channel = String::from("Unknown");
-            let mut old_channel_id_ = String::from("Unknown");
-            let mut new_channel = String::from("Unknown");
-            let mut new_channel_id_ = String::from("Unknown");
-
-            if let Some(guild_id) = old.guild_id {
-                guild_name = guild_id
-                    .name(ctx.clone())
-                    .unwrap_or_else(|| guild_name.clone());
-            }
-            if let Some(member) = &new.member {
-                user_name = member.user.name.to_string();
-            }
-
-            if let Some(old_channel_id) = old.channel_id {
-                old_channel_id_ = old_channel_id.get().to_string();
-                if let Ok(channel_name) = old_channel_id.name(ctx.clone()).await {
-                    old_channel = channel_name;
-                } else {
-                    old_channel = "Unknown".to_owned();
-                }
-            }
-
-            if let Some(new_channel_id) = new.channel_id {
-                new_channel_id_ = new_channel_id.get().to_string();
-                if let Ok(channel_name) = new_channel_id.name(ctx.clone()).await {
-                    new_channel = channel_name;
-                } else {
-                    new_channel = "Unknown".to_owned();
-                }
-            }
-            println!(
-                "\x1B[32m[{guild_name}] {user_name}: {old_channel} (ID:{old_channel_id_}) -> \
-                 {new_channel} (ID:{new_channel_id_})\x1B[0m"
-            );
+            handle_switch(ctx, old, new).await?;
         } else if new.channel_id.is_none() {
-            let mut guild_name = String::from("Unknown");
-            let mut user_name = String::from("Unknown User");
-            let mut old_channel = String::from("Unknown");
-            let mut old_channel_id_ = String::from("Unknown");
-
-            if let Some(guild_id) = old.guild_id {
-                guild_name = guild_id
-                    .name(ctx.clone())
-                    .unwrap_or_else(|| guild_name.clone());
-            }
-            if let Some(member) = &new.member {
-                user_name = member.user.name.to_string();
-            }
-            if let Some(old_channel_id) = old.channel_id {
-                old_channel_id_ = old_channel_id.get().to_string();
-                if let Ok(channel_name) = old_channel_id.name(ctx.clone()).await {
-                    old_channel = channel_name;
-                } else {
-                    old_channel = "Unknown".to_owned();
-                }
-            }
-            println!(
-                "\x1B[32m[{guild_name}] {user_name} left {old_channel} \
-                 (ID:{old_channel_id_})\x1B[0m"
-            );
-        } else {
-            // mutes, unmutes, deafens, etc are here.
+            handle_leave(ctx, old, new).await?;
         }
+        // third case where mutes and other changes happen.
     } else {
-        let mut guild_name = String::from("Unknown");
-        let mut user_name = String::from("Unknown User");
-        let mut new_channel = String::from("Unknown");
-        let mut new_channel_id_ = String::from("Unknown");
-
-        if let Some(guild_id) = new.guild_id {
-            guild_name = guild_id
-                .name(ctx.clone())
-                .unwrap_or_else(|| guild_name.clone());
-        }
-        if let Some(member) = &new.member {
-            user_name = member.user.name.to_string();
-        }
-        if let Some(new_channel_id) = new.channel_id {
-            new_channel_id_ = new_channel_id.get().to_string();
-            if let Ok(channel_name) = new_channel_id.name(ctx.clone()).await {
-                new_channel = channel_name;
-            } else {
-                new_channel = "Unknown".to_owned();
-            }
-        }
-
-        println!(
-            "\x1B[32m[{guild_name}] {user_name} joined {new_channel} (ID:{new_channel_id_})\x1B[0m"
-        );
+        handle_joins(ctx, new).await?;
     }
 
+    Ok(())
+}
+
+async fn handle_switch(
+    ctx: &serenity::Context,
+    old: &VoiceState,
+    new: &VoiceState,
+) -> Result<(), Error> {
+    // unwraping this should be fine because the user should
+    // have this when switching a channel, i'll know if this fails.
+    // Potentially might die with no cache.
+    let old_id = old.channel_id.unwrap();
+
+    // Ditto.
+    let new_id = new.channel_id.unwrap();
+
+    // Should be fine given as voice states shouldn't be on private channels.
+    let old_channel = old_id.to_channel(ctx).await?.guild().unwrap();
+    let new_channel = new_id.to_channel(ctx).await?.guild().unwrap();
+    let old_name = old_channel.name();
+    let new_name = new_channel.name();
+
+    let guild_name = new_channel
+        .guild_id
+        .name(ctx)
+        .unwrap_or(String::from("Unknown"));
+
+    let user_name = new.user_id.to_user(ctx).await?.tag();
+
+    println!(
+        "\x1B[32m[{guild_name}] {user_name}: {old_name} (ID:{old_id}) -> {new_name} \
+         (ID:{new_id})\x1B[0m"
+    );
+
+    Ok(())
+}
+async fn handle_leave(
+    ctx: &serenity::Context,
+    old: &VoiceState,
+    new: &VoiceState,
+) -> Result<(), Error> {
+    // There is no new channel ID.
+
+    let channel_id = old.channel_id.unwrap();
+
+    // Should be fine given as voice states shouldn't be on private channels.
+    let old_channel = channel_id.to_channel(ctx).await?.guild().unwrap();
+    let channel_name = old_channel.name();
+
+    let guild_name = old_channel
+        .guild_id
+        .name(ctx)
+        .unwrap_or(String::from("Unknown"));
+
+    let user_name = new.user_id.to_user(ctx).await?.tag();
+
+    println!("\x1B[32m[{guild_name}] {user_name} left {channel_name} (ID:{channel_id})\x1B[0m");
+    Ok(())
+}
+async fn handle_joins(ctx: &serenity::Context, new: &VoiceState) -> Result<(), Error> {
+    let channel_id = new.channel_id.unwrap();
+
+    // Should be fine given as voice states shouldn't be on private channels.
+    let channel = channel_id.to_channel(ctx).await?.guild().unwrap();
+    let channel_name = channel.name();
+
+    let guild_name = channel
+        .guild_id
+        .name(ctx)
+        .unwrap_or(String::from("Unknown"));
+
+    let user_name = new.user_id.to_user(ctx).await?.tag();
+
+    println!("\x1B[32m[{guild_name}] {user_name} joined {channel_name} (ID:{channel_id})\x1B[0m");
     Ok(())
 }

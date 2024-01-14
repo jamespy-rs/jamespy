@@ -1,7 +1,6 @@
 use std::time::Instant;
 
 use poise::serenity_prelude as serenity;
-use ::serenity::all::ChannelId;
 
 use crate::{Context, Error};
 
@@ -60,7 +59,13 @@ pub async fn help(
 #[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 10)]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     let now = Instant::now();
-    reqwest::get("https://discordapp.com/api/v6/gateway").await?;
+
+    ctx.data()
+        .reqwest
+        .get("https://discordapp.com/api/v6/gateway")
+        .send()
+        .await?;
+
     let get_latency = now.elapsed().as_millis();
     let now = Instant::now();
     let ping_msg = ctx.say("Calculating...").await?;

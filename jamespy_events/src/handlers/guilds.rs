@@ -1,4 +1,3 @@
-
 use sqlx::query;
 
 use crate::{helper::get_guild_name, Data, Error};
@@ -155,10 +154,7 @@ pub async fn guild_audit_log_entry_create(
         };
 
     if let Some(id) = check_contents {
-        tokio::time::sleep(
-            std::time::Duration::from_secs(1),
-        )
-        .await;
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
         let cloned_messages = ctx.cache.channel_messages(id).map(|c| c.clone());
 
@@ -175,7 +171,6 @@ pub async fn guild_audit_log_entry_create(
         // so i'll fix it later.
         // alongside the horrible usage of indents.
         if let Some(msg_clones) = cloned_messages {
-
             let mut sorted_msgs: Vec<_> = msg_clones.into_iter().collect();
             sorted_msgs.sort_by(|a, b| b.0.cmp(&a.0));
 
@@ -192,7 +187,6 @@ pub async fn guild_audit_log_entry_create(
                 }
             }
         };
-
 
         let author_title = format!("{user_name} tried to set an inappropriate status");
         let footer = serenity::CreateEmbedFooter::new(format!(

@@ -21,6 +21,7 @@ pub struct DataInner {
     pub db: sqlx::PgPool,
     pub redis: crate::database::RedisPool,
     pub time_started: std::time::Instant,
+    pub reqwest: reqwest::Client,
     pub config: RwLock<jamespy_config::JamespyConfig>,
     pub dm_activity: DashMap<UserId, (i64, Option<i64>, i16)>,
 }

@@ -10,9 +10,13 @@ use serialize::*;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct JamespyConfig {
-    pub events: Events,     // configuration for the event handler.
-    pub vcstatus: VCStatus, // Tracking for osu!game, harshly hardcoded.
+    // configuration for the event handler.
+    pub events: Events,
+    // Tracking for osu!game, harshly hardcoded.
+    pub vcstatus: VCStatus,
+    // Having a dedicated guild for managing the deployment of jamespy.
     pub spy_guild: Option<SpyGuild>,
+    // Control for saving attachments from deleted messages.
     pub attachment_store: Option<Attachments>,
 }
 
@@ -34,7 +38,7 @@ impl JamespyConfig {
                 regex: None,
                 guilds: None,
             },
-            spy_guild: Some(SpyGuild { event: 1 }),
+            spy_guild: None,
             attachment_store: Some(Attachments {
                 enabled: true,
                 single_limit: Some(200),
@@ -108,7 +112,32 @@ pub struct VCStatus {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SpyGuild {
-    pub event: u64,
+    pub status: Init,
+    pub self_regex: Option<SelfRegex>,
+    pub attachment_hook: Option<AttachmentHook>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub struct Init {
+    pub enabled: bool,
+    pub guild_id: Option<GuildId>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct SelfRegex {
+    pub enabled: bool,
+    pub channel_id: Option<ChannelId>,
+    pub use_events_regex: bool,
+    #[serde(with = "regex_patterns")]
+    pub extra_regex: Option<Vec<Regex>>,
+    pub context_info: bool,
+    pub mention: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct AttachmentHook {
+    pub enabled: bool,
+    pub channel_id: Option<ChannelId>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

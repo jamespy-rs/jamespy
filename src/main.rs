@@ -49,6 +49,7 @@ async fn main() {
         db: db_pool,
         redis: redis_pool,
         time_started: std::time::Instant::now(),
+        reqwest: reqwest::Client::new(),
         config: config.into(),
         dm_activity: dashmap::DashMap::new(),
     }));

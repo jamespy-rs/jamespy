@@ -1065,6 +1065,7 @@ dependencies = [
  "jamespy_config",
  "poise",
  "rand",
+ "reqwest",
  "serenity",
  "sqlx",
  "tokio",
