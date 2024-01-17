@@ -173,7 +173,7 @@ pub async fn message_delete(
     // This works but might not be optimal.
     let message = ctx
         .cache
-        .message(channel_id, deleted_message_id)
+        .message(*channel_id, *deleted_message_id)
         .map(|message_ref| message_ref.clone());
 
     if let Some(message) = message {

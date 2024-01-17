@@ -1,7 +1,9 @@
 use crate::{Context, Error};
 use ::serenity::all::{User, UserId};
 use bb8_redis::redis::AsyncCommands;
-use poise::serenity_prelude::{self as serenity, ActivityType, Colour, OnlineStatus};
+use poise::serenity_prelude::{
+    self as serenity, ActivityType, Colour, GuildMemberFlags, OnlineStatus,
+};
 use std::collections::HashMap;
 
 #[poise::command(
@@ -250,12 +252,94 @@ pub async fn flag_lb(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn commands() -> [crate::Command; 5] {
+/// Display some details from the member object.
+#[poise::command(
+    rename = "get-member",
+    prefix_command,
+    category = "Utility",
+    guild_only,
+    required_permissions = "MANAGE_MESSAGES"
+)]
+pub async fn get_member(ctx: Context<'_>, member: serenity::Member) -> Result<(), Error> {
+    // communication disabled since
+    // unusual dm activity until.
+
+    let mut embed = serenity::CreateEmbed::default();
+
+    embed = embed.title(format!("{}'s Member Object", &member.user.name));
+
+    if let Some(avatar) = member.avatar_url() {
+        embed = embed.thumbnail(avatar)
+    }
+
+    if let Some(nick) = member.nick.clone() {
+        embed = embed.field("Nickname", nick, true)
+    }
+
+    if let Some(joined_at) = member.joined_at {
+        embed = embed.field("Joined at", joined_at.to_string(), true)
+    }
+
+    if let Some(boosting) = member.premium_since {
+        embed = embed.field("Boosting since", boosting.to_string(), true)
+    }
+
+    if let Some(flags) = get_flags_str(&member.flags) {
+        embed = embed.field("Flags", flags, true)
+    }
+
+    if let Some(comms_disabled) = member.communication_disabled_until {
+        embed = embed.field("Timeout until", comms_disabled.to_string(), true)
+    }
+
+    if let Some(dm_activity) = member.unusual_dm_activity_until {
+        embed = embed.field("High DM Activity Until", dm_activity.to_string(), true)
+    }
+
+    embed = embed.field("Pending", member.pending().to_string(), true);
+
+    ctx.send(poise::CreateReply::default().embed(embed)).await?;
+
+    Ok(())
+}
+
+pub fn commands() -> [crate::Command; 6] {
     [
         last_reactions(),
         statuses(),
         playing(),
         dm_activity_check(),
         flag_lb(),
+        get_member(),
     ]
+}
+
+fn get_flags_str(flags: &GuildMemberFlags) -> Option<String> {
+    let flag_strings: Vec<&str> = [
+        ("DID_REJOIN", GuildMemberFlags::DID_REJOIN),
+        (
+            "COMPLETED_ONBOARDING",
+            GuildMemberFlags::COMPLETED_ONBOARDING,
+        ),
+        (
+            "BYPASSES_VERIFICATION",
+            GuildMemberFlags::BYPASSES_VERIFICATION,
+        ),
+        ("STARTED_ONBOARDING", GuildMemberFlags::STARTED_ONBOARDING),
+    ]
+    .iter()
+    .filter_map(|(name, flag)| {
+        if flags.contains(*flag) {
+            Some(*name)
+        } else {
+            None
+        }
+    })
+    .collect();
+
+    if flag_strings.is_empty() {
+        None
+    } else {
+        Some(flag_strings.join("\n"))
+    }
 }

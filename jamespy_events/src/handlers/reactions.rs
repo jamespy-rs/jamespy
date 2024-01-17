@@ -3,6 +3,7 @@ use crate::{Data, Error};
 
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{self as serenity, Reaction};
+use small_fixed_array::FixedString;
 
 pub async fn reaction_add(
     ctx: &serenity::Context,
@@ -17,7 +18,7 @@ pub async fn reaction_add(
             }
             user.name
         }
-        Err(_) => "Unknown User".to_string().into(),
+        Err(_) => FixedString::from_str_trunc("Unknown User"),
     };
 
     let guild_id = add_reaction.guild_id;
@@ -61,7 +62,7 @@ pub async fn reaction_remove(
             }
             user.name
         }
-        Err(_) => "Unknown User".to_string().into(),
+        Err(_) => FixedString::from_str_trunc("Unknown User"),
     };
     let guild_id = removed_reaction.guild_id;
     let guild_name = get_guild_name(ctx, guild_id);

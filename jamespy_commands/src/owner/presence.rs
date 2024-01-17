@@ -2,6 +2,8 @@ use poise::serenity_prelude::{ActivityData, ActivityType};
 
 use crate::{Context, Error};
 
+use small_fixed_array::FixedString;
+
 #[derive(Debug, poise::ChoiceParameter)]
 pub enum OnlineStatus {
     Online,
@@ -84,10 +86,10 @@ pub async fn set_activity(
         _ => ActivityType::Playing,
     };
 
-    let status = custom_status.map(std::convert::Into::into);
+    let status = custom_status.map(|s| FixedString::from_str_trunc(&s));
 
     let activity_data = ActivityData {
-        name: name.into(),
+        name: FixedString::from_str_trunc(&name),
         kind: activity_type_enum,
         state: status,
         url: None,

@@ -4,6 +4,8 @@ use poise::serenity_prelude::{
     GuildMemberUpdateEvent, Member,
 };
 
+use small_fixed_array::FixedString;
+
 use crate::{Data, Error};
 
 pub async fn guild_member_update(
@@ -53,12 +55,12 @@ pub async fn guild_member_update(
                         .clone()
                         .user
                         .global_name
-                        .unwrap_or("None".to_owned().into()),
+                        .unwrap_or(FixedString::from_str_trunc("None")),
                     new_member
                         .clone()
                         .user
                         .global_name
-                        .unwrap_or("None".to_owned().into()),
+                        .unwrap_or(FixedString::from_str_trunc("None")),
                     new_member.user.id
                 );
             }
@@ -130,7 +132,7 @@ async fn dm_activity_new(
     };
 
     let mut client_stat = vec![];
-    if let Some(Some(client)) = online_status {
+    if let Some(client) = online_status.flatten() {
         if client.desktop.is_some() {
             client_stat.push("Desktop");
         }

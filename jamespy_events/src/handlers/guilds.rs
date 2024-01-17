@@ -153,10 +153,11 @@ pub async fn guild_audit_log_entry_create(
             (None, None)
         };
 
+    // use channel_id instead.
     if let Some(id) = check_contents {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-        let cloned_messages = ctx.cache.channel_messages(id).map(|c| c.clone());
+        let cloned_messages = ctx.cache.channel_messages(id.into()).map(|c| c.clone());
 
         let mut status = format!(
             "Unknown (check #{})",

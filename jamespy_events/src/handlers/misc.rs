@@ -3,11 +3,13 @@ use crate::{Data, Error};
 use poise::serenity_prelude::{self as serenity, ActivityData, ActivityType, GuildId, UserId};
 use sqlx::query;
 
+use small_fixed_array::FixedString;
+
 pub async fn ready(ctx: &serenity::Context, data: &Data) -> Result<(), Error> {
     let _ = data;
 
     let activity_data = ActivityData {
-        name: "you inside your home.".to_string().into(),
+        name: FixedString::from_str_trunc("you inside your home."),
         kind: ActivityType::Watching,
         state: None,
         url: None,

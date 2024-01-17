@@ -114,7 +114,22 @@ pub struct VCStatus {
 pub struct SpyGuild {
     pub status: Init,
     pub self_regex: Option<SelfRegex>,
+    pub patterns: Option<PatternAnnounce>,
     pub attachment_hook: Option<AttachmentHook>,
+}
+
+impl SpyGuild {
+    pub fn new(guild_id: GuildId) -> Self {
+        SpyGuild {
+            status: Init {
+                enabled: true,
+                guild_id: Some(guild_id),
+            },
+            self_regex: None,
+            patterns: None,
+            attachment_hook: None,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
@@ -132,6 +147,24 @@ pub struct SelfRegex {
     pub extra_regex: Option<Vec<Regex>>,
     pub context_info: bool,
     pub mention: bool,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct PatternAnnounce {
+    pub enabled: bool,
+    pub default_channel_id: Option<ChannelId>,
+    pub list: Vec<Pattern>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Pattern {
+    pub enabled: bool,
+    pub name: Option<String>,
+    pub ping: bool,
+    pub traverse_embeds: bool,
+    pub channel_id: ChannelId,
+    #[serde(with = "regex_patterns")]
+    pub patterns: Option<Vec<Regex>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

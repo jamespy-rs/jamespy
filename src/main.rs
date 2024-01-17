@@ -101,7 +101,7 @@ async fn main() {
 
     let mut settings = serenity::Settings::default();
     settings.max_messages = 350;
-    let mut client = serenity::Client::builder(token, intents)
+    let mut client = serenity::Client::builder(&token, intents)
         .framework(framework)
         .cache_settings(settings)
         .await

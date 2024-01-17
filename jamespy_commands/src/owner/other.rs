@@ -1,4 +1,4 @@
-use poise::serenity_prelude::{self as serenity, ChannelId, ReactionType};
+use poise::serenity_prelude::{self as serenity, ChannelId, MessageId, ReactionType};
 
 use crate::{Context, Error};
 
@@ -46,7 +46,7 @@ pub async fn dm(
 pub async fn react(
     ctx: Context<'_>,
     #[description = "Channel where the message is"] channel_id: ChannelId,
-    #[description = "Message to react to"] message_id: u64,
+    #[description = "Message to react to"] message_id: MessageId,
     #[description = "What to React with"] string: String,
 ) -> Result<(), Error> {
     let message = channel_id.message(&ctx.http(), message_id).await?;
