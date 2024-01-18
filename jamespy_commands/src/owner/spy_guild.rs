@@ -1,6 +1,6 @@
 use crate::{Context, Error};
 use jamespy_config::SpyGuild;
-use poise::serenity_prelude::{self as serenity, ChannelType, CreateChannel};
+use poise::serenity_prelude::{ChannelType, CreateChannel};
 
 #[poise::command(
     rename = "init",
@@ -90,7 +90,7 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
 
     spy_conf.attachment_hook = Some(jamespy_config::AttachmentHook {
         enabled: true,
-        channel_id: Some(attachment_hook_channel)
+        channel_id: Some(attachment_hook_channel),
     });
 
     spy_conf.patterns = Some(jamespy_config::PatternAnnounce {
@@ -99,16 +99,16 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
         list: vec![],
     });
 
-
     {
         let mut config = ctx.data().config.write().unwrap();
-
 
         config.spy_guild = Some(spy_conf);
 
         config.write_config();
-
     }
+
+    // TODO: handle errors.
+    ctx.say("Success!").await?;
 
     Ok(())
 }

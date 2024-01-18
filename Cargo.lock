@@ -1084,7 +1084,6 @@ dependencies = [
  "jamespy_data",
  "poise",
  "regex",
- "serde",
  "serde_json",
  "serenity",
  "small-fixed-array",

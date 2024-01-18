@@ -110,6 +110,7 @@ pub struct VCStatus {
     pub guilds: Option<Vec<GuildId>>,
 }
 
+// TODO: categories should probably be stored too.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SpyGuild {
     pub status: Init,

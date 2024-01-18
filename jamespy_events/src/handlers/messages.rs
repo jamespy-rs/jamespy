@@ -210,7 +210,7 @@ pub async fn message_delete(
         )
         .execute(db_pool)
         .await;
-        crate::attachments::download_attachments(message, data).await?;
+        crate::attachments::download_attachments(ctx, message, data).await?;
     } else {
         println!(
             "\x1B[91m\x1B[2mA message (ID:{deleted_message_id}) was deleted but was not in \

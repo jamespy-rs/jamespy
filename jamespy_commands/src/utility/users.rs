@@ -261,9 +261,6 @@ pub async fn flag_lb(ctx: Context<'_>) -> Result<(), Error> {
     required_permissions = "MANAGE_MESSAGES"
 )]
 pub async fn get_member(ctx: Context<'_>, member: serenity::Member) -> Result<(), Error> {
-    // communication disabled since
-    // unusual dm activity until.
-
     let mut embed = serenity::CreateEmbed::default();
 
     embed = embed.title(format!("{}'s Member Object", &member.user.name));
