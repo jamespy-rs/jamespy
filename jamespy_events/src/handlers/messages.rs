@@ -41,7 +41,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: &Data) -> Res
             "\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[36m{}{}\x1B[0m",
             guild_name,
             channel_name,
-            msg.author.name,
+            msg.author.tag(),
             msg.content,
             attachments.as_deref().unwrap_or(""),
             embeds.as_deref().unwrap_or("")
@@ -55,7 +55,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: &Data) -> Res
             "\x1B[90m[{}] [#{}]\x1B[0m {}: \x1B[1m\x1B[31m{}{}{}\x1B[0m",
             guild_name,
             channel_name,
-            msg.author.name,
+            msg.author.tag(),
             msg.content,
             attachments.as_deref().unwrap_or(""),
             embeds.as_deref().unwrap_or("")
@@ -108,15 +108,15 @@ pub async fn message_edit(
 
                 println!(
                     "\x1B[36m[{}] [#{}] A message by \x1B[0m{}\x1B[36m was edited:",
-                    guild_name, channel_name, new_message.author.name
+                    guild_name, channel_name, new_message.author.tag()
                 );
                 println!(
                     "BEFORE: {}: {}",
-                    new_message.author.name, old_message.content
+                    new_message.author.tag(), old_message.content
                 ); // potentially check old attachments in the future.
                 println!(
                     "AFTER: {}: {}{}{}\x1B[0m",
-                    new_message.author.name,
+                    new_message.author.tag(),
                     new_message.content,
                     attachments.as_deref().unwrap_or(""),
                     embeds.as_deref().unwrap_or("")
@@ -177,7 +177,7 @@ pub async fn message_delete(
         .map(|message_ref| message_ref.clone());
 
     if let Some(message) = message {
-        let user_name = message.author.name.clone();
+        let user_name = message.author.tag();
         let content = message.content.clone();
 
         let (attachments_fmt, embeds_fmt) = attachments_embed_fmt(&message);
@@ -265,7 +265,7 @@ async fn pattern_matched(ctx: &serenity::Context, msg: &Message, guild: &str) ->
         .description(format!(
             "<#{}> by **{}** {}\n\n [Jump to message!]({})",
             msg.channel_id,
-            msg.author.name,
+            msg.author.tag(),
             msg.content,
             msg.link()
         ))
@@ -274,7 +274,7 @@ async fn pattern_matched(ctx: &serenity::Context, msg: &Message, guild: &str) ->
     let msg = serenity::CreateMessage::default()
         .content(format!(
             "In {} <#{}> you were mentioned by {} (ID:{})",
-            guild, msg.channel_id, msg.author.name, msg.author.id
+            guild, msg.channel_id, msg.author.tag(), msg.author.id
         ))
         .embed(embed);
 

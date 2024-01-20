@@ -34,23 +34,23 @@ pub async fn guild_member_update(
                 println!(
                     "\x1B[92m[{}] Nickname change: {}: {} -> {} (ID:{})\x1B[0m",
                     guild_name,
-                    new_member.user.name,
+                    new_member.user.tag(),
                     old_nickname,
                     new_nickname,
                     new_member.user.id
                 );
             };
 
-            if old_member.user.name != new_member.user.name {
+            if old_member.user.tag() != new_member.user.tag() {
                 println!(
                     "\x1B[92mUsername change: {} -> {} (ID:{})\x1B[0m",
-                    old_member.user.name, new_member.user.name, new_member.user.id
+                    old_member.user.tag(), new_member.user.tag(), new_member.user.id
                 );
             }
             if old_member.user.global_name != new_member.user.global_name {
                 println!(
                     "\x1B[92mDisplay name change: {}: {} -> {} (ID:{})\x1B[0m",
-                    old_member.user.name,
+                    old_member.user.tag(),
                     old_member
                         .clone()
                         .user
@@ -149,7 +149,7 @@ async fn dm_activity_new(
         .author(
             CreateEmbedAuthor::new(format!(
                 "{} is flagged with unusual dm activity",
-                event.user.name
+                event.user.tag()
             ))
             .icon_url(event.user.face()),
         )

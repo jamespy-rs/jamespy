@@ -36,7 +36,7 @@ pub async fn guild_member_addition(
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has joined!\x1B[0m",
-        guild_name, new_member.user.name, joined_user_id
+        guild_name, new_member.user.tag(), joined_user_id
     );
 
     // Check join tracks
@@ -49,7 +49,7 @@ pub async fn guild_member_addition(
     .await;
     let reply_content: &str = &format!(
         "{} (<@{}>) joined {}!",
-        new_member.user.name, new_member.user.id, guild_name
+        new_member.user.tag(), new_member.user.id, guild_name
     );
     if let Ok(records) = result {
         for record in records {
@@ -95,7 +95,7 @@ pub async fn guild_member_removal(
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m",
-        guild_name, user.name, user.id
+        guild_name, user.tag(), user.id
     );
 
     // Author left guild, these are no longer important.
@@ -134,7 +134,7 @@ pub async fn guild_audit_log_entry_create(
 
     let (user_name, avatar_url) = {
         let user = entry.user_id.to_user(&ctx).await.unwrap();
-        (user.name.clone(), user.face())
+        (user.tag(), user.face())
     };
 
     let (check_contents, culprit_channel_id): (Option<u64>, Option<ChannelId>) =

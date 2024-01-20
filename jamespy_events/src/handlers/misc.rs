@@ -47,7 +47,7 @@ pub async fn cache_ready(
                     if let Ok(member) = guild.member(ctx, userid).await {
                         let reply_content = format!(
                             "{} (<@{}>) joined {}!",
-                            member.user.name, member.user.id, guild_name
+                            member.user.tag(), member.user.id, guild_name
                         );
                         let reply_builder =
                             serenity::CreateMessage::default().content(reply_content);

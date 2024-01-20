@@ -123,7 +123,7 @@ pub async fn get_permission_changes(
 ) -> String {
     let name = match kind {
         PermissionOverwriteType::Member(user_id) => match user_id.to_user(ctx).await {
-            Ok(user) => user.name.to_string(),
+            Ok(user) => user.tag(),
             Err(_) => String::from("Unknown User"),
         },
         PermissionOverwriteType::Role(role_id) => ctx

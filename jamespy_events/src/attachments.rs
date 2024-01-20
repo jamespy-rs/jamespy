@@ -180,7 +180,7 @@ async fn announce_deleted_spy(
                 .author(
                     serenity::CreateEmbedAuthor::new(format!(
                         "{}'s deleted message with attachments",
-                        message.author.name
+                        message.author.tag()
                     ))
                     .icon_url(message.author.face()),
                 )

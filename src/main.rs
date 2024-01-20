@@ -87,7 +87,7 @@ async fn main() {
         });
 
         Box::pin(async move {
-            println!("Logged in as {}", ready.user.name);
+            println!("Logged in as {}", ready.user.tag());
             poise::builtins::register_globally(ctx, &framework.options().commands).await?;
             Ok(data)
         })

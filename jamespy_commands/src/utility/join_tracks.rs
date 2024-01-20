@@ -49,7 +49,7 @@ pub async fn track_join(
     .execute(db_pool)
     .await;
 
-    ctx.say(format!("Successfully started tracking {}", user.name))
+    ctx.say(format!("Successfully started tracking {}", user.tag()))
         .await?;
 
     Ok(())
@@ -87,7 +87,7 @@ pub async fn list_tracked(
             let userid = UserId::new(row.user_id.unwrap() as u64);
             // future me will check for error.
             let user = userid.to_user(ctx).await?;
-            description = format!("\n{} (ID:{})", user.name, user.id);
+            description = format!("\n{} (ID:{})", user.tag(), user.id);
         }
     } else {
         ctx.say("You aren't tracking any users!").await?;

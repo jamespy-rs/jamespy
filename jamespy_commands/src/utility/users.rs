@@ -43,7 +43,7 @@ pub async fn last_reactions(ctx: Context<'_>) -> Result<(), Error> {
             let username = UserId::new(user_id)
                 .to_user(ctx)
                 .await
-                .map_or_else(|_| "Unknown User".to_string(), |user| user.name.to_string());
+                .map_or_else(|_| "Unknown User".to_string(), |user| user.tag());
             formatted.push(format!(
                 "**{}** {} {} Message ID: {}",
                 username,
@@ -263,7 +263,7 @@ pub async fn flag_lb(ctx: Context<'_>) -> Result<(), Error> {
 pub async fn get_member(ctx: Context<'_>, member: serenity::Member) -> Result<(), Error> {
     let mut embed = serenity::CreateEmbed::default();
 
-    embed = embed.title(format!("{}'s Member Object", &member.user.name));
+    embed = embed.title(format!("{}'s Member Object", &member.user.tag()));
 
     if let Some(avatar) = member.avatar_url() {
         embed = embed.thumbnail(avatar)
