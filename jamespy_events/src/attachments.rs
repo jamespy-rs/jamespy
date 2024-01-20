@@ -1,6 +1,7 @@
 use crate::{helper::get_guild_name, Data, Error};
 use poise::serenity_prelude::{
-    self as serenity, Attachment, CreateAttachment, CreateButton, CreateInteractionResponseFollowup, Message,
+    self as serenity, Attachment, CreateAttachment, CreateButton,
+    CreateInteractionResponseFollowup, Message,
 };
 use small_fixed_array::FixedString;
 use std::fmt::Write;
@@ -28,6 +29,13 @@ pub async fn download_attachments(
 
     if !attachments_set.enabled {
         return Ok(());
+    }
+
+    if let Some(ref spy_guild) = spy_guild {
+        if matches!(&spy_guild.attachment_hook, Some(hook) if hook.channel_id == Some(message.channel_id))
+        {
+            return Ok(()); // do not download files from this channel.
+        }
     }
 
     // TODO: allow configuration.
@@ -157,6 +165,15 @@ async fn announce_deleted_spy(
         action_rows.push(serenity::CreateActionRow::Buttons(chunk.to_vec()));
     }
 
+    let description_fmt = if message.content.is_empty() {
+        format!("**Attachments**:\n{}", description)
+    } else {
+        format!(
+            "**Message**:\n{}\n**Attachments**:\n{}",
+            message.content, description
+        )
+    };
+
     let message = serenity::CreateMessage::default()
         .embed(
             serenity::CreateEmbed::default()
@@ -168,15 +185,15 @@ async fn announce_deleted_spy(
                     .icon_url(message.author.face()),
                 )
                 .title(format!(
-                    "Message deleted in: <#{}> in {}",
+                    "Message deleted in <#{}> in {}",
                     message.channel_id,
                     get_guild_name(ctx, message.guild_id)
                 ))
-                .description(description),
+                .description(description_fmt),
         )
         .components(action_rows);
 
-    hook.channel_id.unwrap().send_message(ctx, message).await?;
+    let mut msg = hook.channel_id.unwrap().send_message(ctx, message).await?;
 
     while let Some(press) = serenity::ComponentInteractionCollector::new(ctx)
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
@@ -193,21 +210,23 @@ async fn announce_deleted_spy(
                     Ok(bytes) => bytes,
                     Err(err) => {
                         println!("{err:?}");
-                        return Ok(())
-                    },
+                        return Ok(());
+                    }
                 };
 
                 press
                     .create_followup(
                         ctx,
-                        CreateInteractionResponseFollowup::new().files(vec![
-                            CreateAttachment::bytes(bytes, file.file_name.clone()),
-                        ]),
+                        CreateInteractionResponseFollowup::new()
+                            .files(vec![CreateAttachment::bytes(bytes, file.file_name.clone())]),
                     )
                     .await?;
             }
         }
     }
+
+    msg.edit(ctx, serenity::EditMessage::new().components(vec![]))
+        .await?;
 
     Ok(())
 }

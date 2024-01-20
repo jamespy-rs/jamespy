@@ -37,9 +37,11 @@ pub async fn update_lob() -> Result<(usize, usize), Error> {
             .lines()
             .map(std::string::ToString::to_string)
             .collect();
+
+        new_count = lines.len();
+
         old_count = loblist.len();
         *loblist = lines;
-        new_count = loblist.len();
     }
 
     Ok((old_count, new_count))
