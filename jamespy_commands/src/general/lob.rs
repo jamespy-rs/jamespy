@@ -76,12 +76,12 @@ pub async fn new_lob(
     #[rest]
     item: String,
 ) -> Result<(), Error> {
-    add_lob(&item).await?;
     ctx.send(poise::CreateReply::default().content(format!(
         "Added `{item}` to loblist!\nChanges will not be applied until bot restart or until \
          reload-lob is called!"
     )))
     .await?;
+    add_lob(item).await?;
     Ok(())
 }
 

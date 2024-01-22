@@ -13,15 +13,18 @@
 
 use jamespy_data::{
     database::{init_data, init_redis_pool},
-    structs::{Data, DataInner, Error},
+    structs::{Data, Error},
 };
 
 use poise::serenity_prelude::{self as serenity};
-use std::{env::var, sync::Arc, time::Duration};
+use std::{
+    env::var,
+    sync::{atomic::AtomicBool, Arc},
+    time::Duration,
+};
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
-        poise::FrameworkError::Setup { error, .. } => panic!("Failed to start bot: {error:?}"),
         poise::FrameworkError::Command { error, ctx, .. } => {
             println!("Error in command `{}`: {:?}", ctx.command().name, error,);
         }
@@ -45,14 +48,15 @@ async fn main() {
     let redis_pool = init_redis_pool().await;
 
     let config = jamespy_config::JamespyConfig::load_config();
-    let data = Data(Arc::new(DataInner {
+    let data = Arc::new(Data {
+        has_started: AtomicBool::new(false),
         db: db_pool,
         redis: redis_pool,
         time_started: std::time::Instant::now(),
         reqwest: reqwest::Client::new(),
         config: config.into(),
         dm_activity: dashmap::DashMap::new(),
-    }));
+    });
 
     let options = poise::FrameworkOptions {
         commands: jamespy_commands::commands(),
@@ -67,31 +71,11 @@ async fn main() {
         on_error: |error| Box::pin(on_error(error)),
 
         skip_checks_for_owners: false,
-        event_handler: |ctx: &serenity::Context, event: &serenity::FullEvent, framework, data| {
-            Box::pin(jamespy_events::event_handler(ctx, event, framework, data))
-        },
+        event_handler: |framework, event| Box::pin(jamespy_events::event_handler(framework, event)),
         ..Default::default()
     };
 
-    let framework = poise::Framework::new(options, move |ctx, ready, framework| {
-        let ctx_clone = ctx.clone();
-        let data_clone = data.clone();
-
-        tokio::spawn(async move {
-            let mut interval: tokio::time::Interval =
-                tokio::time::interval(std::time::Duration::from_secs(60 * 10));
-            loop {
-                interval.tick().await;
-                let _ = jamespy_events::tasks::check_space(&ctx_clone, &data_clone).await;
-            }
-        });
-
-        Box::pin(async move {
-            println!("Logged in as {}", ready.user.tag());
-            poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-            Ok(data)
-        })
-    });
+    let framework = poise::Framework::new(options);
 
     let token = var("JAMESPY_TOKEN").expect("Missing `JAMESPY_TOKEN` env var. Aborting...");
     let intents = serenity::GatewayIntents::non_privileged()
@@ -101,8 +85,10 @@ async fn main() {
 
     let mut settings = serenity::Settings::default();
     settings.max_messages = 350;
+
     let mut client = serenity::Client::builder(&token, intents)
         .framework(framework)
+        .data(data)
         .cache_settings(settings)
         .await
         .unwrap();

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::helper::{get_channel_name, get_guild_name};
 use crate::{Data, Error};
 
@@ -7,7 +9,7 @@ use poise::serenity_prelude::{self as serenity, Reaction};
 pub async fn reaction_add(
     ctx: &serenity::Context,
     add_reaction: &Reaction,
-    data: &Data,
+    data: Arc<Data>,
 ) -> Result<(), Error> {
     let user_id = add_reaction.user_id.unwrap();
     let user_name = match user_id.to_user(ctx).await {
@@ -51,7 +53,7 @@ pub async fn reaction_add(
 pub async fn reaction_remove(
     ctx: &serenity::Context,
     removed_reaction: &Reaction,
-    data: &Data,
+    data: Arc<Data>,
 ) -> Result<(), Error> {
     let user_id = removed_reaction.user_id.unwrap();
     let user_name = match user_id.to_user(ctx).await {

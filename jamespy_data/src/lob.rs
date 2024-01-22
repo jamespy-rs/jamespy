@@ -54,14 +54,14 @@ pub async fn unload_lob() -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn add_lob(content: &String) -> Result<(), Error> {
+pub async fn add_lob(content: String) -> Result<(), Error> {
     let loblist = "config/lists/loblist.txt";
     let mut file = OpenOptions::new().append(true).open(loblist)?;
 
     let content_with_newline = if file.metadata()?.len() > 0 {
         format!("\n{content}")
     } else {
-        content.clone()
+        content
     };
 
     file.write_all(content_with_newline.as_bytes())?;

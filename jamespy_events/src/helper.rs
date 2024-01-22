@@ -113,7 +113,7 @@ pub fn sort_order_to_string(sort_order: SortOrder) -> String {
 }
 
 pub async fn get_permission_changes(
-    ctx: Context,
+    ctx: &Context,
     guild_id: GuildId,
     old_allow: Permissions,
     new_allow: Permissions,

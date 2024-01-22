@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::sync::Arc;
 
 use crate::helper::{get_channel_name, get_guild_name};
 use crate::{Data, Error};
@@ -10,7 +11,7 @@ use poise::serenity_prelude::{
 };
 use sqlx::query;
 
-pub async fn message(ctx: &serenity::Context, msg: &Message, data: &Data) -> Result<(), Error> {
+pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) -> Result<(), Error> {
     let config = { data.config.read().unwrap().events.clone() };
 
     if should_skip_msg(config.no_log_users, config.no_log_channels, msg) {
@@ -88,7 +89,7 @@ pub async fn message_edit(
     old_if_available: &Option<Message>,
     new: &Option<Message>,
     event: &MessageUpdateEvent,
-    data: &Data,
+    data: Arc<Data>,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
 
@@ -108,11 +109,14 @@ pub async fn message_edit(
 
                 println!(
                     "\x1B[36m[{}] [#{}] A message by \x1B[0m{}\x1B[36m was edited:",
-                    guild_name, channel_name, new_message.author.tag()
+                    guild_name,
+                    channel_name,
+                    new_message.author.tag()
                 );
                 println!(
                     "BEFORE: {}: {}",
-                    new_message.author.tag(), old_message.content
+                    new_message.author.tag(),
+                    old_message.content
                 ); // potentially check old attachments in the future.
                 println!(
                     "AFTER: {}: {}{}{}\x1B[0m",
@@ -162,7 +166,7 @@ pub async fn message_delete(
     channel_id: &ChannelId,
     deleted_message_id: &MessageId,
     guild_id: &Option<GuildId>,
-    data: &Data,
+    data: Arc<Data>,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
 
@@ -210,7 +214,7 @@ pub async fn message_delete(
         )
         .execute(db_pool)
         .await;
-        crate::attachments::download_attachments(ctx, message, data).await?;
+        crate::attachments::download_attachments(ctx, message, &data).await?;
     } else {
         println!(
             "\x1B[91m\x1B[2mA message (ID:{deleted_message_id}) was deleted but was not in \
@@ -274,7 +278,10 @@ async fn pattern_matched(ctx: &serenity::Context, msg: &Message, guild: &str) ->
     let msg = serenity::CreateMessage::default()
         .content(format!(
             "In {} <#{}> you were mentioned by {} (ID:{})",
-            guild, msg.channel_id, msg.author.tag(), msg.author.id
+            guild,
+            msg.channel_id,
+            msg.author.tag(),
+            msg.author.id
         ))
         .embed(embed);
 

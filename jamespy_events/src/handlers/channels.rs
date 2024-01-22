@@ -11,6 +11,7 @@ use poise::serenity_prelude::{
     GuildId, PartialGuildChannel, UserId, VoiceChannelStatusAction,
 };
 
+use std::sync::Arc;
 use std::time::Duration;
 
 pub async fn channel_create(ctx: &serenity::Context, channel: &GuildChannel) -> Result<(), Error> {
@@ -82,7 +83,7 @@ pub async fn channel_update(
                 for new_overwrite in &new.permission_overwrites {
                     if old_overwrite.kind == new_overwrite.kind {
                         let changes_str = get_permission_changes(
-                            ctx.clone(),
+                            ctx,
                             new.guild_id,
                             old_overwrite.allow,
                             new_overwrite.allow,
@@ -388,7 +389,7 @@ pub async fn voice_channel_status_update(
     status: &Option<String>,
     id: &ChannelId,
     guild_id: &GuildId,
-    data: &Data,
+    data: Arc<Data>,
 ) -> Result<(), Error> {
     let vcstatus = {
         let config = data.config.read().unwrap();
@@ -401,19 +402,37 @@ pub async fn voice_channel_status_update(
             (None, None) => {
                 old_field = None;
                 new_field = None;
-                add(ctx, id, guild_id, old_field, new_field, status, data).await?;
+                add(ctx, id, guild_id, old_field, new_field, status, &data).await?;
             }
             (Some(old), Some(status)) => {
                 old_field = Some(old.to_string());
                 new_field = Some(status.clone());
                 if old_field != new_field {
-                    add(ctx, id, guild_id, old_field, new_field, &Some(status), data).await?;
+                    add(
+                        ctx,
+                        id,
+                        guild_id,
+                        old_field,
+                        new_field,
+                        &Some(status),
+                        &data,
+                    )
+                    .await?;
                 }
             }
             (None, Some(status)) => {
                 old_field = None;
                 new_field = Some(status.clone());
-                add(ctx, id, guild_id, old_field, new_field, &Some(status), data).await?;
+                add(
+                    ctx,
+                    id,
+                    guild_id,
+                    old_field,
+                    new_field,
+                    &Some(status),
+                    &data,
+                )
+                .await?;
             }
             _ => {}
         }

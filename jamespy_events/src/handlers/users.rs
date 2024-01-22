@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use chrono::Utc;
 use poise::serenity_prelude::{
     self as serenity, ChannelId, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
@@ -13,7 +15,7 @@ pub async fn guild_member_update(
     old_if_available: &Option<Member>,
     new: &Option<Member>,
     event: &GuildMemberUpdateEvent,
-    data: &Data,
+    data: Arc<Data>,
 ) -> Result<(), Error> {
     let guild_id = event.guild_id;
     let guild_name = if guild_id == 1 {
@@ -44,7 +46,9 @@ pub async fn guild_member_update(
             if old_member.user.tag() != new_member.user.tag() {
                 println!(
                     "\x1B[92mUsername change: {} -> {} (ID:{})\x1B[0m",
-                    old_member.user.tag(), new_member.user.tag(), new_member.user.id
+                    old_member.user.tag(),
+                    new_member.user.tag(),
+                    new_member.user.id
                 );
             }
             if old_member.user.global_name != new_member.user.global_name {
@@ -52,15 +56,15 @@ pub async fn guild_member_update(
                     "\x1B[92mDisplay name change: {}: {} -> {} (ID:{})\x1B[0m",
                     old_member.user.tag(),
                     old_member
-                        .clone()
                         .user
                         .global_name
-                        .unwrap_or(FixedString::from_str_trunc("None")),
+                        .as_ref()
+                        .unwrap_or(&FixedString::from_str_trunc("None")),
                     new_member
-                        .clone()
                         .user
                         .global_name
-                        .unwrap_or(FixedString::from_str_trunc("None")),
+                        .as_ref()
+                        .unwrap_or(&FixedString::from_str_trunc("None")),
                     new_member.user.id
                 );
             }
@@ -74,38 +78,42 @@ pub async fn guild_member_update(
 
             let now = Utc::now().timestamp();
 
-            // last_announced, activity until, times updated.
-            // they have a flag now, check if they had one before.
-            if let Some(old_stamp) = data.get_activity_check(event.user.id).await {
-                // they had a flag before.
-                if let Some(until) = old_stamp.1 {
-                    if until < now {
-                        data.remove_until(event.user.id).await;
-                        return Ok(());
-                    }
+            // If this is in the past, it doesn't need to continue.
+            // Also remove it from the database if its there.
+            if timestamp < now {
+                data.remove_until(event.user.id).await;
+                return Ok(());
+            }
 
-                    // If its newer by an hour, announce.
-                    if timestamp >= (old_stamp.0 + 3600) {
-                        dm_activity_updated(ctx, event, old_stamp.2).await?;
-                        data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.2 + 1))
-                            .await;
-                        return Ok(()); // its okay to return here because it'll be updated.
-                    }
+            let old_stamp = data.get_activity_check(event.user.id).await;
 
-                    // If its newer than a minute, update.
-                    if timestamp >= (until + 60) {
-                        data.updated_no_announce(event.user.id, now, timestamp, old_stamp.2 + 1)
-                            .await;
-                    }
-                } else {
-                    dm_activity_new(ctx, event, old_stamp.2).await?;
-                    data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.2 + 1))
-                        .await;
-                }
-            } else if timestamp >= Utc::now().timestamp() {
-                // add, no previous match but in future.
+            if old_stamp.is_none() {
                 dm_activity_new(ctx, event, 0).await?;
                 data.new_or_announced(event.user.id, now, timestamp, Some(1))
+                    .await;
+                return Ok(())
+            }
+
+            let old_stamp = old_stamp.unwrap();
+
+            // Display a message if its over an hour since the last one.
+            if timestamp >= (old_stamp.last_announced + 3600) {
+                dm_activity_updated(ctx, event, old_stamp.count).await?;
+                data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.count + 1))
+                    .await;
+                return Ok(()); // its okay to return here to prevent
+            }
+
+            // If an until is currently set, its an update, otherwise its new.
+            if let Some(until) = old_stamp.until {
+                // If its newer than a minute, update.
+                if timestamp >= (until + 60) {
+                    data.updated_no_announce(event.user.id, now, timestamp, old_stamp.count + 1)
+                        .await;
+                }
+            } else {
+                dm_activity_new(ctx, event, old_stamp.count).await?;
+                data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.count + 1))
                     .await;
             }
         }

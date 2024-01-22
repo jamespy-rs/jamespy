@@ -9,11 +9,12 @@ pub mod handlers;
 use handlers::*;
 
 pub async fn event_handler(
-    ctx: &serenity::Context,
+    framework: poise::FrameworkContext<'_, Data, Error>,
     event: &serenity::FullEvent,
-    _framework: poise::FrameworkContext<'_, Data, Error>,
-    data: &Data,
 ) -> Result<(), Error> {
+    let data = framework.user_data();
+    let ctx = framework.serenity_context;
+
     match event {
         FullEvent::Message { new_message } => {
             messages::message(ctx, new_message, data).await?;
@@ -102,8 +103,8 @@ pub async fn event_handler(
         } => {
             users::guild_member_update(ctx, old_if_available, new, event, data).await?;
         }
-        FullEvent::Ready { data_about_bot: _ } => {
-            misc::ready(ctx, data).await?;
+        FullEvent::Ready { data_about_bot } => {
+            misc::ready(ctx, data_about_bot, data).await?;
         }
         FullEvent::CacheReady { guilds } => {
             misc::cache_ready(ctx, guilds, data).await?;

@@ -5,7 +5,7 @@ use poise::serenity_prelude::{
 use poise::{Context, CreateReply};
 
 // The function that constructs the paginated messages for the guild_message_cache command.
-pub async fn guild_message_cache_builder<U, E>(
+pub async fn guild_message_cache_builder<U: Send + Sync + 'static, E>(
     ctx: Context<'_, U, E>,
     pages: &[&str],
     total_messages_cached: usize,
@@ -79,7 +79,7 @@ pub async fn guild_message_cache_builder<U, E>(
     Ok(())
 }
 
-pub async fn presence_builder<U, E>(
+pub async fn presence_builder<U: Send + Sync + 'static, E>(
     ctx: Context<'_, U, E>,
     pages: Vec<Vec<(&str, u32)>>,
     total_members: usize,

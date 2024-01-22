@@ -56,7 +56,7 @@ pub async fn sql(
     query: String,
 ) -> Result<(), Error> {
     //TODO: completely overhaul this.
-    let sql_query = query.clone();
+    let sql_query = query;
     let db_pool = &ctx.data().db;
 
     let now = std::time::Instant::now();

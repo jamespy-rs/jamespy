@@ -1,34 +1,41 @@
 use dashmap::DashMap;
 use serenity::all::UserId;
-use std::sync::{Arc, RwLock};
+use std::sync::{atomic::AtomicBool, RwLock};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 pub type Command = poise::Command<Data, Error>;
 
-#[derive(Clone)]
-pub struct Data(pub Arc<DataInner>);
-
-impl std::ops::Deref for Data {
-    type Target = DataInner;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-pub struct DataInner {
+pub struct Data {
+    pub has_started: AtomicBool,
     pub db: sqlx::PgPool,
     pub redis: crate::database::RedisPool,
     pub time_started: std::time::Instant,
     pub reqwest: reqwest::Client,
     pub config: RwLock<jamespy_config::JamespyConfig>,
-    pub dm_activity: DashMap<UserId, (i64, Option<i64>, i16)>,
+    pub dm_activity: DashMap<UserId, DmActivity>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct DmActivity {
+    pub last_announced: i64,
+    pub until: Option<i64>,
+    pub count: i16,
+}
+
+impl DmActivity {
+    pub fn new(last_announced: i64, until: Option<i64>, count: i16) -> Self {
+        DmActivity {
+            last_announced,
+            until,
+            count,
+        }
+    }
 }
 
 #[allow(clippy::missing_panics_doc)]
 impl Data {
-    pub async fn get_activity_check(&self, user_id: UserId) -> Option<(i64, Option<i64>, i16)> {
+    pub async fn get_activity_check(&self, user_id: UserId) -> Option<DmActivity> {
         let cached = self.dm_activity.get(&user_id);
 
         if let Some(cached) = cached {
@@ -38,7 +45,7 @@ impl Data {
         }
     }
 
-    async fn _get_activity_check_psql(&self, user_id: UserId) -> Option<(i64, Option<i64>, i16)> {
+    async fn _get_activity_check_psql(&self, user_id: UserId) -> Option<DmActivity> {
         let result = sqlx::query!(
             "SELECT last_announced, until, count FROM dm_activity WHERE user_id = $1",
             i64::from(user_id)
@@ -47,7 +54,7 @@ impl Data {
         .await;
 
         match result {
-            Ok(record) => Some((
+            Ok(record) => Some(DmActivity::new(
                 record.last_announced.unwrap(),
                 record.until,
                 record.count.unwrap(),
@@ -113,7 +120,7 @@ impl Data {
 
     fn update_user_cache(&self, user_id: UserId, announced: i64, until: i64, count: i16) {
         self.dm_activity
-            .insert(user_id, (announced, Some(until), count));
+            .insert(user_id, DmActivity::new(announced, Some(until), count));
     }
 
     pub async fn remove_until(&self, user_id: UserId) {

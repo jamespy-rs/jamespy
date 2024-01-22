@@ -1,8 +1,7 @@
 use crate::{Context, Error};
-use ::serenity::all::{User, UserId};
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{
-    self as serenity, ActivityType, Colour, GuildMemberFlags, OnlineStatus,
+    self as serenity, ActivityType, Colour, GuildMemberFlags, OnlineStatus, Role, User, UserId,
 };
 use std::collections::HashMap;
 
@@ -186,16 +185,20 @@ pub async fn dm_activity_check(ctx: Context<'_>, user: User) -> Result<(), Error
     let result = ctx.data().get_activity_check(user.id).await;
 
     if let Some(result) = result {
-        let until = if let Some(u) = result.1 {
+        let until = if let Some(u) = result.until {
             format!("<t:{u}>")
         } else {
             String::from("None")
         };
 
         embed = embed
-            .field("Announced last", format!("<t:{}>", result.0), true)
+            .field(
+                "Announced last",
+                format!("<t:{}>", result.last_announced),
+                true,
+            )
             .field("Until", until, true)
-            .field("Count", result.2.to_string(), true);
+            .field("Count", result.count.to_string(), true);
     }
 
     if let Ok(member) = ctx.guild_id().unwrap().member(ctx, user.id).await {
@@ -300,7 +303,66 @@ pub async fn get_member(ctx: Context<'_>, member: serenity::Member) -> Result<()
     Ok(())
 }
 
-pub fn commands() -> [crate::Command; 6] {
+/// See what games people are playing!
+#[poise::command(
+    rename = "member-unique-roles",
+    aliases("unique-roles"),
+    prefix_command,
+    category = "Utility",
+    guild_only,
+    required_permissions = "MANAGE_MESSAGES"
+)]
+pub async fn member_unique_roles(ctx: Context<'_>, role1: Role, role2: Role) -> Result<(), Error> {
+    let guild_id = ctx.guild_id().unwrap();
+
+    {
+        let guild = ctx.cache().guild(guild_id).unwrap();
+
+        let roles = &guild.roles;
+
+        if roles.get(&role1.id).is_none() {
+            println!("Role1 wasn't found in guild");
+            return Ok(());
+        }
+
+        if roles.get(&role2.id).is_none() {
+            println!("Role2 wasn't found in guild");
+            return Ok(());
+        }
+
+        let mut users_with_either_role = 0;
+        let mut users_with_role1 = 0;
+        let mut users_with_role2 = 0;
+        let mut users_with_both_roles = 0;
+
+        for member in &guild.members {
+            if member.1.roles.contains(&role1.id) || member.1.roles.contains(&role2.id) {
+                users_with_either_role += 1;
+            }
+
+            if member.1.roles.contains(&role1.id) {
+                users_with_role1 += 1;
+            }
+
+            if member.1.roles.contains(&role2.id) {
+                users_with_role2 += 1;
+            }
+
+            if member.1.roles.contains(&role1.id) && member.1.roles.contains(&role2.id) {
+                users_with_both_roles += 1;
+            }
+        }
+
+        println!("Users with {}: {}", role1.name, users_with_role1);
+        println!("Users with {}: {}", role2.name, users_with_role2);
+        println!("Users with Either role: {}", users_with_either_role);
+        println!("Users with both roles: {}", users_with_both_roles);
+    }
+
+    Ok(())
+}
+
+pub fn commands() -> [crate::Command; 7] {
     [
         last_reactions(),
         statuses(),
@@ -308,6 +370,7 @@ pub fn commands() -> [crate::Command; 6] {
         dm_activity_check(),
         flag_lb(),
         get_member(),
+        member_unique_roles(),
     ]
 }
 

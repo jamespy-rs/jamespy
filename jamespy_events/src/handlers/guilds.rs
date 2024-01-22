@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use sqlx::query;
 
 use crate::{helper::get_guild_name, Data, Error};
@@ -26,7 +28,7 @@ pub async fn guild_create(
 pub async fn guild_member_addition(
     ctx: &serenity::Context,
     new_member: &Member,
-    data: &Data,
+    data: Arc<Data>,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
     let guild_id = new_member.guild_id;
@@ -36,7 +38,9 @@ pub async fn guild_member_addition(
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has joined!\x1B[0m",
-        guild_name, new_member.user.tag(), joined_user_id
+        guild_name,
+        new_member.user.tag(),
+        joined_user_id
     );
 
     // Check join tracks
@@ -49,7 +53,9 @@ pub async fn guild_member_addition(
     .await;
     let reply_content: &str = &format!(
         "{} (<@{}>) joined {}!",
-        new_member.user.tag(), new_member.user.id, guild_name
+        new_member.user.tag(),
+        new_member.user.id,
+        guild_name
     );
     if let Ok(records) = result {
         for record in records {
@@ -88,14 +94,16 @@ pub async fn guild_member_removal(
     ctx: &serenity::Context,
     guild_id: &GuildId,
     user: &User,
-    data: &Data,
+    data: Arc<Data>,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
     let guild_name = get_guild_name(ctx, Some(*guild_id));
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m",
-        guild_name, user.tag(), user.id
+        guild_name,
+        user.tag(),
+        user.id
     );
 
     // Author left guild, these are no longer important.
