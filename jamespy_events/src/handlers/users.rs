@@ -91,7 +91,7 @@ pub async fn guild_member_update(
                 dm_activity_new(ctx, event, 0).await?;
                 data.new_or_announced(event.user.id, now, timestamp, Some(1))
                     .await;
-                return Ok(())
+                return Ok(());
             }
 
             let old_stamp = old_stamp.unwrap();

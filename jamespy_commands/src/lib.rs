@@ -1,8 +1,9 @@
-use jamespy_data::structs::{Command, Context, Error};
+use jamespy_data::structs::{Command, Context, Data, Error};
 
 pub mod general;
 pub mod meta;
 pub mod owner;
+pub mod register;
 pub mod utility;
 
 pub mod utils;

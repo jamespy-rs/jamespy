@@ -88,7 +88,9 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 
 #[poise::command(prefix_command, hide_in_help)]
 async fn register(ctx: Context<'_>) -> Result<(), Error> {
-    poise::builtins::register_application_commands_buttons(ctx).await?;
+    // This uses an inbuilt function because spy guild commands should only
+    // be registered in the spy guild.
+    crate::register::register_application_commands_buttons(ctx, ctx.data()).await?;
 
     Ok(())
 }
