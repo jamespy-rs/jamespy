@@ -1035,6 +1035,7 @@ dependencies = [
  "jamespy_config",
  "jamespy_data",
  "jamespy_events",
+ "libc",
  "poise",
  "rand",
  "reqwest",

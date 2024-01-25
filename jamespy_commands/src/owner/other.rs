@@ -144,12 +144,25 @@ pub async fn react(
     Ok(())
 }
 
-pub fn commands() -> [crate::Command; 4] {
+// This halfs the memory usage at startup, not sure about other cases.
+#[poise::command(prefix_command, owners_only, hide_in_help)]
+async fn malloc_trim(ctx: Context<'_>) -> Result<(), Error> {
+    unsafe {
+        libc::malloc_trim(0);
+    }
+
+    ctx.say("Trimmed.").await?;
+
+    Ok(())
+}
+
+
+pub fn commands() -> [crate::Command; 5] {
     let say = poise::Command {
         slash_action: say_slash().slash_action,
         parameters: say_slash().parameters,
         ..say()
     };
 
-    [shutdown(), say, dm(), react()]
+    [shutdown(), say, dm(), react(), malloc_trim()]
 }

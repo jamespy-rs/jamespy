@@ -95,6 +95,8 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+
+
 pub fn commands() -> [crate::Command; 5] {
     [uptime(), source(), help(), ping(), register()]
 }
