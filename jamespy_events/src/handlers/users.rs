@@ -96,16 +96,20 @@ pub async fn guild_member_update(
 
             let old_stamp = old_stamp.unwrap();
 
-            // Display a message if its over an hour since the last one.
-            if timestamp >= (old_stamp.last_announced + 3600) {
-                dm_activity_updated(ctx, event, old_stamp.count).await?;
-                data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.count + 1))
-                    .await;
-                return Ok(()); // its okay to return here to prevent
-            }
 
             // If an until is currently set, its an update, otherwise its new.
             if let Some(until) = old_stamp.until {
+
+                // Display a message if its over an hour since the last one.
+                if timestamp - until >= 3600 {
+                    println!("conditional check passed.");
+                    dm_activity_updated(ctx, event, old_stamp.count).await?;
+                    data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.count + 1))
+                        .await;
+                    return Ok(()); // its okay to return here to prevent
+                }
+
+
                 // If its newer than a minute, update.
                 if timestamp >= (until + 60) {
                     data.updated_no_announce(event.user.id, now, timestamp, old_stamp.count + 1)
