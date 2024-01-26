@@ -1,6 +1,6 @@
 use dashmap::DashMap;
 use serenity::all::UserId;
-use std::sync::{atomic::AtomicBool, RwLock};
+use std::sync::{atomic::AtomicBool, Arc, RwLock};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -35,6 +35,22 @@ impl DmActivity {
 
 #[allow(clippy::missing_panics_doc)]
 impl Data {
+    pub async fn new() -> Arc<Self> {
+        let db_pool = crate::database::init_data().await;
+        let redis_pool = crate::database::init_redis_pool().await;
+
+        let config = jamespy_config::JamespyConfig::load_config();
+        Arc::new(Data {
+            has_started: AtomicBool::new(false),
+            db: db_pool,
+            redis: redis_pool,
+            time_started: std::time::Instant::now(),
+            reqwest: reqwest::Client::new(),
+            config: config.into(),
+            dm_activity: dashmap::DashMap::new()
+        })
+    }
+
     pub async fn get_activity_check(&self, user_id: UserId) -> Option<DmActivity> {
         let cached = self.dm_activity.get(&user_id);
 

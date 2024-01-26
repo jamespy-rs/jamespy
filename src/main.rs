@@ -11,15 +11,12 @@
     clippy::too_many_lines,
 )]
 
-use jamespy_data::{
-    database::{init_data, init_redis_pool},
-    structs::{Data, Error},
-};
+use jamespy_data::structs::{Data, Error};
 
 use poise::serenity_prelude::{self as serenity};
 use std::{
     env::var,
-    sync::{atomic::AtomicBool, Arc},
+    sync::Arc,
     time::Duration,
 };
 
@@ -43,20 +40,6 @@ async fn main() {
     let config = jamespy_config::JamespyConfig::load_config();
 
     config.write_config();
-
-    let db_pool = init_data().await;
-    let redis_pool = init_redis_pool().await;
-
-    let config = jamespy_config::JamespyConfig::load_config();
-    let data = Arc::new(Data {
-        has_started: AtomicBool::new(false),
-        db: db_pool,
-        redis: redis_pool,
-        time_started: std::time::Instant::now(),
-        reqwest: reqwest::Client::new(),
-        config: config.into(),
-        dm_activity: dashmap::DashMap::new(),
-    });
 
     let options = poise::FrameworkOptions {
         commands: jamespy_commands::commands(),
@@ -88,7 +71,7 @@ async fn main() {
 
     let mut client = serenity::Client::builder(&token, intents)
         .framework(framework)
-        .data(data)
+        .data(Data::new().await)
         .cache_settings(settings)
         .await
         .unwrap();
