@@ -32,7 +32,14 @@ pub async fn max_messages(
     Ok(())
 }
 
-#[poise::command(rename = "guild-cache-stats", prefix_command, category = "Cache", hide_in_help, owners_only, guild_only)]
+#[poise::command(
+    rename = "guild-cache-stats",
+    prefix_command,
+    category = "Cache",
+    hide_in_help,
+    owners_only,
+    guild_only
+)]
 pub async fn guild_cache_stats(ctx: Context<'_>) -> Result<(), Error> {
     let (channel_count, thread_count, members_count, cached_members) = {
         let guild = ctx.guild().unwrap();
@@ -45,7 +52,10 @@ pub async fn guild_cache_stats(ctx: Context<'_>) -> Result<(), Error> {
         (channel_count, thread_count, members_count, cached_members)
     };
 
-    let stats = format!("Channel Count: {}\n Thread count: {}\nUser count: {}\nCached Users: {}", channel_count, thread_count, members_count, cached_members);
+    let stats = format!(
+        "Channel Count: {}\n Thread count: {}\nUser count: {}\nCached Users: {}",
+        channel_count, thread_count, members_count, cached_members
+    );
 
     let embed = serenity::CreateEmbed::default()
         .title("Guild Cache Stats")
@@ -55,7 +65,6 @@ pub async fn guild_cache_stats(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
-
 
 pub fn commands() -> [crate::Command; 2] {
     [max_messages(), guild_cache_stats()]

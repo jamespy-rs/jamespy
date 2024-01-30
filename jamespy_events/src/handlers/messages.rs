@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use crate::helper::{get_channel_name, get_guild_name};
+use crate::helper::{get_channel_name, get_guild_name_override};
 use crate::{Data, Error};
 
 use chrono::NaiveDateTime;
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
-    MessageUpdateEvent, UserId,
+    MessageUpdateEvent, RoleId, UserId,
 };
 use sqlx::query;
 
@@ -19,7 +19,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     }
 
     let guild_id = msg.guild_id;
-    let guild_name = get_guild_name(ctx, guild_id);
+    let guild_name = get_guild_name_override(ctx, &data, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, msg.channel_id).await;
 
     if let Some(patterns) = config.regex {
@@ -29,6 +29,20 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     handle_dm(ctx, msg).await?;
 
     let (attachments, embeds) = attachments_embed_fmt(msg);
+
+    let mut author_string = msg.author.tag();
+
+    // TODO: stop hardcoding this and make this configurable in other means.
+    let blue = "\x1B[94m";
+    let reset = "\x1B[0m";
+    if let Some(partial_member) = &msg.member {
+        if partial_member
+            .roles
+            .contains(&RoleId::new(98459030455853056))
+        {
+            author_string = format!("{blue}{author_string}{reset}");
+        }
+    }
 
     // TODO: fix this before working on the bot after rewrite.
     let flagged_words = get_blacklisted_words(
@@ -42,7 +56,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
             "\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[36m{}{}\x1B[0m",
             guild_name,
             channel_name,
-            msg.author.tag(),
+            author_string,
             msg.content,
             attachments.as_deref().unwrap_or(""),
             embeds.as_deref().unwrap_or("")
@@ -94,7 +108,7 @@ pub async fn message_edit(
     let db_pool = &data.db;
 
     let guild_id = event.guild_id;
-    let guild_name = get_guild_name(ctx, guild_id);
+    let guild_name = get_guild_name_override(ctx, &data, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, event.channel_id).await;
 
     // I can probably just check event instead, it probably has what i need.
@@ -170,7 +184,7 @@ pub async fn message_delete(
 ) -> Result<(), Error> {
     let db_pool = &data.db;
 
-    let guild_name = get_guild_name(ctx, *guild_id);
+    let guild_name = get_guild_name_override(ctx, &data, *guild_id);
 
     let channel_name = get_channel_name(ctx, *guild_id, *channel_id).await;
 

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use sqlx::query;
 
-use crate::{helper::get_guild_name, Data, Error};
+use crate::{helper::get_guild_name_override, Data, Error};
 use poise::serenity_prelude::{
     self as serenity, AuditLogEntry, AutoModAction, ChannelId, CreateEmbedAuthor, Guild, GuildId,
     Member, User, UserId,
@@ -27,14 +27,14 @@ pub async fn guild_create(
 
 pub async fn guild_member_addition(
     ctx: &serenity::Context,
-    new_member: &Member,
     data: Arc<Data>,
+    new_member: &Member,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
     let guild_id = new_member.guild_id;
     let joined_user_id = new_member.user.id;
 
-    let guild_name = get_guild_name(ctx, Some(guild_id));
+    let guild_name = get_guild_name_override(ctx, &data, Some(guild_id));
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has joined!\x1B[0m",
@@ -97,7 +97,7 @@ pub async fn guild_member_removal(
     data: Arc<Data>,
 ) -> Result<(), Error> {
     let db_pool = &data.db;
-    let guild_name = get_guild_name(ctx, Some(*guild_id));
+    let guild_name = get_guild_name_override(ctx, &data, Some(*guild_id));
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m",

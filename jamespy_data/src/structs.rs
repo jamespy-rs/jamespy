@@ -47,7 +47,7 @@ impl Data {
             time_started: std::time::Instant::now(),
             reqwest: reqwest::Client::new(),
             config: config.into(),
-            dm_activity: dashmap::DashMap::new()
+            dm_activity: dashmap::DashMap::new(),
         })
     }
 

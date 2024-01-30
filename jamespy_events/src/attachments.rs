@@ -71,6 +71,7 @@ pub async fn download_attachments(
 
         let mut file = match std::fs::OpenOptions::new()
             .create(true)
+            .truncate(true)
             .write(true)
             .open(&file_loc)
         {

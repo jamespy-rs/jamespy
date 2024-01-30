@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::helper::{get_channel_name, get_guild_name};
+use crate::helper::{get_channel_name, get_guild_name_override};
 use crate::{Data, Error};
 
 use bb8_redis::redis::AsyncCommands;
@@ -23,7 +23,7 @@ pub async fn reaction_add(
     };
 
     let guild_id = add_reaction.guild_id;
-    let guild_name = get_guild_name(ctx, guild_id);
+    let guild_name = get_guild_name_override(ctx, &data, guild_id);
 
     let channel_name = get_channel_name(ctx, guild_id, add_reaction.channel_id).await;
 
@@ -66,7 +66,7 @@ pub async fn reaction_remove(
         Err(_) => String::from("Unknown User"),
     };
     let guild_id = removed_reaction.guild_id;
-    let guild_name = get_guild_name(ctx, guild_id);
+    let guild_name = get_guild_name_override(ctx, &data, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, removed_reaction.channel_id).await;
 
     let redis_pool = &data.redis;

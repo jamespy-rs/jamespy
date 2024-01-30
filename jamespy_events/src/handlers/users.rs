@@ -96,10 +96,8 @@ pub async fn guild_member_update(
 
             let old_stamp = old_stamp.unwrap();
 
-
             // If an until is currently set, its an update, otherwise its new.
             if let Some(until) = old_stamp.until {
-
                 // Display a message if its over an hour since the last one.
                 if timestamp - until >= 3600 {
                     println!("conditional check passed.");
@@ -108,7 +106,6 @@ pub async fn guild_member_update(
                         .await;
                     return Ok(()); // its okay to return here to prevent
                 }
-
 
                 // If its newer than a minute, update.
                 if timestamp >= (until + 60) {

@@ -1,7 +1,7 @@
+use ::serenity::gateway::ChunkGuildFilter;
 use poise::serenity_prelude::{
     self as serenity, Attachment, ChannelId, Message, MessageId, ReactionType, StickerId, UserId,
 };
-use ::serenity::gateway::ChunkGuildFilter;
 
 use crate::{Context, Error};
 
@@ -158,53 +158,37 @@ async fn malloc_trim(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 /// requests chunks of all guild members in the current guild.
-#[poise::command(rename = "chunk-guild-members", prefix_command, owners_only, hide_in_help, guild_only)]
+#[poise::command(
+    rename = "chunk-guild-members",
+    prefix_command,
+    owners_only,
+    hide_in_help,
+    guild_only
+)]
 async fn chunk_guild_members(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.serenity_context().shard.chunk_guild(ctx.guild_id().unwrap(), None, false, ChunkGuildFilter::None, None);
+    let guild_id = ctx.guild_id().unwrap();
+    ctx.serenity_context()
+        .shard
+        .chunk_guild(guild_id, None, false, ChunkGuildFilter::None, None);
 
-    // overhaul this by reading the events.
-
-    Ok(())
-}
-
-/// requests chunks of all guild members in the current guild.
-#[poise::command(rename = "discrim", prefix_command, owners_only, hide_in_help, guild_only)]
-async fn discrim(ctx: Context<'_>) -> Result<(), Error> {
-    let (none, discrim) = {
-        let guild = ctx.guild().unwrap();
-
-        let mut none = 0;
-        let mut discrim = 0;
-
-        for member in &guild.members {
-            if member.1.user.bot() {
-                continue
-            }
-
-            if member.1.user.discriminator.is_some() {
-                discrim += 1;
-            } else {
-                none += 1;
-            }
-        }
-
-        (none, discrim)
-    };
-
-    ctx.say(format!("Users with unique usernames: {}\nUsers with old username: {}", none, discrim)).await?;
+    ctx.say("Requesting guild member chunks").await?;
 
     Ok(())
 }
 
-
-
-
-pub fn commands() -> [crate::Command; 7] {
+pub fn commands() -> [crate::Command; 6] {
     let say = poise::Command {
         slash_action: say_slash().slash_action,
         parameters: say_slash().parameters,
         ..say()
     };
 
-    [shutdown(), say, dm(), react(), malloc_trim(), chunk_guild_members(), discrim()]
+    [
+        shutdown(),
+        say,
+        dm(),
+        react(),
+        malloc_trim(),
+        chunk_guild_members(),
+    ]
 }

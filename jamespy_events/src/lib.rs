@@ -43,7 +43,7 @@ pub async fn event_handler(
             guilds::guild_create(ctx, guild, is_new).await?;
         }
         FullEvent::GuildMemberAddition { new_member } => {
-            guilds::guild_member_addition(ctx, new_member, data).await?;
+            guilds::guild_member_addition(ctx, data, new_member).await?;
         }
         FullEvent::GuildMemberRemoval {
             guild_id,
@@ -56,28 +56,28 @@ pub async fn event_handler(
             guilds::guild_audit_log_entry_create(ctx, entry, guild_id).await?;
         }
         FullEvent::ChannelCreate { channel } => {
-            channels::channel_create(ctx, channel).await?;
+            channels::channel_create(ctx, data, channel).await?;
         }
         FullEvent::ChannelDelete {
             channel,
             messages: _,
         } => {
-            channels::channel_delete(ctx, channel).await?;
+            channels::channel_delete(ctx, data, channel).await?;
         }
         FullEvent::ChannelUpdate { old, new } => {
-            channels::channel_update(ctx, old, new).await?;
+            channels::channel_update(ctx, data, old, new).await?;
         }
         FullEvent::ThreadCreate { thread } => {
-            channels::thread_create(ctx, thread).await?;
+            channels::thread_create(ctx, data, thread).await?;
         }
         FullEvent::ThreadDelete {
             thread,
             full_thread_data,
         } => {
-            channels::thread_delete(ctx, thread, full_thread_data).await?;
+            channels::thread_delete(ctx, data, thread, full_thread_data).await?;
         }
         FullEvent::ThreadUpdate { old, new } => {
-            channels::thread_update(ctx, old, new).await?;
+            channels::thread_update(ctx, data, old, new).await?;
         }
         FullEvent::VoiceChannelStatusUpdate {
             old,
@@ -108,6 +108,14 @@ pub async fn event_handler(
         }
         FullEvent::CacheReady { guilds } => {
             misc::cache_ready(ctx, guilds, data).await?;
+        }
+        FullEvent::GuildMembersChunk { chunk } => {
+            println!(
+                "Chunk recieved containing {} members: {}/{}",
+                chunk.members.len(),
+                chunk.chunk_index + 1,
+                chunk.chunk_count
+            )
         }
 
         _ => {}

@@ -1,7 +1,30 @@
+use crate::Data;
+use std::sync::Arc;
+
 use poise::serenity_prelude::{
     self as serenity, AutoArchiveDuration, ChannelId, ChannelType, Context, ForumLayoutType,
     GuildId, PermissionOverwriteType, Permissions, SortOrder,
 };
+
+// Helper function for getting the guild name even if ID is a None variant.
+pub fn get_guild_name_override(
+    ctx: &serenity::Context,
+    data: &Arc<Data>,
+    guild_id: Option<GuildId>,
+) -> String {
+    if guild_id.is_none() {
+        return get_guild_name(ctx, guild_id);
+    }
+
+    if let Some(overrides) = &data.config.read().unwrap().events.guild_name_override {
+        overrides
+            .get(&guild_id.unwrap())
+            .unwrap_or(&get_guild_name(ctx, guild_id))
+            .to_string()
+    } else {
+        get_guild_name(ctx, guild_id)
+    }
+}
 
 // Helper function for getting the guild name even if ID is a None variant.
 pub fn get_guild_name(ctx: &serenity::Context, guild_id: Option<GuildId>) -> String {

@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -22,6 +22,9 @@ pub struct JamespyConfig {
 
 impl JamespyConfig {
     pub fn new() -> Self {
+        let mut map = HashMap::new();
+        map.insert(GuildId::new(1), "Yes".to_string());
+
         JamespyConfig {
             events: Events {
                 no_log_channels: None,
@@ -29,6 +32,7 @@ impl JamespyConfig {
                 regex: None,
                 badlist: None,
                 fixlist: None,
+                guild_name_override: Some(map),
             },
             vcstatus: VCStatus {
                 action: false,
@@ -184,6 +188,7 @@ pub struct Events {
     pub badlist: Option<HashSet<String>>,
     #[serde(skip_serializing)]
     pub fixlist: Option<HashSet<String>>,
+    pub guild_name_override: Option<HashMap<GuildId, String>>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]

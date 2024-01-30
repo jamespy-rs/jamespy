@@ -14,11 +14,7 @@
 use jamespy_data::structs::{Data, Error};
 
 use poise::serenity_prelude::{self as serenity};
-use std::{
-    env::var,
-    sync::Arc,
-    time::Duration,
-};
+use std::{env::var, sync::Arc, time::Duration};
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {

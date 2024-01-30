@@ -1,6 +1,6 @@
 use crate::helper::{
     auto_archive_duration_to_string, channel_type_to_string, forum_layout_to_string,
-    get_guild_name, get_permission_changes, sort_order_to_string,
+    get_guild_name_override, get_permission_changes, sort_order_to_string,
 };
 
 use crate::{Data, Error};
@@ -14,8 +14,12 @@ use poise::serenity_prelude::{
 use std::sync::Arc;
 use std::time::Duration;
 
-pub async fn channel_create(ctx: &serenity::Context, channel: &GuildChannel) -> Result<(), Error> {
-    let guild_name = get_guild_name(ctx, Some(channel.guild_id));
+pub async fn channel_create(
+    ctx: &serenity::Context,
+    data: Arc<Data>,
+    channel: &GuildChannel,
+) -> Result<(), Error> {
+    let guild_name = get_guild_name_override(ctx, &data, Some(channel.guild_id));
 
     let kind = channel_type_to_string(channel.kind);
     println!(
@@ -27,6 +31,7 @@ pub async fn channel_create(ctx: &serenity::Context, channel: &GuildChannel) -> 
 
 pub async fn channel_update(
     ctx: &serenity::Context,
+    data: Arc<Data>,
     old: &Option<GuildChannel>,
     new: &GuildChannel,
 ) -> Result<(), Error> {
@@ -34,7 +39,7 @@ pub async fn channel_update(
     let mut kind = String::new();
     let mut diff = String::new();
 
-    let guild_name = get_guild_name(ctx, Some(new.guild_id));
+    let guild_name = get_guild_name_override(ctx, &data, Some(new.guild_id));
 
     if let Some(old) = old {
         channel_name = new.name.to_string();
@@ -240,9 +245,13 @@ pub async fn channel_update(
     Ok(())
 }
 
-pub async fn channel_delete(ctx: &serenity::Context, channel: &GuildChannel) -> Result<(), Error> {
+pub async fn channel_delete(
+    ctx: &serenity::Context,
+    data: Arc<Data>,
+    channel: &GuildChannel,
+) -> Result<(), Error> {
     let kind = channel_type_to_string(channel.kind);
-    let guild_name = get_guild_name(ctx, Some(channel.guild_id));
+    let guild_name = get_guild_name_override(ctx, &data, Some(channel.guild_id));
 
     println!(
         "\x1B[34m[{}] #{} ({}) was deleted!\x1B[0m",
@@ -252,9 +261,13 @@ pub async fn channel_delete(ctx: &serenity::Context, channel: &GuildChannel) -> 
     Ok(())
 }
 
-pub async fn thread_create(ctx: &serenity::Context, thread: &GuildChannel) -> Result<(), Error> {
+pub async fn thread_create(
+    ctx: &serenity::Context,
+    data: Arc<Data>,
+    thread: &GuildChannel,
+) -> Result<(), Error> {
     let guild_id = thread.guild_id;
-    let guild_name = get_guild_name(ctx, Some(guild_id));
+    let guild_name = get_guild_name_override(ctx, &data, Some(guild_id));
     let kind = channel_type_to_string(thread.kind);
 
     let parent_channel_name = if let Some(parent_id) = thread.parent_id {
@@ -272,11 +285,12 @@ pub async fn thread_create(ctx: &serenity::Context, thread: &GuildChannel) -> Re
 
 pub async fn thread_update(
     ctx: &serenity::Context,
+    data: Arc<Data>,
     old: &Option<GuildChannel>,
     new: &GuildChannel,
 ) -> Result<(), Error> {
     let guild_id = new.guild_id;
-    let guild_name = get_guild_name(ctx, Some(guild_id));
+    let guild_name = get_guild_name_override(ctx, &data, Some(guild_id));
     let kind = channel_type_to_string(new.kind);
     let mut diff = String::new();
 
@@ -352,6 +366,7 @@ pub async fn thread_update(
 
 pub async fn thread_delete(
     ctx: &serenity::Context,
+    data: Arc<Data>,
     thread: &PartialGuildChannel,
     full_thread_data: &Option<GuildChannel>,
 ) -> Result<(), Error> {
@@ -359,7 +374,7 @@ pub async fn thread_delete(
     let mut channel_name = String::new();
     let mut parent_channel_name: String = String::new();
     let mut kind = String::new();
-    let guild_name = get_guild_name(ctx, Some(guild_id));
+    let guild_name = get_guild_name_override(ctx, &data, Some(guild_id));
 
     if let Some(full_thread) = full_thread_data {
         channel_name = full_thread.name.to_string();
