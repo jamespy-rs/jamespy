@@ -7,7 +7,7 @@ use crate::{Data, Error};
 use chrono::NaiveDateTime;
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
-    MessageUpdateEvent, RoleId, UserId,
+    MessageUpdateEvent, UserId,
 };
 use sqlx::query;
 
@@ -32,16 +32,39 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
 
     let mut author_string = msg.author.tag();
 
-    // TODO: stop hardcoding this and make this configurable in other means.
-    let blue = "\x1B[94m";
-    let reset = "\x1B[0m";
+    // TODO: make this configurable with whitelists and blacklists.
     if let Some(partial_member) = &msg.member {
-        if partial_member
-            .roles
-            .contains(&RoleId::new(98459030455853056))
-        {
-            author_string = format!("{blue}{author_string}{reset}");
+        let guild = msg.guild(&ctx.cache).unwrap();
+
+        let mut highest: Option<&serenity::Role> = None;
+
+        for role_id in &partial_member.roles {
+            if let Some(role) = guild.roles.get(role_id) {
+                // Skip this role if this role in iteration has:
+                // - a position less than the recorded highest
+                // - a position equal to the recorded, but a higher ID
+                if let Some(r) = highest {
+                    if role.position < r.position || (role.position == r.position && role.id > r.id)
+                    {
+                        continue;
+                    }
+                }
+
+                highest = Some(role);
+            }
         }
+
+        let mut prefix = String::new();
+        if let Some(hr) = highest {
+            let c = hr.colour;
+            if hr.colour.0 != 0 {
+                // This allocates but I don't care to fix it.
+                prefix = format!("\x1B[38;2;{};{};{}m", c.r(), c.g(), c.b());
+            }
+        }
+
+        let reset = "\x1B[0m";
+        author_string = format!("{prefix}{author_string}{reset}");
     }
 
     // TODO: fix this before working on the bot after rewrite.
