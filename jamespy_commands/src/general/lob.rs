@@ -76,12 +76,23 @@ pub async fn new_lob(
     #[rest]
     item: String,
 ) -> Result<(), Error> {
-    ctx.send(poise::CreateReply::default().content(format!(
-        "Added `{item}` to loblist!\nChanges will not be applied until bot restart or until \
-         reload-lob is called!"
-    )))
+
+
+    let lines = item.lines();
+    let count = item.lines().count();
+    let msg = if count > 1 {
+        // terrible code.
+        let lobs: String = lines.map(|line| format!("`{}`", line)).collect::<Vec<_>>().join("\n");
+        format!("Added {count} lobs:\n{lobs}")
+    } else {
+        format!("Added `{item}` to loblist!\n")
+    };
+
+    ctx.send(poise::CreateReply::default().content(msg))
     .await?;
+
     add_lob(item).await?;
+
     Ok(())
 }
 
@@ -135,7 +146,7 @@ pub async fn delete_lob(
 pub async fn total_lobs(ctx: Context<'_>) -> Result<(), Error> {
     let count = count_lob()?;
     ctx.send(
-        poise::CreateReply::default().content(format!("Currently, `{count}` lobs are stored.")),
+        poise::CreateReply::default().content(format!("Currently, `{}` lobs are stored.", count)),
     )
     .await?;
     Ok(())

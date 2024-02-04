@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::{helper::get_guild_name_override, Error};
 use poise::serenity_prelude::{self as serenity, VoiceState};
 
 pub async fn voice_state_update(
@@ -39,10 +39,7 @@ async fn handle_switch(
     let old_name = old_channel.name();
     let new_name = new_channel.name();
 
-    let guild_name = new_channel
-        .guild_id
-        .name(ctx)
-        .unwrap_or(String::from("Unknown"));
+    let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(new_channel.guild_id));
 
     let user_name = new.user_id.to_user(ctx).await?.tag();
 
@@ -66,10 +63,7 @@ async fn handle_leave(
     let old_channel = channel_id.to_channel(ctx).await?.guild().unwrap();
     let channel_name = old_channel.name();
 
-    let guild_name = old_channel
-        .guild_id
-        .name(ctx)
-        .unwrap_or(String::from("Unknown"));
+    let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(old_channel.guild_id));
 
     let user_name = new.user_id.to_user(ctx).await?.tag();
 
@@ -83,10 +77,7 @@ async fn handle_joins(ctx: &serenity::Context, new: &VoiceState) -> Result<(), E
     let channel = channel_id.to_channel(ctx).await?.guild().unwrap();
     let channel_name = channel.name();
 
-    let guild_name = channel
-        .guild_id
-        .name(ctx)
-        .unwrap_or(String::from("Unknown"));
+    let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(channel.guild_id));
 
     let user_name = new.user_id.to_user(ctx).await?.tag();
 

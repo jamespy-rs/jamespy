@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use crate::helper::{get_channel_name, get_guild_name_override};
+use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
 use crate::{Data, Error};
 
 use chrono::NaiveDateTime;
@@ -23,7 +23,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     let channel_name = get_channel_name(ctx, guild_id, msg.channel_id).await;
 
     if let Some(patterns) = config.regex {
-        check_event_dm_regex(ctx, msg, &guild_name, &patterns).await?;
+        check_event_dm_regex(ctx, msg, &get_guild_name(ctx, guild_id), &patterns).await?;
     };
 
     handle_dm(ctx, msg).await?;
