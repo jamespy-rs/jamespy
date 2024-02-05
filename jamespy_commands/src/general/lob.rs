@@ -32,7 +32,6 @@ pub async fn lob(ctx: Context<'_>) -> Result<(), Error> {
     ),
     prefix_command,
     category = "Utility",
-    global_cooldown = "5",
     check = "trontin",
     hide_in_help
 )]
@@ -51,7 +50,6 @@ pub async fn reload_lob(ctx: Context<'_>) -> Result<(), Error> {
     aliases("unloadlob", "unload_lob"),
     prefix_command,
     category = "Utility",
-    global_cooldown = "5",
     check = "trontin",
     hide_in_help
 )]
@@ -66,7 +64,6 @@ pub async fn no_lob(ctx: Context<'_>) -> Result<(), Error> {
     aliases("addlob", "add_lob"),
     prefix_command,
     category = "Utility",
-    global_cooldown = "5",
     hide_in_help,
     check = "trontin"
 )]
@@ -101,7 +98,6 @@ pub async fn new_lob(
     aliases("removelob", "remove_lob"),
     prefix_command,
     category = "Utility",
-    global_cooldown = "5",
     hide_in_help,
     check = "trontin"
 )]
@@ -139,7 +135,6 @@ pub async fn delete_lob(
     ),
     prefix_command,
     category = "Utility",
-    user_cooldown = "5",
     hide_in_help,
     check = "trontin"
 )]
@@ -157,7 +152,6 @@ pub async fn total_lobs(ctx: Context<'_>) -> Result<(), Error> {
     aliases("sendlobs", "send_lobs", "upload-lobs", "uploadlobs", "upload_lobs"),
     prefix_command,
     category = "Utility",
-    user_cooldown = "5",
     hide_in_help,
     check = "trontin"
 )]
