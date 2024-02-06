@@ -6,7 +6,7 @@ use poise::serenity_prelude::{
     GuildId, PermissionOverwriteType, Permissions, SortOrder,
 };
 
-// Helper function for getting the guild name even if ID is a None variant.
+// Helper function for getting the guild name override or guild name even if None.
 pub fn get_guild_name_override(
     ctx: &serenity::Context,
     data: &Arc<Data>,

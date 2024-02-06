@@ -8,7 +8,7 @@ use poise::serenity_prelude::{
 
 use small_fixed_array::FixedString;
 
-use crate::{Data, Error};
+use crate::{helper::get_guild_name_override, Data, Error};
 
 pub async fn guild_member_update(
     ctx: &serenity::Context,
@@ -18,14 +18,7 @@ pub async fn guild_member_update(
     data: Arc<Data>,
 ) -> Result<(), Error> {
     let guild_id = event.guild_id;
-    let guild_name = if guild_id == 1 {
-        "None".to_owned()
-    } else {
-        match guild_id.name(ctx.clone()) {
-            Some(name) => name,
-            None => "Unknown".to_owned(),
-        }
-    };
+    let guild_name = get_guild_name_override(ctx, &data, Some(guild_id));
 
     if let Some(old_member) = old_if_available {
         if let Some(new_member) = new {
