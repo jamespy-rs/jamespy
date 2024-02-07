@@ -73,20 +73,20 @@ pub async fn new_lob(
     #[rest]
     item: String,
 ) -> Result<(), Error> {
-
-
     let lines = item.lines();
     let count = item.lines().count();
     let msg = if count > 1 {
         // terrible code.
-        let lobs: String = lines.map(|line| format!("`{}`", line)).collect::<Vec<_>>().join("\n");
+        let lobs: String = lines
+            .map(|line| format!("`{}`", line))
+            .collect::<Vec<_>>()
+            .join("\n");
         format!("Added {count} lobs:\n{lobs}")
     } else {
         format!("Added `{item}` to loblist!\n")
     };
 
-    ctx.send(poise::CreateReply::default().content(msg))
-    .await?;
+    ctx.send(poise::CreateReply::default().content(msg)).await?;
 
     add_lob(item).await?;
 

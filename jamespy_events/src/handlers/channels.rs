@@ -586,27 +586,24 @@ async fn send_msgs(
         format!("<@{user_id}>")
     };
 
+    let mentions = serenity::CreateAllowedMentions::new()
+        .all_users(false)
+        .everyone(false)
+        .all_roles(false);
+
+    let msg = serenity::CreateMessage::default()
+        .content(&content)
+        .embed(embed)
+        .allowed_mentions(mentions);
+
     if blacklisted {
         if let Some(announce) = announce {
-            announce
-                .send_message(
-                    ctx,
-                    serenity::CreateMessage::default()
-                        .content(&content)
-                        .embed(embed.clone()),
-                )
-                .await?;
+            announce.send_message(ctx, msg.clone()).await?;
         }
     }
 
     if let Some(post) = post {
-        post.send_message(
-            ctx,
-            serenity::CreateMessage::default()
-                .content(&content)
-                .embed(embed),
-        )
-        .await?;
+        post.send_message(ctx, msg).await?;
     }
 
     Ok(())
