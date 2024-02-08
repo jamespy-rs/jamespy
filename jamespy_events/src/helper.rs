@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use poise::serenity_prelude::{
     self as serenity, AutoArchiveDuration, ChannelId, ChannelType, Context, ForumLayoutType,
-    GuildId, PermissionOverwriteType, Permissions, SortOrder,
+    GuildId, PermissionOverwrite, PermissionOverwriteType, Permissions, SortOrder,
 };
 
 // Helper function for getting the guild name override or guild name even if None.
@@ -219,6 +219,58 @@ pub fn get_permission_changes_detail(old: Permissions, new: Permissions, allow: 
         for perm in &removed_perms {
             changes_str.push_str(&format!("{removed_color}- {perm}\n\x1B[0m"));
         }
+    }
+
+    changes_str
+}
+
+pub async fn overwrite_removal(
+    ctx: &Context,
+    guild_id: GuildId,
+    overwrite: &PermissionOverwrite,
+) -> String {
+    let name = match overwrite.kind {
+        PermissionOverwriteType::Member(user_id) => match user_id.to_user(ctx).await {
+            Ok(user) => user.tag(),
+            Err(_) => String::from("Unknown User"),
+        },
+        PermissionOverwriteType::Role(role_id) => ctx
+            .cache
+            .guild(guild_id)
+            .unwrap()
+            .roles
+            .get(&role_id)
+            .map_or_else(|| "Unknown Role".to_string(), |role| role.name.to_string()),
+        _ => String::from("Unknown"),
+    };
+
+    let mut changes_str = String::new();
+    let kind_string = overwrite_to_string(overwrite.kind);
+    changes_str.push_str(&format!(
+        "Permission override for {name} ({kind_string}) was removed!\n"
+    ));
+
+    let added_color = "\x1B[92m";
+    let removed_color = "\x1B[31m";
+
+    let mut allowed_str = String::new();
+    let mut denied_str = String::new();
+    for allowed in overwrite.allow {
+        allowed_str.push_str(&format!("{added_color}+ {allowed}\n\x1B[0m"));
+    }
+
+    for denied in overwrite.deny {
+        denied_str.push_str(&format!("{removed_color}+ {denied}\n\x1B[0m"));
+    }
+
+    if !allowed_str.is_empty() {
+        changes_str.push_str("allowed:\n");
+        changes_str.push_str(&allowed_str.to_string());
+    }
+
+    if !denied_str.is_empty() {
+        changes_str.push_str("denied:\n");
+        changes_str.push_str(&denied_str.to_string());
     }
 
     changes_str

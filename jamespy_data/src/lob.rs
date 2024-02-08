@@ -104,12 +104,7 @@ pub fn count_lob() -> Result<usize, Error> {
     let file = File::open("config/lists/loblist.txt")?;
     let reader = BufReader::new(file);
 
-    let mut count = 0;
-    for _ in reader.lines() {
-        count += 1;
-    }
-
-    Ok(count)
+    Ok(reader.lines().count())
 }
 
 // A check for Trash, so he can refresh the loblist. Includes me because, well I'm me.

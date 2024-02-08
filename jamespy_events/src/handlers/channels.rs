@@ -1,6 +1,6 @@
 use crate::helper::{
     auto_archive_duration_to_string, channel_type_to_string, forum_layout_to_string,
-    get_guild_name_override, get_permission_changes, sort_order_to_string,
+    get_guild_name_override, get_permission_changes, overwrite_removal, sort_order_to_string,
 };
 
 use crate::{Data, Error};
@@ -85,6 +85,7 @@ pub async fn channel_update(
         // TODO: show if permission overrides have been removed.
         if old.permission_overwrites != new.permission_overwrites {
             for old_overwrite in &old.permission_overwrites {
+                let mut overwrite_found = false;
                 for new_overwrite in &new.permission_overwrites {
                     if old_overwrite.kind == new_overwrite.kind {
                         let changes_str = get_permission_changes(
@@ -98,11 +99,16 @@ pub async fn channel_update(
                         )
                         .await;
                         diff.push_str(&changes_str);
+                        overwrite_found = true;
                     }
+                }
+
+                if !overwrite_found {
+                    let change = overwrite_removal(ctx, new.guild_id, old_overwrite).await;
+                    diff.push_str(&change);
                 }
             }
         }
-
         // If both the old and new topic are the same, it shouldn't print.
         match (&old.topic, &new.topic) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
