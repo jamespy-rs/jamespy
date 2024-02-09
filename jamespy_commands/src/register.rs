@@ -177,7 +177,9 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
                 ":gear: Registering {num_owner} spy guild commands...",
             ))
             .await?;
-            guild_id.set_commands(ctx.http(), &create_commands.1).await?;
+            guild_id
+                .set_commands(ctx.http(), &create_commands.1)
+                .await?;
         } else {
             ctx.say(":gear: Unregistering spy guild commands...")
                 .await?;

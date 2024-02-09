@@ -165,13 +165,12 @@ pub async fn guild_audit_log_entry_create(
     if let Some(id) = check_contents {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-
         let mut status = format!(
             "Unknown (check #{})",
             ChannelId::new(id)
-            .name(&ctx)
-            .await
-            .unwrap_or("Unknown".to_string())
+                .name(&ctx)
+                .await
+                .unwrap_or("Unknown".to_string())
         )
         .to_string();
 
@@ -193,7 +192,6 @@ pub async fn guild_audit_log_entry_create(
                     }
                 }
             }
-
         };
 
         let author_title = format!("{user_name} tried to set an inappropriate status");

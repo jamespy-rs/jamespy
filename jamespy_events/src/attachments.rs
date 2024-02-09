@@ -1,9 +1,9 @@
 use crate::{helper::get_guild_name, Data, Error};
+use ::serenity::http::CacheHttp;
 use poise::serenity_prelude::{
     self as serenity, Attachment, CreateAttachment, CreateButton,
     CreateInteractionResponseFollowup, Message,
 };
-use ::serenity::http::CacheHttp;
 use small_fixed_array::FixedString;
 use std::fmt::Write;
 
