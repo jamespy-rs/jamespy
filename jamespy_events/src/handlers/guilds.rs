@@ -165,36 +165,35 @@ pub async fn guild_audit_log_entry_create(
     if let Some(id) = check_contents {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
-        let cloned_messages = ctx.cache.channel_messages(id.into()).map(|c| c.clone());
 
         let mut status = format!(
             "Unknown (check #{})",
             ChannelId::new(id)
-                .name(&ctx)
-                .await
-                .unwrap_or("Unknown".to_string())
+            .name(&ctx)
+            .await
+            .unwrap_or("Unknown".to_string())
         )
         .to_string();
 
-        // its rather expensive to iterate and sort upwards of 350 messages.
-        // so i'll fix it later.
-        // alongside the horrible usage of indents.
-        if let Some(msg_clones) = cloned_messages {
-            let mut sorted_msgs: Vec<_> = msg_clones.into_iter().collect();
-            sorted_msgs.sort_by(|a, b| b.0.cmp(&a.0));
+        // TODO: fix silly.
+        {
+            let msgs = ctx.cache.channel_messages(id.into());
 
-            for msg in sorted_msgs {
-                if msg.1.author.id == entry.user_id {
-                    if let Some(kind) = &msg.1.embeds.first().and_then(|e| e.kind.clone()) {
-                        if kind == "auto_moderation_message" {
-                            if let Some(description) = &msg.1.embeds[0].description {
-                                status = description.to_string();
-                                break;
+            if let Some(msgs) = msgs {
+                for msg in msgs.iter().rev() {
+                    if msg.author.id == entry.user_id {
+                        if let Some(kind) = &msg.embeds.first().and_then(|e| e.kind.clone()) {
+                            if kind == "auto_moderation_message" {
+                                if let Some(description) = &msg.embeds[0].description {
+                                    status = description.to_string();
+                                    break;
+                                }
                             }
                         }
                     }
                 }
             }
+
         };
 
         let author_title = format!("{user_name} tried to set an inappropriate status");

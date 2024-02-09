@@ -82,7 +82,6 @@ pub async fn channel_update(
             _ => {}
         }
 
-        // TODO: show if permission overrides have been removed.
         if old.permission_overwrites != new.permission_overwrites {
             for old_overwrite in &old.permission_overwrites {
                 let mut overwrite_found = false;
@@ -473,7 +472,7 @@ pub async fn add(
     tokio::time::sleep(Duration::from_secs(2)).await;
     let logs = guild_id
         .audit_logs(
-            &ctx,
+            &ctx.http,
             Some(VoiceChannelStatus(VoiceChannelStatusAction::StatusUpdate)),
             None,
             None,

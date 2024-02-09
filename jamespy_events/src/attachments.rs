@@ -3,6 +3,7 @@ use poise::serenity_prelude::{
     self as serenity, Attachment, CreateAttachment, CreateButton,
     CreateInteractionResponseFollowup, Message,
 };
+use ::serenity::http::CacheHttp;
 use small_fixed_array::FixedString;
 use std::fmt::Write;
 
@@ -196,7 +197,7 @@ async fn announce_deleted_spy(
 
     let mut msg = hook.channel_id.unwrap().send_message(ctx, message).await?;
 
-    while let Some(press) = serenity::ComponentInteractionCollector::new(ctx)
+    while let Some(press) = serenity::ComponentInteractionCollector::new(ctx.shard.clone())
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
         .timeout(std::time::Duration::from_secs(3600)) // 1 hour.
         .await
@@ -205,7 +206,7 @@ async fn announce_deleted_spy(
             if *id.0 == press.data.custom_id {
                 let file = files.get(id.1).unwrap();
 
-                press.defer(ctx).await?;
+                press.defer(ctx.http()).await?;
 
                 let bytes = match std::fs::read(&file.location) {
                     Ok(bytes) => bytes,
@@ -217,7 +218,7 @@ async fn announce_deleted_spy(
 
                 press
                     .create_followup(
-                        ctx,
+                        ctx.http(),
                         CreateInteractionResponseFollowup::new()
                             .files(vec![CreateAttachment::bytes(bytes, file.file_name.clone())]),
                     )

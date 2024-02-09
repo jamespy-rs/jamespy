@@ -1,6 +1,6 @@
 use ::serenity::gateway::ChunkGuildFilter;
 use poise::serenity_prelude::{
-    self as serenity, Attachment, ChannelId, Message, MessageId, ReactionType, StickerId, UserId,
+    self as serenity, Attachment, ChannelId, Message, ReactionType, StickerId, UserId,
 };
 
 use crate::{Context, Error};
@@ -50,6 +50,8 @@ pub async fn say_slash(
     #[description = "Allow roles?"] allow_roles: Option<bool>,
     #[description = "Allow users?"] allow_users: Option<bool>,
 ) -> Result<(), Error> {
+    ctx.defer().await?;
+
     let mut am = serenity::CreateAllowedMentions::new()
         .all_roles(true)
         .all_users(true)
@@ -130,17 +132,14 @@ pub async fn dm(
 #[poise::command(prefix_command, hide_in_help, owners_only)]
 pub async fn react(
     ctx: Context<'_>,
-    #[description = "Channel where the message is"] channel_id: ChannelId,
-    #[description = "Message to react to"] message_id: MessageId,
+    #[description = "Message to react to"] message: Message,
     #[description = "What to React with"] string: String,
 ) -> Result<(), Error> {
-    let message = channel_id.message(&ctx.http(), message_id).await?;
-
+    // dumb stuff to get around discord stupidly attempting to strip the parsing.
     let trimmed_string = string.trim_matches('`').trim_matches('\\').to_string();
-
     // React to the message with the specified emoji
     let reaction = trimmed_string.parse::<ReactionType>().unwrap(); // You may want to handle parsing errors
-    message.react(&ctx.http(), reaction).await?;
+    message.react(ctx, reaction).await?;
 
     Ok(())
 }
@@ -176,7 +175,28 @@ async fn chunk_guild_members(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn commands() -> [crate::Command; 6] {
+#[poise::command(
+    rename = "fw-commands",
+    prefix_command,
+    owners_only,
+    hide_in_help,
+    guild_only
+)]
+async fn fw_commands(ctx: Context<'_>) -> Result<(), Error> {
+    let commands = &ctx.framework().options.commands;
+
+    for command in commands {
+        if command.aliases.is_empty() {
+            println!("{}", command.name)
+        } else {
+            println!("{}: {:?}", command.name, command.aliases)
+        }
+    }
+
+    Ok(())
+}
+
+pub fn commands() -> [crate::Command; 7] {
     let say = poise::Command {
         slash_action: say_slash().slash_action,
         parameters: say_slash().parameters,
@@ -190,5 +210,6 @@ pub fn commands() -> [crate::Command; 6] {
         react(),
         malloc_trim(),
         chunk_guild_members(),
+        fw_commands(),
     ]
 }

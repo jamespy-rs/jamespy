@@ -33,7 +33,7 @@ pub async fn guild_message_cache_builder<U: Send + Sync + 'static, E>(
         )
         .await?;
 
-    while let Some(press) = ComponentInteractionCollector::new(ctx)
+    while let Some(press) = ComponentInteractionCollector::new(ctx.serenity_context().shard.clone())
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
         .timeout(std::time::Duration::from_secs(60))
         .await
@@ -51,7 +51,7 @@ pub async fn guild_message_cache_builder<U: Send + Sync + 'static, E>(
 
         press
             .create_response(
-                ctx.serenity_context(),
+                ctx.http(),
                 CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::default().embed(
                         serenity::CreateEmbed::default()
@@ -105,7 +105,7 @@ pub async fn presence_builder<U: Send + Sync + 'static, E>(
         )
         .await?;
 
-    while let Some(press) = ComponentInteractionCollector::new(ctx)
+    while let Some(press) = ComponentInteractionCollector::new(ctx.serenity_context().shard.clone())
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
         .timeout(std::time::Duration::from_secs(180))
         .await
@@ -123,7 +123,7 @@ pub async fn presence_builder<U: Send + Sync + 'static, E>(
 
         press
             .create_response(
-                sctx,
+                &sctx.http,
                 CreateInteractionResponse::UpdateMessage(
                     serenity::CreateInteractionResponseMessage::default()
                         .embed(create_presence_embed(current_page, &footer, &pages)),

@@ -29,7 +29,7 @@ pub fn get_guild_name_override(
 // Helper function for getting the guild name even if ID is a None variant.
 pub fn get_guild_name(ctx: &serenity::Context, guild_id: Option<GuildId>) -> String {
     if let Some(id) = guild_id {
-        match id.name(ctx) {
+        match id.name(&ctx.cache) {
             Some(name) => name,
             None => "Unknown".to_owned(),
         }
@@ -91,8 +91,7 @@ pub fn channel_type_to_string(channel_type: ChannelType) -> String {
         ChannelType::Stage => String::from("Stage"),
         ChannelType::Directory => String::from("Directory"),
         ChannelType::Forum => String::from("Forum"),
-        ChannelType::Unknown(u) => format!("Unknown({u})"),
-        _ => String::from("?"),
+        _ => format!("Unknown({}", channel_type.0),
     }
 }
 
@@ -111,8 +110,7 @@ pub fn auto_archive_duration_to_string(duration: AutoArchiveDuration) -> String 
         AutoArchiveDuration::OneDay => String::from("1 day"),
         AutoArchiveDuration::ThreeDays => String::from("3 days"),
         AutoArchiveDuration::OneWeek => String::from("1 week"),
-        AutoArchiveDuration::Unknown(u) => format!("Unknown({u})"),
-        _ => String::from("?"),
+        _ => format!("Unknown({}", duration.0),
     }
 }
 
@@ -121,8 +119,7 @@ pub fn forum_layout_to_string(layout_type: ForumLayoutType) -> String {
         ForumLayoutType::NotSet => String::from("Not Set"),
         ForumLayoutType::ListView => String::from("List View"),
         ForumLayoutType::GalleryView => String::from("Gallery View"),
-        ForumLayoutType::Unknown(u) => format!("Unknown({u})"),
-        _ => String::from("?"),
+        _ => format!("Unknown({}", layout_type.0),
     }
 }
 
@@ -130,8 +127,7 @@ pub fn sort_order_to_string(sort_order: SortOrder) -> String {
     match sort_order {
         SortOrder::LatestActivity => String::from("Latest Activity"),
         SortOrder::CreationDate => String::from("Creation Date"),
-        SortOrder::Unknown(u) => format!("Unknown({u})"),
-        _ => String::from("?"),
+        _ => format!("Unknown({}", sort_order.0),
     }
 }
 

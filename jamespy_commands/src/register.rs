@@ -116,7 +116,7 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
     let interaction = reply
         .message()
         .await?
-        .await_component_interaction(ctx)
+        .await_component_interaction(ctx.serenity_context().shard.clone())
         .author_id(ctx.author().id)
         .await;
 
@@ -158,10 +158,10 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
                 ":gear: Registering {num_commands} global commands...",
             ))
             .await?;
-            serenity::Command::set_global_commands(ctx, &create_commands.0).await?;
+            serenity::Command::set_global_commands(ctx.http(), &create_commands.0).await?;
         } else {
             ctx.say(":gear: Unregistering global commands...").await?;
-            serenity::Command::set_global_commands(ctx, &[]).await?;
+            serenity::Command::set_global_commands(ctx.http(), &[]).await?;
         }
     } else {
         let guild_id = match guild_id {
@@ -177,11 +177,11 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
                 ":gear: Registering {num_owner} spy guild commands...",
             ))
             .await?;
-            guild_id.set_commands(ctx, &create_commands.1).await?;
+            guild_id.set_commands(ctx.http(), &create_commands.1).await?;
         } else {
             ctx.say(":gear: Unregistering spy guild commands...")
                 .await?;
-            guild_id.set_commands(ctx, &[]).await?;
+            guild_id.set_commands(ctx.http(), &[]).await?;
         }
     }
 
