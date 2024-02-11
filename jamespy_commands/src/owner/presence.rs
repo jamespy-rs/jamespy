@@ -1,6 +1,6 @@
 use poise::serenity_prelude::{ActivityData, ActivityType};
 
-use crate::{Context, Error};
+use crate::{owner::owner, Context, Error};
 
 use small_fixed_array::FixedString;
 
@@ -17,7 +17,7 @@ pub enum OnlineStatus {
 #[poise::command(
     prefix_command,
     category = "Management",
-    owners_only,
+    check = "owner",
     track_edits,
     hide_in_help
 )]
@@ -53,7 +53,7 @@ pub async fn status(
     rename = "reset-presence",
     prefix_command,
     category = "Management",
-    owners_only,
+    check = "owner",
     hide_in_help
 )]
 pub async fn reset_presence(ctx: Context<'_>) -> Result<(), Error> {
@@ -67,7 +67,7 @@ pub async fn reset_presence(ctx: Context<'_>) -> Result<(), Error> {
     rename = "set-activity",
     prefix_command,
     category = "Management",
-    owners_only,
+    check = "owner",
     track_edits,
     hide_in_help
 )]

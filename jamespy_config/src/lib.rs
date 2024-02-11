@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use poise::serenity_prelude::{ChannelId, GuildId};
+use poise::serenity_prelude::{ChannelId, GuildId, UserId};
 
 mod serialize;
 use serialize::*;
@@ -12,6 +12,8 @@ use serialize::*;
 pub struct JamespyConfig {
     // configuration for the event handler.
     pub events: Events,
+    // Extra checks for commands to execute.
+    pub command_checks: Option<Checks>,
     // Tracking for osu!game, harshly hardcoded.
     pub vcstatus: VCStatus,
     // Having a dedicated guild for managing the deployment of jamespy.
@@ -20,11 +22,30 @@ pub struct JamespyConfig {
     pub attachment_store: Option<Attachments>,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Checks {
+    // Users under  this will have access to all owner commands.
+    pub owners_all: HashSet<UserId>,
+    pub owners_single: HashMap<String, HashSet<UserId>>,
+}
+
+impl Checks {
+    pub fn new() -> Self {
+        Checks {
+            owners_all: HashSet::new(),
+            owners_single: HashMap::new(),
+        }
+    }
+}
+
+impl Default for Checks {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl JamespyConfig {
     pub fn new() -> Self {
-        let mut map = HashMap::new();
-        map.insert(GuildId::new(1), "Yes".to_string());
-
         JamespyConfig {
             events: Events {
                 no_log_channels: None,
@@ -32,7 +53,7 @@ impl JamespyConfig {
                 regex: None,
                 badlist: None,
                 fixlist: None,
-                guild_name_override: Some(map),
+                guild_name_override: None,
             },
             vcstatus: VCStatus {
                 action: false,
@@ -49,6 +70,7 @@ impl JamespyConfig {
                 soft_limit: Some(9000),
                 hard_limit: Some(10000),
             }),
+            command_checks: None,
         }
     }
 

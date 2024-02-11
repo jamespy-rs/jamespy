@@ -1,4 +1,4 @@
-use crate::{Context, Error};
+use crate::{owner::owner, Context, Error};
 
 use poise::serenity_prelude as serenity;
 
@@ -7,7 +7,7 @@ use poise::serenity_prelude as serenity;
     rename = "max-messages",
     prefix_command,
     category = "Cache",
-    owners_only,
+    check = "owner",
     hide_in_help
 )]
 pub async fn max_messages(
@@ -37,7 +37,7 @@ pub async fn max_messages(
     prefix_command,
     category = "Cache",
     hide_in_help,
-    owners_only,
+    check = "owner",
     guild_only
 )]
 pub async fn guild_cache_stats(ctx: Context<'_>) -> Result<(), Error> {

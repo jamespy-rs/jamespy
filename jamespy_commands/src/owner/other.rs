@@ -3,7 +3,7 @@ use poise::serenity_prelude::{
     self as serenity, Attachment, ChannelId, Message, ReactionType, StickerId, UserId,
 };
 
-use crate::{Context, Error};
+use crate::{owner::owner, Context, Error};
 
 #[poise::command(prefix_command, aliases("kys"), owners_only, hide_in_help)]
 pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
@@ -14,7 +14,7 @@ pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 /// Say something!
-#[poise::command(prefix_command, hide_in_help, owners_only, category = "Owner - Say")]
+#[poise::command(prefix_command, hide_in_help, check = "owner", category = "Owner - Say")]
 pub async fn say(
     ctx: Context<'_>,
     #[description = "Channel where the message will be sent"] channel: Option<ChannelId>,
@@ -35,7 +35,7 @@ pub async fn say(
 ///
 /// Allowed mentions by default are set to true.
 #[allow(clippy::too_many_arguments)]
-#[poise::command(slash_command, hide_in_help, owners_only, category = "Owner - Say")]
+#[poise::command(slash_command, hide_in_help, check = "owner", category = "Owner - Say")]
 pub async fn say_slash(
     ctx: Context<'_>,
     // Have to manually parse this because discord guild command.
@@ -113,7 +113,7 @@ pub async fn say_slash(
 }
 
 /// dm a user!
-#[poise::command(prefix_command, hide_in_help, owners_only)]
+#[poise::command(prefix_command, hide_in_help, check = "owner",)]
 pub async fn dm(
     ctx: Context<'_>,
     #[description = "ID"] user_id: UserId,
@@ -129,7 +129,7 @@ pub async fn dm(
 }
 
 /// React to a message with a specific reaction!
-#[poise::command(prefix_command, hide_in_help, owners_only)]
+#[poise::command(prefix_command, hide_in_help, check = "owner",)]
 pub async fn react(
     ctx: Context<'_>,
     #[description = "Message to react to"] message: Message,
@@ -160,7 +160,7 @@ async fn malloc_trim(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     rename = "chunk-guild-members",
     prefix_command,
-    owners_only,
+    check = "owner",
     hide_in_help,
     guild_only
 )]
@@ -178,7 +178,7 @@ async fn chunk_guild_members(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     rename = "fw-commands",
     prefix_command,
-    owners_only,
+    check = "owner",
     hide_in_help,
     guild_only
 )]

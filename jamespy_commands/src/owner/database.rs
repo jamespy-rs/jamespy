@@ -1,4 +1,4 @@
-use crate::{Context, Error};
+use crate::{owner::owner, Context, Error};
 use poise::serenity_prelude::{self as serenity, CreateEmbedFooter};
 use sqlx::{query, Row};
 
@@ -7,7 +7,7 @@ use sqlx::{query, Row};
     aliases("db-stats", "db-info"),
     prefix_command,
     category = "Database",
-    owners_only,
+    check = "owner",
     hide_in_help
 )]
 pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
