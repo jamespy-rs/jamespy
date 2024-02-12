@@ -39,7 +39,7 @@ pub async fn allow_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> 
     hide_in_help,
     owners_only
 )]
-pub async fn deny_owner_cmd(ctx: Context<'_>, cmd_name: String, user: User) -> Result<(), Error> {
+pub async fn deny_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> Result<(), Error> {
     let statement = match handle_deny_cmd(
         &ctx.framework().options.commands,
         ctx.data(),
