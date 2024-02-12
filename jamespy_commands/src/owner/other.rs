@@ -14,7 +14,12 @@ pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 /// Say something!
-#[poise::command(prefix_command, hide_in_help, check = "owner", category = "Owner - Say")]
+#[poise::command(
+    prefix_command,
+    hide_in_help,
+    check = "owner",
+    category = "Owner - Say"
+)]
 pub async fn say(
     ctx: Context<'_>,
     #[description = "Channel where the message will be sent"] channel: Option<ChannelId>,
@@ -113,7 +118,7 @@ pub async fn say_slash(
 }
 
 /// dm a user!
-#[poise::command(prefix_command, hide_in_help, check = "owner",)]
+#[poise::command(prefix_command, hide_in_help, check = "owner")]
 pub async fn dm(
     ctx: Context<'_>,
     #[description = "ID"] user_id: UserId,
@@ -129,7 +134,7 @@ pub async fn dm(
 }
 
 /// React to a message with a specific reaction!
-#[poise::command(prefix_command, hide_in_help, check = "owner",)]
+#[poise::command(prefix_command, hide_in_help, check = "owner")]
 pub async fn react(
     ctx: Context<'_>,
     #[description = "Message to react to"] message: Message,

@@ -1,13 +1,8 @@
-use std::collections::HashSet;
 
 use crate::{Context, Error};
 
-use jamespy_config::Checks;
+use crate::utils::{handle_allow_cmd, handle_deny_cmd, CommandRestrictErr};
 use poise::serenity_prelude::User;
-
-// TODO: verify if the command is real.
-// TODO: check if they already had access.
-
 
 #[poise::command(
     rename = "allow-owner-cmd",
@@ -16,32 +11,23 @@ use poise::serenity_prelude::User;
     hide_in_help,
     owners_only
 )]
-pub async fn allow_owner_cmd(ctx: Context<'_>, cmd_name: String, user: User) -> Result<(), Error> {
-    {
-        let data = &ctx.data();
-        let mut config = data.config.write().unwrap();
-
-        // TODO: possibly make this actually good code.
-        if let Some(checks) = &mut config.command_checks {
-            let set = checks.owners_single.entry(cmd_name.clone()).or_default();
-            set.insert(user.id);
-        } else {
-            // Set checks to the new setup.
-            let mut checks = Checks::new();
-            let mut set = HashSet::new();
-            set.insert(user.id);
-            checks.owners_single.insert(cmd_name.clone(), set);
-            config.command_checks = Some(checks);
+pub async fn allow_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> Result<(), Error> {
+    let statement = match handle_allow_cmd(
+        &ctx.framework().options.commands,
+        ctx.data(),
+        cmd_name,
+        &user,
+    ) {
+        Ok(cmd) => format!("Successfully allowed {} to use `{}`!", user, cmd),
+        Err(err) => match err {
+            CommandRestrictErr::CommandNotFound => "Could not find command!",
+            CommandRestrictErr::AlreadyExists => "The user is already allowed to use this!",
+            _ => "", // This error is not used at this point.
         }
-
-        config.write_config();
+        .to_string(),
     };
 
-    ctx.say(format!(
-        "Successfully allowed <@{}> to use `{}`!",
-        user.id, cmd_name
-    ))
-    .await?;
+    ctx.say(statement).await?;
 
     Ok(())
 }
@@ -54,24 +40,23 @@ pub async fn allow_owner_cmd(ctx: Context<'_>, cmd_name: String, user: User) -> 
     owners_only
 )]
 pub async fn deny_owner_cmd(ctx: Context<'_>, cmd_name: String, user: User) -> Result<(), Error> {
-    {
-        let data = &ctx.data();
-        let mut config = data.config.write().unwrap();
-
-        // TODO: possibly make this actually good code.
-        if let Some(checks) = &mut config.command_checks {
-            let set = checks.owners_single.entry(cmd_name.clone()).or_default();
-            set.remove(&user.id);
+    let statement = match handle_deny_cmd(
+        &ctx.framework().options.commands,
+        ctx.data(),
+        cmd_name,
+        &user,
+    ) {
+        Ok(cmd) => format!("Successfully denied {} to use `{}`!", user, cmd),
+        Err(err) => match err {
+            CommandRestrictErr::CommandNotFound => "Could not find command!",
+            CommandRestrictErr::DoesntExist => "Cannot remove
+            permissions they don't have!",
+            _ => "", // This error is not used at this point.
         }
-
-        config.write_config();
+        .to_string(),
     };
 
-    ctx.say(format!(
-        "Successfully denied <@{}> to use `{}`!",
-        user.id, cmd_name
-    ))
-    .await?;
+    ctx.say(statement).await?;
 
     Ok(())
 }
