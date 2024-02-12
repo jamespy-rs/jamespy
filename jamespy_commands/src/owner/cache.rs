@@ -6,7 +6,7 @@ use poise::serenity_prelude as serenity;
 #[poise::command(
     rename = "max-messages",
     prefix_command,
-    category = "Cache",
+    category = "Owner - Cache",
     check = "owner",
     hide_in_help
 )]
@@ -35,7 +35,7 @@ pub async fn max_messages(
 #[poise::command(
     rename = "guild-cache-stats",
     prefix_command,
-    category = "Cache",
+    category = "Owner - Cache",
     hide_in_help,
     check = "owner",
     guild_only

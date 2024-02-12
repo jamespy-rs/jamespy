@@ -6,7 +6,7 @@ use sqlx::{query, Row};
     rename = "dbstats",
     aliases("db-stats", "db-info"),
     prefix_command,
-    category = "Database",
+    category = "Owner - Database",
     check = "owner",
     hide_in_help
 )]
@@ -45,7 +45,7 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     rename = "sql",
     prefix_command,
-    category = "Database",
+    category = "Owner - Database",
     owners_only,
     hide_in_help
 )]

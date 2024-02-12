@@ -16,8 +16,8 @@ pub enum OnlineStatus {
 
 #[poise::command(
     prefix_command,
-    category = "Management",
     check = "owner",
+    category = "Owner - Presence",
     track_edits,
     hide_in_help
 )]
@@ -52,7 +52,7 @@ pub async fn status(
 #[poise::command(
     rename = "reset-presence",
     prefix_command,
-    category = "Management",
+    category = "Owner - Presence",
     check = "owner",
     hide_in_help
 )]
@@ -66,7 +66,7 @@ pub async fn reset_presence(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     rename = "set-activity",
     prefix_command,
-    category = "Management",
+    category = "Owner - Presence",
     check = "owner",
     track_edits,
     hide_in_help

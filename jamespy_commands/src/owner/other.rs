@@ -5,7 +5,7 @@ use poise::serenity_prelude::{
 
 use crate::{owner::owner, Context, Error};
 
-#[poise::command(prefix_command, aliases("kys"), owners_only, hide_in_help)]
+#[poise::command(prefix_command, aliases("kys"), category = "Owner", owners_only, hide_in_help)]
 pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say("**Bailing out, you are on your own. Good luck.**")
         .await?;
@@ -118,7 +118,7 @@ pub async fn say_slash(
 }
 
 /// dm a user!
-#[poise::command(prefix_command, hide_in_help, check = "owner")]
+#[poise::command(prefix_command, hide_in_help, category = "Owner - Say" ,check = "owner")]
 pub async fn dm(
     ctx: Context<'_>,
     #[description = "ID"] user_id: UserId,
@@ -134,7 +134,7 @@ pub async fn dm(
 }
 
 /// React to a message with a specific reaction!
-#[poise::command(prefix_command, hide_in_help, check = "owner")]
+#[poise::command(prefix_command, hide_in_help, category = "Owner - Messages",check = "owner")]
 pub async fn react(
     ctx: Context<'_>,
     #[description = "Message to react to"] message: Message,
@@ -150,7 +150,7 @@ pub async fn react(
 }
 
 // This halfs the memory usage at startup, not sure about other cases.
-#[poise::command(prefix_command, owners_only, hide_in_help)]
+#[poise::command(prefix_command, category = "Owner", owners_only, hide_in_help)]
 async fn malloc_trim(ctx: Context<'_>) -> Result<(), Error> {
     unsafe {
         libc::malloc_trim(0);
@@ -166,6 +166,7 @@ async fn malloc_trim(ctx: Context<'_>) -> Result<(), Error> {
     rename = "chunk-guild-members",
     prefix_command,
     check = "owner",
+    category = "Owner - Cache",
     hide_in_help,
     guild_only
 )]
@@ -184,6 +185,7 @@ async fn chunk_guild_members(ctx: Context<'_>) -> Result<(), Error> {
     rename = "fw-commands",
     prefix_command,
     check = "owner",
+    category = "Owner - Commands",
     hide_in_help,
     guild_only
 )]

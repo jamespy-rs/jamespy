@@ -11,6 +11,7 @@ use poise::serenity_prelude::{self as serenity, User};
     aliases("aoc"),
     prefix_command,
     hide_in_help,
+    category = "Owner - Overrides",
     owners_only
 )]
 pub async fn allow_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> Result<(), Error> {
@@ -42,6 +43,7 @@ pub async fn allow_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> 
     rename = "deny-owner-cmd",
     aliases("doc"),
     prefix_command,
+    category = "Owner - Overrides",
     hide_in_help,
     owners_only
 )]
@@ -78,6 +80,7 @@ pub async fn deny_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> R
     aliases("oo"),
     prefix_command,
     hide_in_help,
+    category = "Owner - Overrides",
     owners_only,
     subcommands("user", "cmd"),
     subcommand_required
@@ -225,7 +228,7 @@ pub async fn cmd_overrides(ctx: Context<'_>, cmd_name: &str) -> Result<(), Error
     Ok(())
 }
 
-#[poise::command(aliases("ao"), prefix_command, hide_in_help, owners_only)]
+#[poise::command(aliases("ao"), prefix_command, category = "Owner - Overrides", hide_in_help, owners_only)]
 pub async fn allow_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
     let statement = match handle_allow_owner(ctx, user.clone()) {
         Ok(_) => format!("Successfully allowed {user} to use owner commands!"),
@@ -259,7 +262,7 @@ fn handle_allow_owner(ctx: Context<'_>, user: User) -> Result<(), CommandRestric
     Ok(())
 }
 
-#[poise::command(aliases("do"), prefix_command, hide_in_help, owners_only)]
+#[poise::command(aliases("do"), prefix_command,category = "Owner - Overrides", hide_in_help, owners_only)]
 pub async fn deny_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
     let statement = match handle_deny_owner(ctx, user.clone()) {
         Ok(_) => format!("Successfully allowed {user} to use owner commands!"),
