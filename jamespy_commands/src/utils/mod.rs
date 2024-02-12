@@ -1,7 +1,5 @@
-pub mod pagination;
 pub mod checks;
+pub mod pagination;
 
-pub use pagination::*;
 pub use checks::*;
-
-
+pub use pagination::*;

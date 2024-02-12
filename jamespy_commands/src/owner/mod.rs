@@ -7,6 +7,9 @@ pub mod spy_guild;
 
 use crate::{Context, Error};
 
+/// ALL owner commands should have a category that starts with owner.
+/// Well, not all, only ones that are intended to be given out to trusted users.
+
 pub fn commands() -> Vec<crate::Command> {
     {
         cache::commands()
