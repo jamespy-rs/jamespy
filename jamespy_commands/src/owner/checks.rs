@@ -1,4 +1,5 @@
 use crate::{Context, Error};
+use std::fmt::Write;
 
 use crate::utils::{get_cmd_name, handle_allow_cmd, handle_deny_cmd, CommandRestrictErr};
 use jamespy_config::Checks;
@@ -118,7 +119,7 @@ pub async fn user(ctx: Context<'_>, user: User) -> Result<(), Error> {
             let embed = if !single_overrides.is_empty() {
                 let mut description = String::new();
                 for over in single_overrides {
-                    description.push_str(&format!("**{over}**\n"))
+                    writeln!(description, "**{over}**").unwrap();
                 }
 
                 let embed = serenity::CreateEmbed::new()
@@ -144,7 +145,7 @@ pub async fn user(ctx: Context<'_>, user: User) -> Result<(), Error> {
             let embed = if !single_overrides.is_empty() {
                 let mut description = String::new();
                 for over in single_overrides {
-                    description.push_str(&format!("**{over}**\n"))
+                    writeln!(description, "**{over}**").unwrap();
                 }
 
                 let embed = serenity::CreateEmbed::new()
@@ -215,7 +216,7 @@ pub async fn cmd_overrides(ctx: Context<'_>, cmd_name: &str) -> Result<(), Error
 
         let mut description = String::new();
         for u in over {
-            description.push_str(&format!("<@{u}>\n"))
+            writeln!(description, "<@{u}>").unwrap();
         }
         let embed = serenity::CreateEmbed::new()
             .title(format!("Overrides for {cmd_name}"))

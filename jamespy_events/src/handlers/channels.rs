@@ -13,6 +13,7 @@ use poise::serenity_prelude::{
 
 use std::sync::Arc;
 use std::time::Duration;
+use std::fmt::Write;
 
 pub async fn channel_create(
     ctx: &serenity::Context,
@@ -47,37 +48,37 @@ pub async fn channel_update(
 
         // Differences
         if old.name != new.name {
-            diff.push_str(&format!("Name: {} -> {}\n", old.name, new.name));
+            writeln!(diff, "Name: {} -> {}", old.name, new.name).unwrap();
         }
         if old.nsfw != new.nsfw {
-            diff.push_str(&format!("NSFW: {} -> {}\n", old.nsfw, new.nsfw));
+            writeln!(diff, "NSFW: {} -> {}", old.nsfw, new.nsfw).unwrap();
         }
 
         // Check if the channel is in a category.
         match (old.parent_id, new.parent_id) {
             (Some(old_parent_id), Some(new_parent_id)) if old_parent_id != new_parent_id => {
-                diff.push_str(&format!(
-                    "Parent: {} -> {}\n",
+                writeln!(diff,
+                    "Parent: {} -> {}",
                     old_parent_id.name(ctx).await?,
                     new_parent_id.name(ctx).await?
-                ));
+                ).unwrap();
             }
             (None, Some(parent_id)) => {
-                diff.push_str(&format!("Parent: None -> {}\n", parent_id.name(ctx).await?));
+                writeln!(diff, "Parent: None -> {}", parent_id.name(ctx).await?).unwrap();
             }
             (Some(parent_id), None) => {
-                diff.push_str(&format!("Parent: {} -> None\n", parent_id.name(ctx).await?));
+                writeln!(diff, "Parent: {} -> None", parent_id.name(ctx).await?).unwrap();
             }
             _ => {}
         }
 
         match (old.bitrate, new.bitrate) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!(
-                    "Bitrate: {}kbps -> {}kbps\n",
+                writeln!(diff,
+                    "Bitrate: {}kbps -> {}kbps",
                     u32::from(old_value) / 1000,
                     u32::from(new_value) / 1000
-                ));
+                ).unwrap();
             }
             _ => {}
         }
@@ -111,33 +112,33 @@ pub async fn channel_update(
         // If both the old and new topic are the same, it shouldn't print.
         match (&old.topic, &new.topic) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!("Topic: {old_value} -> {new_value}\n"));
+                writeln!(diff, "Topic: {old_value} -> {new_value}").unwrap();
             }
             (None, Some(new_value)) if !new_value.is_empty() => {
-                diff.push_str(&format!("Topic: None -> {new_value}\n"));
+                writeln!(diff, "Topic: None -> {new_value}").unwrap();
             }
             (Some(old_value), None) if !old_value.is_empty() => {
-                diff.push_str(&format!("Topic: {old_value} -> None\n"));
+                writeln!(diff, "Topic: {old_value} -> None").unwrap();
             }
             _ => {}
         }
 
         match (old.user_limit, new.user_limit) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!("User Limit: {old_value} -> {new_value}\n"));
+                writeln!(diff, "User Limit: {old_value} -> {new_value}").unwrap();
             }
             (None, Some(new_value)) => {
-                diff.push_str(&format!("User Limit: None -> {new_value}\n"));
+                writeln!(diff, "User Limit: None -> {new_value}").unwrap();
             }
             (Some(old_value), None) => {
-                diff.push_str(&format!("User Limit: {old_value} -> None\n"));
+                writeln!(diff, "User Limit: {old_value} -> None").unwrap();
             }
             _ => {}
         }
 
         match (old.rate_limit_per_user, new.rate_limit_per_user) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!("Slowmode: {old_value}s -> {new_value}s\n"));
+                writeln!(diff, "Slowmode: {old_value}s -> {new_value}s").unwrap();
             }
             _ => {}
         }
@@ -147,9 +148,9 @@ pub async fn channel_update(
             new.default_thread_rate_limit_per_user,
         ) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!(
-                    "Default Thread Slowmode: {old_value}s -> {new_value}s\n"
-                ));
+                writeln!(diff,
+                    "Default Thread Slowmode: {old_value}s -> {new_value}s"
+                ).unwrap();
             }
             _ => {}
         }
@@ -161,9 +162,9 @@ pub async fn channel_update(
             (Some(old_value), Some(new_value)) if old_value != new_value => {
                 let old_duration = auto_archive_duration_to_string(old_value);
                 let new_duration = auto_archive_duration_to_string(new_value);
-                diff.push_str(&format!(
+                writeln!(diff,
                     "Default Archive Duration: {old_duration} -> {new_duration}\n"
-                ));
+                ).unwrap();
             }
             _ => {}
         }
@@ -172,15 +173,15 @@ pub async fn channel_update(
             (Some(ForumEmoji::Name(old_name)), Some(ForumEmoji::Name(new_name)))
                 if old_name != new_name =>
             {
-                diff.push_str(&format!(
-                    "Default Reaction Emoji: {old_name} -> {new_name}\n"
-                ));
+                writeln!(diff,
+                    "Default Reaction Emoji: {old_name} -> {new_name}"
+                ).unwrap();
             }
             (None, Some(ForumEmoji::Name(new_name))) => {
-                diff.push_str(&format!("Default Reaction Emoji: None -> {new_name}\n"));
+                writeln!(diff, "Default Reaction Emoji: None -> {new_name}").unwrap();
             }
             (Some(ForumEmoji::Name(old_name)), None) => {
-                diff.push_str(&format!("Default Reaction Emoji: {old_name} -> None\n"));
+                writeln!(diff, "Default Reaction Emoji: {old_name} -> None").unwrap();
             }
             _ => {}
         }
@@ -197,52 +198,53 @@ pub async fn channel_update(
 
         match (old.default_forum_layout, new.default_forum_layout) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!(
-                    "Default Forum Layout: {} -> {}\n",
+                writeln!(diff,
+                    "Default Forum Layout: {} -> {}",
                     forum_layout_to_string(old_value),
                     forum_layout_to_string(new_value)
-                ));
+                ).unwrap();
             }
             (None, Some(new_value)) => {
-                diff.push_str(&format!(
+                writeln!(diff,
                     "Default Forum Layout: None -> {}\n",
                     forum_layout_to_string(new_value)
-                ));
+                ).unwrap();
             }
             (Some(old_value), None) => {
-                diff.push_str(&format!(
-                    "Default Forum Layout: {} -> None\n",
+                writeln!(diff,
+                    "Default Forum Layout: {} -> None",
                     forum_layout_to_string(old_value)
-                ));
+                ).unwrap();
             }
             _ => {}
         }
 
         match (old.default_sort_order, new.default_sort_order) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!(
-                    "Default Forum Layout: {} -> {}\n",
+                writeln!(diff,
+                    "Default Forum Layout: {} -> {}",
                     sort_order_to_string(old_value),
                     sort_order_to_string(new_value)
-                ));
+                ).unwrap();
             }
             (None, Some(new_value)) => {
-                diff.push_str(&format!(
-                    "Default Forum Layout: None -> {}\n",
+                writeln!(diff,
+                    "Default Forum Layout: None -> {}",
                     sort_order_to_string(new_value)
-                ));
+                ).unwrap();
             }
             (Some(old_value), None) => {
-                diff.push_str(&format!(
-                    "Default Forum Layout: {} -> None\n",
+                writeln!(diff,
+                    "Default Forum Layout: {} -> None",
                     sort_order_to_string(old_value)
-                ));
+                ).unwrap();
             }
 
             _ => {}
         }
         // Forum tags doesn't implement what i want, I refuse to do it until this is matched.
     }
+    // fix.
     diff = diff.trim_end_matches('\n').to_string();
     if !diff.is_empty() {
         println!("\x1B[34m[{guild_name}] #{channel_name} was updated! ({kind})\x1B[0m\n{diff}");
@@ -307,12 +309,12 @@ pub async fn thread_update(
 
     if let Some(old) = old {
         if old.name != new.name {
-            diff.push_str(&format!("Name: {} -> {}\n", old.name, new.name));
+            writeln!(diff, "Name: {} -> {}\n", old.name, new.name).unwrap();
         }
 
         match (old.rate_limit_per_user, new.rate_limit_per_user) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                diff.push_str(&format!("Slowmode: {old_value}s -> {new_value}s\n"));
+                writeln!(diff, "Slowmode: {old_value}s -> {new_value}s").unwrap();
             }
             _ => {}
         }
@@ -351,9 +353,9 @@ pub async fn thread_update(
                     auto_archive_duration_to_string(old_metadata.auto_archive_duration);
                 let new_duration =
                     auto_archive_duration_to_string(new_metadata.auto_archive_duration);
-                diff.push_str(&format!(
-                    "Archive Duration: {old_duration} -> {new_duration}\n"
-                ));
+                writeln!(diff,
+                    "Archive Duration: {old_duration} -> {new_duration}"
+                ).unwrap();
             }
         }
     }

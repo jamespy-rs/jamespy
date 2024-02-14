@@ -1,4 +1,6 @@
 use crate::Data;
+
+use std::fmt::Write;
 use std::sync::Arc;
 
 use poise::serenity_prelude::{
@@ -158,20 +160,19 @@ pub async fn get_permission_changes(
     let mut changes_str = String::new();
     let kind_string = overwrite_to_string(kind);
     if old_allow != new_allow || old_deny != new_deny {
-        changes_str.push_str(&format!(
-            "Permission override for {name} ({kind_string}) changed!\n"
-        ));
+        writeln!(changes_str, "Permission override for {name} ({kind_string}) changed!").unwrap();
+
         let allow_changes_detail = get_permission_changes_detail(old_allow, new_allow, true);
         let deny_changes_detail = get_permission_changes_detail(old_deny, new_deny, false);
 
         if !allow_changes_detail.is_empty() {
-            changes_str.push_str("allow:\n");
-            changes_str.push_str(&allow_changes_detail);
+            writeln!(changes_str, "allow:").unwrap();
+            write!(changes_str, "{}", &allow_changes_detail).unwrap();
         }
 
         if !deny_changes_detail.is_empty() {
-            changes_str.push_str("deny:\n");
-            changes_str.push_str(&deny_changes_detail);
+            writeln!(changes_str, "deny:").unwrap();
+            write!(changes_str, "{}", &deny_changes_detail).unwrap();
         }
     }
 
@@ -186,7 +187,7 @@ pub fn get_permission_changes_detail(old: Permissions, new: Permissions, allow: 
     let added_perms: Vec<String> = {
         let mut added = Vec::new();
         for permission in Permissions::all().iter() {
-            let permission_name = format!("{permission}");
+            let permission_name = permission.to_string();
             if new.contains(permission) && !old.contains(permission) {
                 added.push(permission_name);
             }
@@ -197,7 +198,7 @@ pub fn get_permission_changes_detail(old: Permissions, new: Permissions, allow: 
     let removed_perms: Vec<String> = {
         let mut removed = Vec::new();
         for permission in Permissions::all().iter() {
-            let permission_name = format!("{permission}");
+            let permission_name = permission.to_string();
             if !new.contains(permission) && old.contains(permission) {
                 removed.push(permission_name);
             }
@@ -207,13 +208,13 @@ pub fn get_permission_changes_detail(old: Permissions, new: Permissions, allow: 
 
     if !added_perms.is_empty() {
         for perm in &added_perms {
-            changes_str.push_str(&format!("{added_color}+ {perm}\n\x1B[0m"));
+            writeln!(changes_str, "{added_color}+ {perm}\x1B[0m").unwrap();
         }
     }
 
     if !removed_perms.is_empty() {
         for perm in &removed_perms {
-            changes_str.push_str(&format!("{removed_color}- {perm}\n\x1B[0m"));
+            writeln!(changes_str, "{removed_color}- {perm}\x1B[0m").unwrap();
         }
     }
 
@@ -242,9 +243,7 @@ pub async fn overwrite_removal(
 
     let mut changes_str = String::new();
     let kind_string = overwrite_to_string(overwrite.kind);
-    changes_str.push_str(&format!(
-        "Permission override for {name} ({kind_string}) was removed!\n"
-    ));
+    writeln!(changes_str, "Permission override for {name} ({kind_string}) was removed!").unwrap();
 
     let added_color = "\x1B[92m";
     let removed_color = "\x1B[31m";
@@ -252,21 +251,21 @@ pub async fn overwrite_removal(
     let mut allowed_str = String::new();
     let mut denied_str = String::new();
     for allowed in overwrite.allow {
-        allowed_str.push_str(&format!("{added_color}+ {allowed}\n\x1B[0m"));
+        writeln!(allowed_str, "{added_color}+ {allowed}\x1B[0m").unwrap();
     }
 
     for denied in overwrite.deny {
-        denied_str.push_str(&format!("{removed_color}+ {denied}\n\x1B[0m"));
+        writeln!(denied_str, "{removed_color}+ {denied}\x1B[0m").unwrap();
     }
 
     if !allowed_str.is_empty() {
         changes_str.push_str("allowed:\n");
-        changes_str.push_str(&allowed_str.to_string());
+        changes_str.push_str(&allowed_str);
     }
 
     if !denied_str.is_empty() {
         changes_str.push_str("denied:\n");
-        changes_str.push_str(&denied_str.to_string());
+        changes_str.push_str(&denied_str);
     }
 
     changes_str

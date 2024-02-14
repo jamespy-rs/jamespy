@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fmt::Write;
 use std::sync::Arc;
 
 use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
@@ -58,8 +59,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         if let Some(hr) = highest {
             let c = hr.colour;
             if hr.colour.0 != 0 {
-                // This allocates but I don't care to fix it.
-                prefix = format!("\x1B[38;2;{};{};{}m", c.r(), c.g(), c.b());
+                write!(prefix, "\x1B[38;2;{};{};{}m", c.r(), c.g(), c.b())?;
             }
         }
 

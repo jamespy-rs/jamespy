@@ -4,6 +4,7 @@ use poise::serenity_prelude::{
     self as serenity, ActivityType, Colour, GuildMemberFlags, OnlineStatus, Role, User, UserId,
 };
 use std::collections::HashMap;
+use std::fmt::Write;
 
 #[poise::command(
     rename = "last-reactions",
@@ -238,12 +239,12 @@ pub async fn flag_lb(ctx: Context<'_>) -> Result<(), Error> {
 
     let mut description = String::new();
     for (index, record) in result.into_iter().enumerate() {
-        description.push_str(&format!(
-            "**{}**. <@{}>: **{}**\n",
+        writeln!(description,
+            "**{}**. <@{}>: **{}**",
             index + 1,
             record.user_id,
             record.count.unwrap()
-        ));
+        ).unwrap();
     }
 
     let embed = serenity::CreateEmbed::default()
