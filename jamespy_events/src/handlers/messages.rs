@@ -51,7 +51,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     };
 
     println!(
-        "\x1B[90m[{guild_name}] [#{channel_name}] {author_string}: \
+        "\x1B[90m[{guild_name}] [#{channel_name}]\x1B[0m {author_string}: \
          {flagged_str}{}\x1B[36m{}{}\x1B[0m",
         msg.content,
         attachments.as_deref().unwrap_or(""),
@@ -412,9 +412,5 @@ fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
 
 
     let reset = "\x1B[0m";
-    if prefix.is_empty() {
-        format!("{reset}{username}{reset}")
-    } else {
-        format!("{prefix}{username}{reset}")
-    }
+    format!("{prefix}{username}{reset}")
 }
