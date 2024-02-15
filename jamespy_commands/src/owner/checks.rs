@@ -229,7 +229,13 @@ pub async fn cmd_overrides(ctx: Context<'_>, cmd_name: &str) -> Result<(), Error
     Ok(())
 }
 
-#[poise::command(aliases("ao"), prefix_command, category = "Owner - Overrides", hide_in_help, owners_only)]
+#[poise::command(
+    aliases("ao"),
+    prefix_command,
+    category = "Owner - Overrides",
+    hide_in_help,
+    owners_only
+)]
 pub async fn allow_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
     let statement = match handle_allow_owner(ctx, user.clone()) {
         Ok(_) => format!("Successfully allowed {user} to use owner commands!"),
@@ -263,7 +269,13 @@ fn handle_allow_owner(ctx: Context<'_>, user: User) -> Result<(), CommandRestric
     Ok(())
 }
 
-#[poise::command(aliases("do"), prefix_command,category = "Owner - Overrides", hide_in_help, owners_only)]
+#[poise::command(
+    aliases("do"),
+    prefix_command,
+    category = "Owner - Overrides",
+    hide_in_help,
+    owners_only
+)]
 pub async fn deny_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
     let statement = match handle_deny_owner(ctx, user.clone()) {
         Ok(_) => format!("Successfully allowed {user} to use owner commands!"),

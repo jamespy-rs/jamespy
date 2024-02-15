@@ -5,7 +5,13 @@ use poise::serenity_prelude::{
 
 use crate::{owner::owner, Context, Error};
 
-#[poise::command(prefix_command, aliases("kys"), category = "Owner", owners_only, hide_in_help)]
+#[poise::command(
+    prefix_command,
+    aliases("kys"),
+    category = "Owner",
+    owners_only,
+    hide_in_help
+)]
 pub async fn shutdown(ctx: Context<'_>) -> Result<(), Error> {
     ctx.say("**Bailing out, you are on your own. Good luck.**")
         .await?;
@@ -118,7 +124,12 @@ pub async fn say_slash(
 }
 
 /// dm a user!
-#[poise::command(prefix_command, hide_in_help, category = "Owner - Say" ,check = "owner")]
+#[poise::command(
+    prefix_command,
+    hide_in_help,
+    category = "Owner - Say",
+    check = "owner"
+)]
 pub async fn dm(
     ctx: Context<'_>,
     #[description = "ID"] user_id: UserId,
@@ -134,7 +145,12 @@ pub async fn dm(
 }
 
 /// React to a message with a specific reaction!
-#[poise::command(prefix_command, hide_in_help, category = "Owner - Messages",check = "owner")]
+#[poise::command(
+    prefix_command,
+    hide_in_help,
+    category = "Owner - Messages",
+    check = "owner"
+)]
 pub async fn react(
     ctx: Context<'_>,
     #[description = "Message to react to"] message: Message,

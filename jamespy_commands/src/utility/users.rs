@@ -239,12 +239,14 @@ pub async fn flag_lb(ctx: Context<'_>) -> Result<(), Error> {
 
     let mut description = String::new();
     for (index, record) in result.into_iter().enumerate() {
-        writeln!(description,
+        writeln!(
+            description,
             "**{}**. <@{}>: **{}**",
             index + 1,
             record.user_id,
             record.count.unwrap()
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     let embed = serenity::CreateEmbed::default()

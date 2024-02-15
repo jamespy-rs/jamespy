@@ -160,7 +160,11 @@ pub async fn get_permission_changes(
     let mut changes_str = String::new();
     let kind_string = overwrite_to_string(kind);
     if old_allow != new_allow || old_deny != new_deny {
-        writeln!(changes_str, "Permission override for {name} ({kind_string}) changed!").unwrap();
+        writeln!(
+            changes_str,
+            "Permission override for {name} ({kind_string}) changed!"
+        )
+        .unwrap();
 
         let allow_changes_detail = get_permission_changes_detail(old_allow, new_allow, true);
         let deny_changes_detail = get_permission_changes_detail(old_deny, new_deny, false);
@@ -243,7 +247,11 @@ pub async fn overwrite_removal(
 
     let mut changes_str = String::new();
     let kind_string = overwrite_to_string(overwrite.kind);
-    writeln!(changes_str, "Permission override for {name} ({kind_string}) was removed!").unwrap();
+    writeln!(
+        changes_str,
+        "Permission override for {name} ({kind_string}) was removed!"
+    )
+    .unwrap();
 
     let added_color = "\x1B[92m";
     let removed_color = "\x1B[31m";

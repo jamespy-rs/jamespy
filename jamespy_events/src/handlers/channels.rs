@@ -11,9 +11,9 @@ use poise::serenity_prelude::{
     GuildId, PartialGuildChannel, UserId, VoiceChannelStatusAction,
 };
 
+use std::fmt::Write;
 use std::sync::Arc;
 use std::time::Duration;
-use std::fmt::Write;
 
 pub async fn channel_create(
     ctx: &serenity::Context,
@@ -57,11 +57,13 @@ pub async fn channel_update(
         // Check if the channel is in a category.
         match (old.parent_id, new.parent_id) {
             (Some(old_parent_id), Some(new_parent_id)) if old_parent_id != new_parent_id => {
-                writeln!(diff,
+                writeln!(
+                    diff,
                     "Parent: {} -> {}",
                     old_parent_id.name(ctx).await?,
                     new_parent_id.name(ctx).await?
-                ).unwrap();
+                )
+                .unwrap();
             }
             (None, Some(parent_id)) => {
                 writeln!(diff, "Parent: None -> {}", parent_id.name(ctx).await?).unwrap();
@@ -74,11 +76,13 @@ pub async fn channel_update(
 
         match (old.bitrate, new.bitrate) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                writeln!(diff,
+                writeln!(
+                    diff,
                     "Bitrate: {}kbps -> {}kbps",
                     u32::from(old_value) / 1000,
                     u32::from(new_value) / 1000
-                ).unwrap();
+                )
+                .unwrap();
             }
             _ => {}
         }
@@ -148,9 +152,11 @@ pub async fn channel_update(
             new.default_thread_rate_limit_per_user,
         ) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                writeln!(diff,
+                writeln!(
+                    diff,
                     "Default Thread Slowmode: {old_value}s -> {new_value}s"
-                ).unwrap();
+                )
+                .unwrap();
             }
             _ => {}
         }
@@ -162,9 +168,11 @@ pub async fn channel_update(
             (Some(old_value), Some(new_value)) if old_value != new_value => {
                 let old_duration = auto_archive_duration_to_string(old_value);
                 let new_duration = auto_archive_duration_to_string(new_value);
-                writeln!(diff,
+                writeln!(
+                    diff,
                     "Default Archive Duration: {old_duration} -> {new_duration}\n"
-                ).unwrap();
+                )
+                .unwrap();
             }
             _ => {}
         }
@@ -173,9 +181,7 @@ pub async fn channel_update(
             (Some(ForumEmoji::Name(old_name)), Some(ForumEmoji::Name(new_name)))
                 if old_name != new_name =>
             {
-                writeln!(diff,
-                    "Default Reaction Emoji: {old_name} -> {new_name}"
-                ).unwrap();
+                writeln!(diff, "Default Reaction Emoji: {old_name} -> {new_name}").unwrap();
             }
             (None, Some(ForumEmoji::Name(new_name))) => {
                 writeln!(diff, "Default Reaction Emoji: None -> {new_name}").unwrap();
@@ -198,46 +204,58 @@ pub async fn channel_update(
 
         match (old.default_forum_layout, new.default_forum_layout) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                writeln!(diff,
+                writeln!(
+                    diff,
                     "Default Forum Layout: {} -> {}",
                     forum_layout_to_string(old_value),
                     forum_layout_to_string(new_value)
-                ).unwrap();
+                )
+                .unwrap();
             }
             (None, Some(new_value)) => {
-                writeln!(diff,
+                writeln!(
+                    diff,
                     "Default Forum Layout: None -> {}\n",
                     forum_layout_to_string(new_value)
-                ).unwrap();
+                )
+                .unwrap();
             }
             (Some(old_value), None) => {
-                writeln!(diff,
+                writeln!(
+                    diff,
                     "Default Forum Layout: {} -> None",
                     forum_layout_to_string(old_value)
-                ).unwrap();
+                )
+                .unwrap();
             }
             _ => {}
         }
 
         match (old.default_sort_order, new.default_sort_order) {
             (Some(old_value), Some(new_value)) if old_value != new_value => {
-                writeln!(diff,
+                writeln!(
+                    diff,
                     "Default Forum Layout: {} -> {}",
                     sort_order_to_string(old_value),
                     sort_order_to_string(new_value)
-                ).unwrap();
+                )
+                .unwrap();
             }
             (None, Some(new_value)) => {
-                writeln!(diff,
+                writeln!(
+                    diff,
                     "Default Forum Layout: None -> {}",
                     sort_order_to_string(new_value)
-                ).unwrap();
+                )
+                .unwrap();
             }
             (Some(old_value), None) => {
-                writeln!(diff,
+                writeln!(
+                    diff,
                     "Default Forum Layout: {} -> None",
                     sort_order_to_string(old_value)
-                ).unwrap();
+                )
+                .unwrap();
             }
 
             _ => {}
@@ -353,9 +371,7 @@ pub async fn thread_update(
                     auto_archive_duration_to_string(old_metadata.auto_archive_duration);
                 let new_duration =
                     auto_archive_duration_to_string(new_metadata.auto_archive_duration);
-                writeln!(diff,
-                    "Archive Duration: {old_duration} -> {new_duration}"
-                ).unwrap();
+                writeln!(diff, "Archive Duration: {old_duration} -> {new_duration}").unwrap();
             }
         }
     }

@@ -8,7 +8,7 @@ use crate::{Data, Error};
 use chrono::NaiveDateTime;
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
-    MessageUpdateEvent, UserId
+    MessageUpdateEvent, UserId,
 };
 use sqlx::query;
 
@@ -40,31 +40,24 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         config.fixlist.unwrap_or_default(),
     );
 
-    if flagged_words.is_empty() {
-        println!(
-            "\x1B[90m[{}] [#{}]\x1B[0m {}: {}\x1B[36m{}{}\x1B[0m",
-            guild_name,
-            channel_name,
-            author_string,
-            msg.content,
-            attachments.as_deref().unwrap_or(""),
-            embeds.as_deref().unwrap_or("")
-        );
-    } else {
+    let flagged_str = if !flagged_words.is_empty() {
         println!(
             "Flagged for bad word(s): \x1B[1m\x1B[31m{}\x1B[0m",
             flagged_words.join(", ")
         );
-        println!(
-            "\x1B[90m[{}] [#{}]\x1B[0m {}: \x1B[1m\x1B[31m{}{}{}\x1B[0m",
-            guild_name,
-            channel_name,
-            msg.author.tag(),
-            msg.content,
-            attachments.as_deref().unwrap_or(""),
-            embeds.as_deref().unwrap_or("")
-        );
-    }
+        "\x1B[1m\x1B[31m"
+    } else {
+        ""
+    };
+
+    println!(
+        "\x1B[90m[{guild_name}] [#{channel_name}] {author_string}: \
+         {flagged_str}{}\x1B[36m{}{}\x1B[0m",
+        msg.content,
+        attachments.as_deref().unwrap_or(""),
+        embeds.as_deref().unwrap_or("")
+    );
+
     let timestamp: NaiveDateTime =
         NaiveDateTime::from_timestamp_opt(msg.timestamp.timestamp(), 0).unwrap();
 
@@ -381,15 +374,10 @@ fn get_blacklisted_words(
     flagged_words
 }
 
-
-fn author_string(
-    ctx: &serenity::Context,
-    msg: &Message
-) -> String {
-
+fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
     // No member meaning no roles.
     if msg.member.is_none() {
-        return msg.author.tag()
+        return msg.author.tag();
     }
     let member = msg.member.as_ref().unwrap();
     let username = msg.author.tag();
@@ -398,7 +386,6 @@ fn author_string(
 
     let mut highest: Option<&serenity::Role> = None;
 
-
     // TODO: possibly try and optimise this.
     for role_id in &member.roles {
         if let Some(role) = guild.roles.get(role_id) {
@@ -406,8 +393,7 @@ fn author_string(
             // - a position less than the recorded highest
             // - a position equal to the recorded, but a higher ID
             if let Some(r) = highest {
-                if role.position < r.position || (role.position == r.position && role.id > r.id)
-                {
+                if role.position < r.position || (role.position == r.position && role.id > r.id) {
                     continue;
                 }
             }
@@ -426,5 +412,4 @@ fn author_string(
 
     let reset = "\x1B[0m";
     format!("{prefix}{username}{reset}")
-
 }
