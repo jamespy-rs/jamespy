@@ -8,7 +8,7 @@ use crate::{Data, Error};
 use chrono::NaiveDateTime;
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
-    MessageUpdateEvent, UserId,
+    MessageUpdateEvent, UserId
 };
 use sqlx::query;
 
@@ -31,41 +31,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
 
     let (attachments, embeds) = attachments_embed_fmt(msg);
 
-    let mut author_string = msg.author.tag();
-
-    // TODO: make this configurable with whitelists and blacklists.
-    if let Some(partial_member) = &msg.member {
-        let guild = msg.guild(&ctx.cache).unwrap();
-
-        let mut highest: Option<&serenity::Role> = None;
-
-        for role_id in &partial_member.roles {
-            if let Some(role) = guild.roles.get(role_id) {
-                // Skip this role if this role in iteration has:
-                // - a position less than the recorded highest
-                // - a position equal to the recorded, but a higher ID
-                if let Some(r) = highest {
-                    if role.position < r.position || (role.position == r.position && role.id > r.id)
-                    {
-                        continue;
-                    }
-                }
-
-                highest = Some(role);
-            }
-        }
-
-        let mut prefix = String::new();
-        if let Some(hr) = highest {
-            let c = hr.colour;
-            if hr.colour.0 != 0 {
-                write!(prefix, "\x1B[38;2;{};{};{}m", c.r(), c.g(), c.b())?;
-            }
-        }
-
-        let reset = "\x1B[0m";
-        author_string = format!("{prefix}{author_string}{reset}");
-    }
+    let author_string = author_string(ctx, msg);
 
     // TODO: fix this before working on the bot after rewrite.
     let flagged_words = get_blacklisted_words(
@@ -413,4 +379,52 @@ fn get_blacklisted_words(
         .collect();
 
     flagged_words
+}
+
+
+fn author_string(
+    ctx: &serenity::Context,
+    msg: &Message
+) -> String {
+
+    // No member meaning no roles.
+    if msg.member.is_none() {
+        return msg.author.tag()
+    }
+    let member = msg.member.as_ref().unwrap();
+    let username = msg.author.tag();
+
+    let guild = msg.guild(&ctx.cache).unwrap();
+
+    let mut highest: Option<&serenity::Role> = None;
+
+
+    // TODO: possibly try and optimise this.
+    for role_id in &member.roles {
+        if let Some(role) = guild.roles.get(role_id) {
+            // Skip this role if this role in iteration has:
+            // - a position less than the recorded highest
+            // - a position equal to the recorded, but a higher ID
+            if let Some(r) = highest {
+                if role.position < r.position || (role.position == r.position && role.id > r.id)
+                {
+                    continue;
+                }
+            }
+
+            highest = Some(role);
+        }
+    }
+
+    let mut prefix = String::new();
+    if let Some(hr) = highest {
+        let c = hr.colour;
+        if hr.colour.0 != 0 {
+            write!(prefix, "\x1B[38;2;{};{};{}m", c.r(), c.g(), c.b()).unwrap();
+        }
+    }
+
+    let reset = "\x1B[0m";
+    format!("{prefix}{username}{reset}")
+
 }
