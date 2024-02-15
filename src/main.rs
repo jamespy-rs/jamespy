@@ -70,6 +70,8 @@ async fn main() {
 
         on_error: |error| Box::pin(on_error(error)),
 
+        command_check: Some(|ctx| Box::pin(jamespy_commands::command_check(ctx))),
+
         skip_checks_for_owners: false,
         event_handler: |framework, event| Box::pin(jamespy_events::event_handler(framework, event)),
         ..Default::default()

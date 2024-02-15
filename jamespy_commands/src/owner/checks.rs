@@ -8,6 +8,79 @@ use poise::serenity_prelude::{self as serenity, User};
 // This entire module needs new command/function names.
 
 #[poise::command(
+    rename = "bot-ban",
+    aliases("bb", "bban"),
+    prefix_command,
+    hide_in_help,
+    category = "Owner - Ban",
+    owners_only
+)]
+pub async fn bot_ban(ctx: Context<'_>, user: User) -> Result<(), Error> {
+
+    let inserted = {
+        let data = ctx.data();
+        let mut config = data.config.write().unwrap();
+
+        if let Some(banned_users) = &mut config.banned_users {
+            banned_users.insert(user.id)
+        } else {
+            let mut banned_users = std::collections::HashSet::new();
+            banned_users.insert(user.id);
+            config.banned_users = Some(banned_users);
+            true
+        }
+
+    };
+
+    let msg = if inserted {
+        format!("{} has been banned from using jamespy.", user.tag())
+    } else {
+        format!("{} is already banned from using jamespy.", user.tag())
+    };
+
+
+    ctx.say(msg).await?;
+
+    Ok(())
+}
+
+#[poise::command(
+    rename = "bot-unban",
+    aliases("bub", "bunban"),
+    prefix_command,
+    hide_in_help,
+    category = "Owner - Ban",
+    owners_only
+)]
+pub async fn bot_unban(ctx: Context<'_>, user: User) -> Result<(), Error> {
+
+    let banned = {
+        let data = ctx.data();
+        let mut config = data.config.write().unwrap();
+
+        if let Some(banned_users) = &mut config.banned_users {
+            banned_users.remove(&user.id)
+        } else {
+            false
+        }
+
+    };
+
+    let msg = if banned {
+        format!("{} has been unbanned from using jamespy.", user.tag())
+    } else {
+        format!("{} was not banned from using jamespy.", user.tag())
+    };
+
+
+    ctx.say(msg).await?;
+
+    Ok(())
+}
+
+
+
+#[poise::command(
     rename = "allow-owner-cmd",
     aliases("aoc"),
     prefix_command,
@@ -307,12 +380,14 @@ fn handle_deny_owner(ctx: Context<'_>, user: User) -> Result<(), CommandRestrict
     Ok(())
 }
 
-pub fn commands() -> [crate::Command; 5] {
+pub fn commands() -> [crate::Command; 7] {
     [
         allow_owner_cmd(),
         deny_owner_cmd(),
         owner_overrides(),
         allow_owner(),
         deny_owner(),
+        bot_ban(),
+        bot_unban()
     ]
 }

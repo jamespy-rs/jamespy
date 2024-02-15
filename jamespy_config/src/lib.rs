@@ -13,6 +13,7 @@ pub struct JamespyConfig {
     // configuration for the event handler.
     pub events: Events,
     // Extra checks for commands to execute.
+    pub banned_users: Option<HashSet<UserId>>,
     pub command_checks: Option<Checks>,
     // Tracking for osu!game, harshly hardcoded.
     pub vcstatus: VCStatus,
@@ -71,6 +72,7 @@ impl JamespyConfig {
                 hard_limit: Some(10000),
             }),
             command_checks: None,
+            banned_users: None,
         }
     }
 
