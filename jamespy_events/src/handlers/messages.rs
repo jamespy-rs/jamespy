@@ -410,6 +410,11 @@ fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
         }
     }
 
+
     let reset = "\x1B[0m";
-    format!("{prefix}{username}{reset}")
+    if prefix.is_empty() {
+        format!("{reset}{username}{reset}")
+    } else {
+        format!("{prefix}{username}{reset}")
+    }
 }
