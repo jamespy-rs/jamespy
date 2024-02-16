@@ -36,7 +36,7 @@ pub mod regex_patterns {
         patterns: &Option<Vec<Regex>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
-        let unwrapped = patterns.as_ref().cloned().unwrap_or_default();
+        let unwrapped = patterns.clone().unwrap_or_default();
         let mut new: Vec<String> = Vec::new();
 
         for pattern in unwrapped {

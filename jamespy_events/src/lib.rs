@@ -1,3 +1,20 @@
+#![warn(clippy::pedantic)]
+// clippy warns for u64 -> i64 conversions despite this being totally okay in this scenario.
+#![allow(
+    clippy::cast_sign_loss,
+    clippy::cast_possible_wrap,
+    clippy::cast_possible_truncation,
+    clippy::missing_errors_doc,
+    clippy::missing_panics_doc,
+    clippy::wildcard_imports,
+    clippy::module_name_repetitions,
+    clippy::too_many_lines,
+    clippy::unreadable_literal,
+    clippy::unused_async, // fix.
+
+
+)]
+
 use jamespy_data::structs::{Data, Error};
 use poise::serenity_prelude::{self as serenity, FullEvent};
 
@@ -115,7 +132,7 @@ pub async fn event_handler(
                 chunk.members.len(),
                 chunk.chunk_index + 1,
                 chunk.chunk_count
-            )
+            );
         }
 
         _ => {}

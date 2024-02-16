@@ -16,7 +16,6 @@ use poise::serenity_prelude::{self as serenity, User};
     owners_only
 )]
 pub async fn bot_ban(ctx: Context<'_>, user: User) -> Result<(), Error> {
-
     let inserted = {
         let data = ctx.data();
         let mut config = data.config.write().unwrap();
@@ -29,7 +28,6 @@ pub async fn bot_ban(ctx: Context<'_>, user: User) -> Result<(), Error> {
             config.banned_users = Some(banned_users);
             true
         }
-
     };
 
     let msg = if inserted {
@@ -37,7 +35,6 @@ pub async fn bot_ban(ctx: Context<'_>, user: User) -> Result<(), Error> {
     } else {
         format!("{} is already banned from using jamespy.", user.tag())
     };
-
 
     ctx.say(msg).await?;
 
@@ -53,7 +50,6 @@ pub async fn bot_ban(ctx: Context<'_>, user: User) -> Result<(), Error> {
     owners_only
 )]
 pub async fn bot_unban(ctx: Context<'_>, user: User) -> Result<(), Error> {
-
     let banned = {
         let data = ctx.data();
         let mut config = data.config.write().unwrap();
@@ -63,7 +59,6 @@ pub async fn bot_unban(ctx: Context<'_>, user: User) -> Result<(), Error> {
         } else {
             false
         }
-
     };
 
     let msg = if banned {
@@ -72,13 +67,10 @@ pub async fn bot_unban(ctx: Context<'_>, user: User) -> Result<(), Error> {
         format!("{} was not banned from using jamespy.", user.tag())
     };
 
-
     ctx.say(msg).await?;
 
     Ok(())
 }
-
-
 
 #[poise::command(
     rename = "allow-owner-cmd",
@@ -88,14 +80,15 @@ pub async fn bot_unban(ctx: Context<'_>, user: User) -> Result<(), Error> {
     category = "Owner - Overrides",
     owners_only
 )]
+#[allow(clippy::match_wildcard_for_single_variants)]
 pub async fn allow_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> Result<(), Error> {
     let statement = match handle_allow_cmd(
         &ctx.framework().options.commands,
-        ctx.data(),
+        &ctx.data(),
         cmd_name,
         &user,
     ) {
-        Ok(cmd) => format!("Successfully allowed {} to use `{}`!", user, cmd),
+        Ok(cmd) => format!("Successfully allowed {user} to use `{cmd}`!"),
         Err(err) => match err {
             CommandRestrictErr::CommandNotFound => "Could not find command!",
             CommandRestrictErr::AlreadyExists => "The user is already allowed to use this!",
@@ -103,7 +96,7 @@ pub async fn allow_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> 
                 "This command requires you to be an owner in the framework!"
             }
             CommandRestrictErr::NotOwnerCommand => "This command is not an owner command!",
-            _ => "", // No other errors should fire in this code.
+            _ => "",
         }
         .to_string(),
     };
@@ -121,14 +114,15 @@ pub async fn allow_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> 
     hide_in_help,
     owners_only
 )]
+#[allow(clippy::match_wildcard_for_single_variants)]
 pub async fn deny_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> Result<(), Error> {
     let statement = match handle_deny_cmd(
         &ctx.framework().options.commands,
-        ctx.data(),
-        cmd_name,
+        &ctx.data(),
+        &cmd_name,
         &user,
     ) {
-        Ok(cmd) => format!("Successfully denied {} to use `{}`!", user, cmd),
+        Ok(cmd) => format!("Successfully denied {user} to use `{cmd}`!"),
         Err(err) => match err {
             CommandRestrictErr::CommandNotFound => "Could not find command!",
             CommandRestrictErr::FrameworkOwner => {
@@ -171,14 +165,14 @@ pub async fn user(ctx: Context<'_>, user: User) -> Result<(), Error> {
 
         if let Some(checks) = &config.command_checks {
             let mut single_overrides = Vec::new();
-            for single_check in checks.owners_single.iter() {
+            for single_check in &checks.owners_single {
                 if single_check.1.contains(&user.id) {
-                    single_overrides.push(single_check.0.clone())
+                    single_overrides.push(single_check.0.clone());
                 }
             }
 
             (
-                checks.owners_all.get(&user.id).cloned(),
+                checks.owners_all.get(&user.id).copied(),
                 Some(single_overrides),
             )
         } else {
@@ -189,7 +183,9 @@ pub async fn user(ctx: Context<'_>, user: User) -> Result<(), Error> {
     // TODO: fix this mess, and paginate.
     match overrides {
         (Some(_), Some(single_overrides)) => {
-            let embed = if !single_overrides.is_empty() {
+            let embed = if single_overrides.is_empty() {
+                None
+            } else {
                 let mut description = String::new();
                 for over in single_overrides {
                     writeln!(description, "**{over}**").unwrap();
@@ -199,8 +195,6 @@ pub async fn user(ctx: Context<'_>, user: User) -> Result<(), Error> {
                     .title("Extra Owner Overrides")
                     .description(description);
                 Some(embed)
-            } else {
-                None
             };
 
             if let Some(embed) = embed {
@@ -215,7 +209,9 @@ pub async fn user(ctx: Context<'_>, user: User) -> Result<(), Error> {
             }
         }
         (None, Some(single_overrides)) => {
-            let embed = if !single_overrides.is_empty() {
+            let embed = if single_overrides.is_empty() {
+                None
+            } else {
                 let mut description = String::new();
                 for over in single_overrides {
                     writeln!(description, "**{over}**").unwrap();
@@ -225,8 +221,6 @@ pub async fn user(ctx: Context<'_>, user: User) -> Result<(), Error> {
                     .title("Owner Overrides")
                     .description(description);
                 Some(embed)
-            } else {
-                None
             };
 
             if let Some(embed) = embed {
@@ -310,8 +304,8 @@ pub async fn cmd_overrides(ctx: Context<'_>, cmd_name: &str) -> Result<(), Error
     owners_only
 )]
 pub async fn allow_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
-    let statement = match handle_allow_owner(ctx, user.clone()) {
-        Ok(_) => format!("Successfully allowed {user} to use owner commands!"),
+    let statement = match handle_allow_owner(ctx, &user) {
+        Ok(()) => format!("Successfully allowed {user} to use owner commands!"),
         Err(err) => match err {
             CommandRestrictErr::AlreadyExists => format!("{user} already has a bypass!"),
             _ => String::from("Error while handling error: Unexpected Error!"),
@@ -322,7 +316,7 @@ pub async fn allow_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
     Ok(())
 }
 
-fn handle_allow_owner(ctx: Context<'_>, user: User) -> Result<(), CommandRestrictErr> {
+fn handle_allow_owner(ctx: Context<'_>, user: &User) -> Result<(), CommandRestrictErr> {
     let data = ctx.data();
     let mut config = data.config.write().unwrap();
 
@@ -350,8 +344,8 @@ fn handle_allow_owner(ctx: Context<'_>, user: User) -> Result<(), CommandRestric
     owners_only
 )]
 pub async fn deny_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
-    let statement = match handle_deny_owner(ctx, user.clone()) {
-        Ok(_) => format!("Successfully allowed {user} to use owner commands!"),
+    let statement = match handle_deny_owner(ctx, &user) {
+        Ok(()) => format!("Successfully allowed {user} to use owner commands!"),
         Err(err) => match err {
             CommandRestrictErr::DoesntExist => format!("{user} doesn't have a bypass!"),
             _ => String::from("Error while handling error: Unexpected Error!"), // No other errors should fire in this code.
@@ -362,7 +356,7 @@ pub async fn deny_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
     Ok(())
 }
 
-fn handle_deny_owner(ctx: Context<'_>, user: User) -> Result<(), CommandRestrictErr> {
+fn handle_deny_owner(ctx: Context<'_>, user: &User) -> Result<(), CommandRestrictErr> {
     let data = ctx.data();
     let mut config = data.config.write().unwrap();
 
@@ -380,6 +374,7 @@ fn handle_deny_owner(ctx: Context<'_>, user: User) -> Result<(), CommandRestrict
     Ok(())
 }
 
+#[must_use]
 pub fn commands() -> [crate::Command; 7] {
     [
         allow_owner_cmd(),
@@ -388,6 +383,6 @@ pub fn commands() -> [crate::Command; 7] {
         allow_owner(),
         deny_owner(),
         bot_ban(),
-        bot_unban()
+        bot_unban(),
     ]
 }

@@ -53,8 +53,8 @@ pub async fn guild_cache_stats(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     let stats = format!(
-        "Channel Count: {}\n Thread count: {}\nUser count: {}\nCached Users: {}",
-        channel_count, thread_count, members_count, cached_members
+        "Channel Count: {channel_count}\n Thread count: {thread_count}\nUser count: \
+         {members_count}\nCached Users: {cached_members}"
     );
 
     let embed = serenity::CreateEmbed::default()
@@ -66,6 +66,7 @@ pub async fn guild_cache_stats(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+#[must_use]
 pub fn commands() -> [crate::Command; 2] {
     [max_messages(), guild_cache_stats()]
 }

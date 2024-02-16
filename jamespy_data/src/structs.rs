@@ -24,6 +24,7 @@ pub struct DmActivity {
 }
 
 impl DmActivity {
+    #[must_use]
     pub fn new(last_announced: i64, until: Option<i64>, count: i16) -> Self {
         DmActivity {
             last_announced,

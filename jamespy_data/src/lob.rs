@@ -17,6 +17,7 @@ fn get_loblist() -> &'static RwLock<HashSet<String>> {
     })
 }
 
+#[must_use]
 pub fn get_random_lob() -> Option<String> {
     let loblist = get_loblist().read().unwrap();
 
@@ -24,7 +25,7 @@ pub fn get_random_lob() -> Option<String> {
     loblist.iter().choose(&mut rng).cloned()
 }
 
-pub async fn update_lob() -> Result<(usize, usize), Error> {
+pub fn update_lob() -> Result<(usize, usize), Error> {
     let new_lob = std::fs::read_to_string("config/lists/loblist.txt")?;
     let old_count;
 
@@ -43,14 +44,14 @@ pub async fn update_lob() -> Result<(usize, usize), Error> {
     Ok((old_count, new_count))
 }
 
-pub async fn unload_lob() -> Result<(), Error> {
+pub fn unload_lob() -> Result<(), Error> {
     let mut loblist = get_loblist().write().unwrap();
     *loblist = HashSet::new();
 
     Ok(())
 }
 
-pub async fn add_lob(content: String) -> Result<(), Error> {
+pub fn add_lob(content: &str) -> Result<(), Error> {
     let loblist = "config/lists/loblist.txt";
     let mut file = OpenOptions::new().append(true).open(loblist)?;
 
@@ -73,7 +74,7 @@ pub async fn add_lob(content: String) -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn remove_lob(target: &str) -> Result<bool, Error> {
+pub fn remove_lob(target: &str) -> Result<bool, Error> {
     let loblist = "config/lists/loblist.txt";
     let mut lines = Vec::new();
     let mut line_removed = false;
@@ -109,6 +110,7 @@ pub fn count_lob() -> Result<usize, Error> {
 
 // A check for Trash, so he can refresh the loblist. Includes me because, well I'm me.
 // Also includes a few gg/osu mods because well why not!
+#[allow(clippy::unused_async)]
 pub async fn trontin(ctx: Context<'_>) -> Result<bool, Error> {
     let allowed_users = [
         158567567487795200,

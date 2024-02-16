@@ -2,6 +2,7 @@ pub mod join_tracks;
 pub mod random;
 pub mod users;
 
+#[must_use]
 pub fn commands() -> Vec<crate::Command> {
     {
         join_tracks::commands()

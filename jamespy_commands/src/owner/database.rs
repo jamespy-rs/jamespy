@@ -49,6 +49,7 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
     owners_only,
     hide_in_help
 )]
+#[allow(clippy::similar_names)] // "now" and "row" are too close.
 pub async fn sql(
     ctx: Context<'_>,
     #[description = "SQL query"]
@@ -95,6 +96,7 @@ pub async fn sql(
     Ok(())
 }
 
+#[must_use]
 pub fn commands() -> [crate::Command; 2] {
     [dbstats(), sql()]
 }

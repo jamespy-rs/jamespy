@@ -69,11 +69,11 @@ pub async fn guild_member_update(
                 return Ok(());
             }
 
-            let now = Utc::now().timestamp();
+            let now_utc = Utc::now().timestamp();
 
             // If this is in the past, it doesn't need to continue.
             // Also remove it from the database if its there.
-            if timestamp < now {
+            if timestamp < now_utc {
                 data.remove_until(event.user.id).await;
                 return Ok(());
             }
@@ -82,7 +82,7 @@ pub async fn guild_member_update(
 
             if old_stamp.is_none() {
                 dm_activity_new(ctx, event, 0).await?;
-                data.new_or_announced(event.user.id, now, timestamp, Some(1))
+                data.new_or_announced(event.user.id, now_utc, timestamp, Some(1))
                     .await;
                 return Ok(());
             }
@@ -95,19 +95,29 @@ pub async fn guild_member_update(
                 if timestamp - until >= 3600 {
                     println!("conditional check passed.");
                     dm_activity_updated(ctx, event, old_stamp.count).await?;
-                    data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.count + 1))
-                        .await;
+                    data.new_or_announced(
+                        event.user.id,
+                        now_utc,
+                        timestamp,
+                        Some(old_stamp.count + 1),
+                    )
+                    .await;
                     return Ok(()); // its okay to return here to prevent
                 }
 
                 // If its newer than a minute, update.
                 if timestamp >= (until + 60) {
-                    data.updated_no_announce(event.user.id, now, timestamp, old_stamp.count + 1)
-                        .await;
+                    data.updated_no_announce(
+                        event.user.id,
+                        now_utc,
+                        timestamp,
+                        old_stamp.count + 1,
+                    )
+                    .await;
                 }
             } else {
                 dm_activity_new(ctx, event, old_stamp.count).await?;
-                data.new_or_announced(event.user.id, now, timestamp, Some(old_stamp.count + 1))
+                data.new_or_announced(event.user.id, now_utc, timestamp, Some(old_stamp.count + 1))
                     .await;
             }
         }

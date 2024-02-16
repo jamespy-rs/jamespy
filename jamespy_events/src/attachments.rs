@@ -93,7 +93,7 @@ pub async fn download_attachments(
                 files.push(File {
                     file_name: attachment.filename,
                     location: file_loc,
-                })
+                });
             }
         }
     }
@@ -150,7 +150,7 @@ async fn announce_deleted_spy(
 
     let ctx_id = message.id;
     let mut description = String::new();
-    let mut buttons: Vec<CreateButton> = vec![];
+    let mut buttons = vec![];
     let mut button_ids: Vec<(String, usize)> = vec![];
 
     for (index, file) in files.clone().into_iter().enumerate() {
@@ -162,13 +162,13 @@ async fn announce_deleted_spy(
     }
 
     // Split into multiple chunks as the limit per row is 5.
-    let mut action_rows: Vec<serenity::CreateActionRow> = Vec::new();
+    let mut action_rows = Vec::new();
     for chunk in buttons.chunks(5) {
         action_rows.push(serenity::CreateActionRow::Buttons(chunk.to_vec()));
     }
 
     let description_fmt = if message.content.is_empty() {
-        format!("**Attachments**:\n{}", description)
+        format!("**Attachments**:\n{description}")
     } else {
         format!(
             "**Message**:\n{}\n**Attachments**:\n{}",

@@ -16,7 +16,7 @@ pub enum CommandRestrictErr {
 
 pub fn handle_allow_cmd(
     commands: &[Command],
-    data: Arc<Data>,
+    data: &Arc<Data>,
     cmd_name: String,
     user: &User,
 ) -> Result<String, CommandRestrictErr> {
@@ -37,7 +37,7 @@ pub fn handle_allow_cmd(
         let mut checks = Checks::new();
         let mut set = HashSet::new();
         set.insert(user.id);
-        checks.owners_single.insert(cmd_name.clone(), set);
+        checks.owners_single.insert(cmd_name, set);
         config.command_checks = Some(checks);
     }
 
@@ -50,7 +50,7 @@ pub fn get_cmd_name(
     cmd_name: &str,
 ) -> Result<String, CommandRestrictErr> {
     let mut command_name = String::new();
-    for command in commands.iter() {
+    for command in commands {
         // If the command isn't an owner command, skip.
         if !command
             .category
@@ -94,14 +94,14 @@ pub fn get_cmd_name(
 
 pub fn handle_deny_cmd(
     commands: &[crate::Command],
-    data: Arc<Data>,
-    cmd_name: String,
+    data: &Arc<Data>,
+    cmd_name: &str,
     user: &User,
 ) -> Result<String, CommandRestrictErr> {
     let mut config = data.config.write().unwrap();
 
     // Check if the command or its aliases match a real command.
-    let command_name = get_cmd_name(commands, &cmd_name)?;
+    let command_name = get_cmd_name(commands, cmd_name)?;
 
     if let Some(checks) = &mut config.command_checks {
         let map = &mut checks.owners_single;

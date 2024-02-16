@@ -36,7 +36,7 @@ pub async fn lob(ctx: Context<'_>) -> Result<(), Error> {
     hide_in_help
 )]
 pub async fn reload_lob(ctx: Context<'_>) -> Result<(), Error> {
-    let (old_count, new_count) = update_lob().await?;
+    let (old_count, new_count) = update_lob()?;
     ctx.say(format!(
         "Reloaded lobs.\nOld Count: {old_count}\nNew Count: {new_count}"
     ))
@@ -54,7 +54,7 @@ pub async fn reload_lob(ctx: Context<'_>) -> Result<(), Error> {
     hide_in_help
 )]
 pub async fn no_lob(ctx: Context<'_>) -> Result<(), Error> {
-    unload_lob().await?;
+    unload_lob()?;
     ctx.say("Unloaded lob!".to_string()).await?;
     Ok(())
 }
@@ -78,7 +78,7 @@ pub async fn new_lob(
     let msg = if count > 1 {
         // terrible code.
         let lobs: String = lines
-            .map(|line| format!("`{}`", line))
+            .map(|line| format!("`{line}`"))
             .collect::<Vec<_>>()
             .join("\n");
         format!("Added {count} lobs:\n{lobs}")
@@ -88,7 +88,7 @@ pub async fn new_lob(
 
     ctx.send(poise::CreateReply::default().content(msg)).await?;
 
-    add_lob(item).await?;
+    add_lob(&item)?;
 
     Ok(())
 }
@@ -107,7 +107,7 @@ pub async fn delete_lob(
     #[rest]
     target: String,
 ) -> Result<(), Error> {
-    if remove_lob(&target).await? {
+    if remove_lob(&target)? {
         ctx.send(poise::CreateReply::default().content(format!(
             "Removed `{target}` from loblist!\nChanges will not be applied until bot restart or \
              until reload-lob is called!"
@@ -141,7 +141,7 @@ pub async fn delete_lob(
 pub async fn total_lobs(ctx: Context<'_>) -> Result<(), Error> {
     let count = count_lob()?;
     ctx.send(
-        poise::CreateReply::default().content(format!("Currently, `{}` lobs are stored.", count)),
+        poise::CreateReply::default().content(format!("Currently, `{count}` lobs are stored.")),
     )
     .await?;
     Ok(())
@@ -162,6 +162,7 @@ pub async fn send_lobs(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+#[must_use]
 pub fn commands() -> [crate::Command; 7] {
     [
         lob(),

@@ -10,6 +10,7 @@ use poise::serenity_prelude::{ChannelType, CreateChannel};
     subcommands("here"),
     guild_only
 )]
+#[allow(clippy::no_effect_underscore_binding)]
 pub async fn init(_ctx: Context<'_>) -> Result<(), Error> {
     // TODO
 
@@ -114,6 +115,7 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+#[must_use]
 pub fn commands() -> [crate::Command; 1] {
     [init()]
 }

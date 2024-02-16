@@ -10,6 +10,7 @@ use crate::{Context, Error};
 /// ALL owner commands should have a category that starts with owner.
 /// Well, not all, only ones that are intended to be given out to trusted users.
 
+#[must_use]
 pub fn commands() -> Vec<crate::Command> {
     {
         cache::commands()
@@ -23,9 +24,9 @@ pub fn commands() -> Vec<crate::Command> {
     }
 }
 
-/// I use this check instead of the default owners_only check
+/// I use this check instead of the default `owners_only` check
 /// When i want to be able to temporarily give access to specific owner commands
-/// This executes after command_check is executed, so this works.
+/// This executes after `command_check` is executed, so this works.
 pub async fn owner(ctx: Context<'_>) -> Result<bool, Error> {
     let user_id = &ctx.author().id;
 
@@ -44,8 +45,7 @@ pub async fn owner(ctx: Context<'_>) -> Result<bool, Error> {
             return Ok(cmd_override
                 .iter()
                 .find(|&user| user == user_id)
-                .map(|_| true)
-                .unwrap_or(false));
+                .is_some_and(|_| true));
         }
     };
 

@@ -137,6 +137,7 @@ pub async fn remove_track(
     Ok(())
 }
 
+#[must_use]
 pub fn commands() -> [crate::Command; 3] {
     [track_join(), list_tracked(), remove_track()]
 }

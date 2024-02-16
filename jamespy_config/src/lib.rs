@@ -1,3 +1,5 @@
+#![warn(clippy::pedantic)]
+
 use std::collections::{HashMap, HashSet};
 
 use regex::Regex;
@@ -6,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use poise::serenity_prelude::{ChannelId, GuildId, UserId};
 
 mod serialize;
-use serialize::*;
+use serialize::{read_words_from_file, regex_patterns};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct JamespyConfig {
@@ -31,6 +33,7 @@ pub struct Checks {
 }
 
 impl Checks {
+    #[must_use]
     pub fn new() -> Self {
         Checks {
             owners_all: HashSet::new(),
@@ -46,6 +49,7 @@ impl Default for Checks {
 }
 
 impl JamespyConfig {
+    #[must_use]
     pub fn new() -> Self {
         JamespyConfig {
             events: Events {
@@ -96,6 +100,7 @@ impl JamespyConfig {
         }
     }
 
+    #[must_use]
     pub fn load_config() -> Self {
         let default_config = JamespyConfig::new();
 
@@ -148,6 +153,7 @@ pub struct SpyGuild {
 }
 
 impl SpyGuild {
+    #[must_use]
     pub fn new(guild_id: GuildId) -> Self {
         SpyGuild {
             status: Init {
@@ -168,6 +174,7 @@ pub struct Init {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct SelfRegex {
     pub enabled: bool,
     pub channel_id: Option<ChannelId>,

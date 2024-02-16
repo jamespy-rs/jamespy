@@ -100,6 +100,7 @@ pub async fn set_activity(
     Ok(())
 }
 
+#[must_use]
 pub fn commands() -> [crate::Command; 3] {
     [status(), reset_presence(), set_activity()]
 }

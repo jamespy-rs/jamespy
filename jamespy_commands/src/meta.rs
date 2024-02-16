@@ -147,7 +147,7 @@ async fn stats(ctx: Context<'_>) -> Result<(), Error> {
             "Bot Memory",
             format!("Physical: {physical:.2} MiB\nVirtual: {virtual_m:.2} MiB"),
             true,
-        )
+        );
     }
 
     ctx.send(poise::CreateReply::default().embed(embed)).await?;
@@ -164,6 +164,7 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+#[must_use]
 pub fn commands() -> [crate::Command; 6] {
     [uptime(), source(), help(), ping(), register(), stats()]
 }

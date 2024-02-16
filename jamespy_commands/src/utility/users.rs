@@ -1,7 +1,7 @@
 use crate::{Context, Error};
 use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{
-    self as serenity, ActivityType, Colour, GuildMemberFlags, OnlineStatus, Role, User, UserId,
+    self as serenity, ActivityType, Colour, GuildMemberFlags, OnlineStatus, User, UserId,
 };
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -272,31 +272,31 @@ pub async fn get_member(ctx: Context<'_>, member: serenity::Member) -> Result<()
     embed = embed.title(format!("{}'s Member Object", &member.user.tag()));
 
     if let Some(avatar) = member.avatar_url() {
-        embed = embed.thumbnail(avatar)
+        embed = embed.thumbnail(avatar);
     }
 
     if let Some(nick) = member.nick.clone() {
-        embed = embed.field("Nickname", nick, true)
+        embed = embed.field("Nickname", nick, true);
     }
 
     if let Some(joined_at) = member.joined_at {
-        embed = embed.field("Joined at", joined_at.to_string(), true)
+        embed = embed.field("Joined at", joined_at.to_string(), true);
     }
 
     if let Some(boosting) = member.premium_since {
-        embed = embed.field("Boosting since", boosting.to_string(), true)
+        embed = embed.field("Boosting since", boosting.to_string(), true);
     }
 
-    if let Some(flags) = get_flags_str(&member.flags) {
-        embed = embed.field("Flags", flags, true)
+    if let Some(flags) = get_flags_str(member.flags) {
+        embed = embed.field("Flags", flags, true);
     }
 
     if let Some(comms_disabled) = member.communication_disabled_until {
-        embed = embed.field("Timeout until", comms_disabled.to_string(), true)
+        embed = embed.field("Timeout until", comms_disabled.to_string(), true);
     }
 
     if let Some(dm_activity) = member.unusual_dm_activity_until {
-        embed = embed.field("High DM Activity Until", dm_activity.to_string(), true)
+        embed = embed.field("High DM Activity Until", dm_activity.to_string(), true);
     }
 
     embed = embed.field("Pending", member.pending().to_string(), true);
@@ -306,66 +306,8 @@ pub async fn get_member(ctx: Context<'_>, member: serenity::Member) -> Result<()
     Ok(())
 }
 
-/// See what games people are playing!
-#[poise::command(
-    rename = "member-unique-roles",
-    aliases("unique-roles"),
-    prefix_command,
-    category = "Utility",
-    guild_only,
-    required_permissions = "MANAGE_MESSAGES"
-)]
-pub async fn member_unique_roles(ctx: Context<'_>, role1: Role, role2: Role) -> Result<(), Error> {
-    let guild_id = ctx.guild_id().unwrap();
-
-    {
-        let guild = ctx.cache().guild(guild_id).unwrap();
-
-        let roles = &guild.roles;
-
-        if roles.get(&role1.id).is_none() {
-            println!("Role1 wasn't found in guild");
-            return Ok(());
-        }
-
-        if roles.get(&role2.id).is_none() {
-            println!("Role2 wasn't found in guild");
-            return Ok(());
-        }
-
-        let mut users_with_either_role = 0;
-        let mut users_with_role1 = 0;
-        let mut users_with_role2 = 0;
-        let mut users_with_both_roles = 0;
-
-        for member in &guild.members {
-            if member.1.roles.contains(&role1.id) || member.1.roles.contains(&role2.id) {
-                users_with_either_role += 1;
-            }
-
-            if member.1.roles.contains(&role1.id) {
-                users_with_role1 += 1;
-            }
-
-            if member.1.roles.contains(&role2.id) {
-                users_with_role2 += 1;
-            }
-
-            if member.1.roles.contains(&role1.id) && member.1.roles.contains(&role2.id) {
-                users_with_both_roles += 1;
-            }
-        }
-
-        println!("Users with {}: {}", role1.name, users_with_role1);
-        println!("Users with {}: {}", role2.name, users_with_role2);
-        println!("Users with Either role: {}", users_with_either_role);
-        println!("Users with both roles: {}", users_with_both_roles);
-    }
-
-    Ok(())
-}
-
-pub fn commands() -> [crate::Command; 7] {
+#[must_use]
+pub fn commands() -> [crate::Command; 6] {
     [
         last_reactions(),
         statuses(),
@@ -373,11 +315,10 @@ pub fn commands() -> [crate::Command; 7] {
         dm_activity_check(),
         flag_lb(),
         get_member(),
-        member_unique_roles(),
     ]
 }
 
-fn get_flags_str(flags: &GuildMemberFlags) -> Option<String> {
+fn get_flags_str(flags: GuildMemberFlags) -> Option<String> {
     let flag_strings: Vec<&str> = [
         ("DID_REJOIN", GuildMemberFlags::DID_REJOIN),
         (

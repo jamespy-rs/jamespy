@@ -31,7 +31,7 @@ pub async fn ready(ctx: &serenity::Context, ready: &Ready, data: Arc<Data>) -> R
                 let _ = crate::tasks::check_space(&ctx_clone, &data).await;
             }
         });
-        println!("Logged in as {}", ready.user.tag())
+        println!("Logged in as {}", ready.user.tag());
     }
     Ok(())
 }

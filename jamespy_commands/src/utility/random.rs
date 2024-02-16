@@ -12,6 +12,7 @@ use rand::RngCore;
     user_cooldown = "3",
     track_edits
 )]
+#[allow(clippy::similar_names)]
 pub async fn choose(
     ctx: Context<'_>,
     #[description = "Choice 1"] choice1: String,
@@ -52,6 +53,7 @@ pub async fn choose(
     Ok(())
 }
 
+#[must_use]
 pub fn commands() -> [crate::Command; 1] {
     [choose()]
 }

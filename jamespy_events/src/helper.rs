@@ -29,6 +29,7 @@ pub fn get_guild_name_override(
 }
 
 // Helper function for getting the guild name even if ID is a None variant.
+#[must_use]
 pub fn get_guild_name(ctx: &serenity::Context, guild_id: Option<GuildId>) -> String {
     if let Some(id) = guild_id {
         match id.name(&ctx.cache) {
@@ -63,9 +64,8 @@ async fn get_channel_name_thread(
     }
 
     let id = guild_id.unwrap();
-    let guild_cache = match ctx.cache.guild(id) {
-        Some(cache) => cache,
-        None => return "Unknown Channel".to_string(),
+    let Some(guild_cache) = ctx.cache.guild(id) else {
+        return "Unknown Channel".to_string();
     };
 
     let threads = &guild_cache.threads;
@@ -79,6 +79,7 @@ async fn get_channel_name_thread(
     "Unknown Channel".to_string()
 }
 
+#[must_use]
 pub fn channel_type_to_string(channel_type: ChannelType) -> String {
     match channel_type {
         ChannelType::Text => String::from("Text"),
@@ -97,6 +98,7 @@ pub fn channel_type_to_string(channel_type: ChannelType) -> String {
     }
 }
 
+#[must_use]
 pub fn overwrite_to_string(overwrite: PermissionOverwriteType) -> String {
     match overwrite {
         PermissionOverwriteType::Member(_) => String::from("Member"),
@@ -105,6 +107,7 @@ pub fn overwrite_to_string(overwrite: PermissionOverwriteType) -> String {
     }
 }
 
+#[must_use]
 pub fn auto_archive_duration_to_string(duration: AutoArchiveDuration) -> String {
     match duration {
         AutoArchiveDuration::None => String::from("None"),
@@ -116,6 +119,7 @@ pub fn auto_archive_duration_to_string(duration: AutoArchiveDuration) -> String 
     }
 }
 
+#[must_use]
 pub fn forum_layout_to_string(layout_type: ForumLayoutType) -> String {
     match layout_type {
         ForumLayoutType::NotSet => String::from("Not Set"),
@@ -125,6 +129,7 @@ pub fn forum_layout_to_string(layout_type: ForumLayoutType) -> String {
     }
 }
 
+#[must_use]
 pub fn sort_order_to_string(sort_order: SortOrder) -> String {
     match sort_order {
         SortOrder::LatestActivity => String::from("Latest Activity"),
@@ -183,6 +188,7 @@ pub async fn get_permission_changes(
     changes_str
 }
 
+#[must_use]
 pub fn get_permission_changes_detail(old: Permissions, new: Permissions, allow: bool) -> String {
     let mut changes_str = String::new();
     let added_color = if allow { "\x1B[92m" } else { "\x1B[31m" };

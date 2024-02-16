@@ -163,14 +163,12 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
             serenity::Command::set_global_commands(ctx.http(), &[]).await?;
         }
     } else {
-        let guild_id = match guild_id {
-            Some(x) => x,
-            None => {
-                ctx.say(":x: Cannot register spy commands if spy guild isn't set!")
-                    .await?;
-                return Ok(());
-            }
+        let Some(guild_id) = guild_id else {
+            ctx.say(":x: Cannot register spy commands if spy guild isn't set!")
+                .await?;
+            return Ok(());
         };
+
         if register {
             ctx.say(format!(
                 ":gear: Registering {num_owner} spy guild commands...",

@@ -36,18 +36,18 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     // TODO: fix this before working on the bot after rewrite.
     let flagged_words = get_blacklisted_words(
         msg,
-        config.badlist.unwrap_or_default(),
-        config.fixlist.unwrap_or_default(),
+        &config.badlist.unwrap_or_default(),
+        &config.fixlist.unwrap_or_default(),
     );
 
-    let flagged_str = if !flagged_words.is_empty() {
+    let flagged_str = if flagged_words.is_empty() {
+        ""
+    } else {
         println!(
             "Flagged for bad word(s): \x1B[1m\x1B[31m{}\x1B[0m",
             flagged_words.join(", ")
         );
         "\x1B[1m\x1B[31m"
-    } else {
-        ""
     };
 
     println!(
@@ -225,13 +225,10 @@ fn should_skip_msg(
     no_log_channels: Option<Vec<u64>>,
     message: &Message,
 ) -> bool {
-    let user_condition = no_log_users
-        .map(|vec| vec.contains(&message.author.id.get()))
-        .unwrap_or(false);
+    let user_condition = no_log_users.is_some_and(|vec| vec.contains(&message.author.id.get()));
 
-    let channel_condition = no_log_channels
-        .map(|vec| vec.contains(&message.channel_id.get()))
-        .unwrap_or(false);
+    let channel_condition =
+        no_log_channels.is_some_and(|vec| vec.contains(&message.channel_id.get()));
 
     // ignore commands in mudae channel.
     let mudae_cmd = message.content.starts_with('$') && message.channel_id == 850342078034870302;
@@ -344,8 +341,8 @@ fn attachments_embed_fmt(new_message: &Message) -> (Option<String>, Option<Strin
 
 fn get_blacklisted_words(
     new_message: &Message,
-    badlist: HashSet<String>,
-    fixlist: HashSet<String>,
+    badlist: &HashSet<String>,
+    fixlist: &HashSet<String>,
 ) -> Vec<String> {
     let messagewords: Vec<String> = new_message
         .content
@@ -409,7 +406,6 @@ fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
             write!(prefix, "\x1B[38;2;{};{};{}m", c.r(), c.g(), c.b()).unwrap();
         }
     }
-
 
     let reset = "\x1B[0m";
     format!("{prefix}{username}{reset}")

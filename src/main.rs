@@ -1,16 +1,4 @@
 #![warn(clippy::pedantic)]
-// clippy warns for u64 -> i64 conversions despite this being totally okay in this scenario.
-#![allow(
-    clippy::cast_sign_loss,
-    clippy::cast_possible_wrap,
-    clippy::cast_lossless,
-    clippy::cast_possible_truncation,
-    clippy::unused_async, // poise checks must be async.
-    clippy::unreadable_literal,
-    clippy::wildcard_imports,
-    clippy::too_many_lines,
-)]
-
 use jamespy_data::structs::{Data, Error};
 
 use poise::serenity_prelude::{self as serenity};

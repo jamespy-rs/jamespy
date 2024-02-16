@@ -83,7 +83,7 @@ pub async fn say_slash(
     let mut b = serenity::CreateMessage::new().allowed_mentions(am);
 
     if let Some(content) = content {
-        b = b.content(content)
+        b = b.content(content);
     };
 
     // Overhall this later, because allocations.
@@ -96,18 +96,18 @@ pub async fn say_slash(
             .map(|s| StickerId::new(s.parse().unwrap()))
             .collect();
 
-        b = b.add_sticker_ids(sticker_ids)
+        b = b.add_sticker_ids(sticker_ids);
     };
 
     if let Some(reply) = reply {
-        b = b.reference_message(&reply)
+        b = b.reference_message(&reply);
     };
 
     if let Some(attachment) = attachment {
         b = b.add_file(serenity::CreateAttachment::bytes(
             attachment.download().await?,
             attachment.filename,
-        ))
+        ));
     };
 
     let result = ChannelId::new(channel.parse::<u64>().unwrap())
@@ -210,15 +210,16 @@ async fn fw_commands(ctx: Context<'_>) -> Result<(), Error> {
 
     for command in commands {
         if command.aliases.is_empty() {
-            println!("{}", command.name)
+            println!("{}", command.name);
         } else {
-            println!("{}: {:?}", command.name, command.aliases)
+            println!("{}: {:?}", command.name, command.aliases);
         }
     }
 
     Ok(())
 }
 
+#[must_use]
 pub fn commands() -> [crate::Command; 7] {
     let say = poise::Command {
         slash_action: say_slash().slash_action,
