@@ -345,7 +345,7 @@ fn handle_allow_owner(ctx: Context<'_>, user: &User) -> Result<(), CommandRestri
 )]
 pub async fn deny_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
     let statement = match handle_deny_owner(ctx, &user) {
-        Ok(()) => format!("Successfully allowed {user} to use owner commands!"),
+        Ok(()) => format!("Successfully denied {user}'s usage of owner commands!"),
         Err(err) => match err {
             CommandRestrictErr::DoesntExist => format!("{user} doesn't have a bypass!"),
             _ => String::from("Error while handling error: Unexpected Error!"), // No other errors should fire in this code.
