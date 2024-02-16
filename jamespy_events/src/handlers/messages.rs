@@ -13,7 +13,7 @@ use poise::serenity_prelude::{
 use sqlx::query;
 
 pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) -> Result<(), Error> {
-    let config = { data.config.read().unwrap().events.clone() };
+    let config = { data.config.read().events.clone() };
 
     if should_skip_msg(config.no_log_users, config.no_log_channels, msg) {
         return Ok(());

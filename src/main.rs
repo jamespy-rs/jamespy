@@ -13,7 +13,7 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
         poise::FrameworkError::NotAnOwner { ctx, .. } => {
             let owner_bypass = {
                 let data = ctx.data();
-                let config = data.config.read().unwrap();
+                let config = data.config.read();
 
                 if let Some(check) = &config.command_checks {
                     check.owners_all.contains(&ctx.author().id)

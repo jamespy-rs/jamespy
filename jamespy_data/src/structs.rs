@@ -1,6 +1,7 @@
 use dashmap::DashMap;
+use parking_lot::RwLock;
 use serenity::all::UserId;
-use std::sync::{atomic::AtomicBool, Arc, RwLock};
+use std::sync::{atomic::AtomicBool, Arc};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -47,7 +48,7 @@ impl Data {
             redis: redis_pool,
             time_started: std::time::Instant::now(),
             reqwest: reqwest::Client::new(),
-            config: config.into(),
+            config: RwLock::new(config),
             dm_activity: dashmap::DashMap::new(),
         })
     }

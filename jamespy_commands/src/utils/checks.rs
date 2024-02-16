@@ -20,7 +20,7 @@ pub fn handle_allow_cmd(
     cmd_name: String,
     user: &User,
 ) -> Result<String, CommandRestrictErr> {
-    let mut config = data.config.write().unwrap();
+    let mut config = data.config.write();
 
     // Check if the command or its aliases match a real command.
     let command_name = get_cmd_name(commands, &cmd_name)?;
@@ -98,7 +98,7 @@ pub fn handle_deny_cmd(
     cmd_name: &str,
     user: &User,
 ) -> Result<String, CommandRestrictErr> {
-    let mut config = data.config.write().unwrap();
+    let mut config = data.config.write();
 
     // Check if the command or its aliases match a real command.
     let command_name = get_cmd_name(commands, cmd_name)?;

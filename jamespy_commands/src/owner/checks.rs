@@ -18,7 +18,7 @@ use poise::serenity_prelude::{self as serenity, User};
 pub async fn bot_ban(ctx: Context<'_>, user: User) -> Result<(), Error> {
     let inserted = {
         let data = ctx.data();
-        let mut config = data.config.write().unwrap();
+        let mut config = data.config.write();
 
         if let Some(banned_users) = &mut config.banned_users {
             banned_users.insert(user.id)
@@ -52,7 +52,7 @@ pub async fn bot_ban(ctx: Context<'_>, user: User) -> Result<(), Error> {
 pub async fn bot_unban(ctx: Context<'_>, user: User) -> Result<(), Error> {
     let banned = {
         let data = ctx.data();
-        let mut config = data.config.write().unwrap();
+        let mut config = data.config.write();
 
         if let Some(banned_users) = &mut config.banned_users {
             banned_users.remove(&user.id)
@@ -161,7 +161,7 @@ pub async fn owner_overrides(_: Context<'_>) -> Result<(), Error> {
 pub async fn user(ctx: Context<'_>, user: User) -> Result<(), Error> {
     let overrides = {
         let data = ctx.data();
-        let config = data.config.read().unwrap();
+        let config = data.config.read();
 
         if let Some(checks) = &config.command_checks {
             let mut single_overrides = Vec::new();
@@ -266,7 +266,7 @@ pub async fn cmd(ctx: Context<'_>, cmd_name: String) -> Result<(), Error> {
 pub async fn cmd_overrides(ctx: Context<'_>, cmd_name: &str) -> Result<(), Error> {
     let overrides = {
         let data = ctx.data();
-        let config = data.config.read().unwrap();
+        let config = data.config.read();
 
         if let Some(checks) = &config.command_checks {
             checks.owners_single.get(cmd_name).cloned()
@@ -318,7 +318,7 @@ pub async fn allow_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
 
 fn handle_allow_owner(ctx: Context<'_>, user: &User) -> Result<(), CommandRestrictErr> {
     let data = ctx.data();
-    let mut config = data.config.write().unwrap();
+    let mut config = data.config.write();
 
     if let Some(checks) = &mut config.command_checks {
         let newly_added = &checks.owners_all.insert(user.id);
@@ -358,7 +358,7 @@ pub async fn deny_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
 
 fn handle_deny_owner(ctx: Context<'_>, user: &User) -> Result<(), CommandRestrictErr> {
     let data = ctx.data();
-    let mut config = data.config.write().unwrap();
+    let mut config = data.config.write();
 
     if let Some(checks) = &mut config.command_checks {
         let present = &checks.owners_all.remove(&user.id);

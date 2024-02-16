@@ -102,7 +102,7 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
 
     {
         let data = ctx.data();
-        let mut config = data.config.write().unwrap();
+        let mut config = data.config.write();
 
         config.spy_guild = Some(spy_conf);
 

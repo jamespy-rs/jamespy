@@ -430,7 +430,7 @@ pub async fn voice_channel_status_update(
     data: Arc<Data>,
 ) -> Result<(), Error> {
     let vcstatus = {
-        let config = data.config.read().unwrap();
+        let config = data.config.read();
         config.vcstatus.clone()
     };
     if vcstatus.action {
@@ -522,7 +522,7 @@ pub async fn add(
     let user_id = user_id.unwrap();
 
     let vcstatus = {
-        let config = data.config.read().unwrap();
+        let config = data.config.read();
         config.vcstatus.clone()
     };
 
@@ -599,7 +599,7 @@ async fn send_msgs(
     blacklisted: bool,
 ) -> Result<(), Error> {
     let (post, announce) = {
-        let status = &data.config.read().unwrap().vcstatus;
+        let status = &data.config.read().vcstatus;
         (status.post_channel, status.announce_channel)
     };
 

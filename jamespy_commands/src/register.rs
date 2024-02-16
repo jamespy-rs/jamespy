@@ -59,7 +59,7 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
 
     // Ew.
     let (spy_guild_active, guild_id) = {
-        let config = data.config.read().unwrap();
+        let config = data.config.read();
 
         if let Some(spy_guild) = &config.spy_guild {
             let active = spy_guild.status.enabled;

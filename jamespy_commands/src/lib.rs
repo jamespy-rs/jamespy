@@ -45,7 +45,7 @@ pub async fn command_check(ctx: Context<'_>) -> Result<bool, Error> {
 
     let user_banned = {
         let data = ctx.data();
-        let config = data.config.read().unwrap();
+        let config = data.config.read();
 
         if let Some(banned_users) = &config.banned_users {
             banned_users.contains(&ctx.author().id)

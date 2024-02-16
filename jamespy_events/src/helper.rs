@@ -18,7 +18,7 @@ pub fn get_guild_name_override(
         return get_guild_name(ctx, guild_id);
     }
 
-    if let Some(overrides) = &data.config.read().unwrap().events.guild_name_override {
+    if let Some(overrides) = &data.config.read().events.guild_name_override {
         overrides
             .get(&guild_id.unwrap())
             .unwrap_or(&get_guild_name(ctx, guild_id))

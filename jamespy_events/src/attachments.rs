@@ -17,7 +17,7 @@ pub async fn download_attachments(
     use std::io::Write;
 
     let (attachments_set, spy_guild) = {
-        let data = data.config.read().unwrap();
+        let data = data.config.read();
 
         (data.attachment_store, data.spy_guild.clone())
     };

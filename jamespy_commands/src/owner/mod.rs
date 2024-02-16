@@ -35,7 +35,7 @@ pub async fn owner(ctx: Context<'_>) -> Result<bool, Error> {
         return Ok(true);
     };
 
-    if let Some(checks) = &ctx.data().config.read().unwrap().command_checks {
+    if let Some(checks) = &ctx.data().config.read().command_checks {
         if checks.owners_all.contains(user_id) {
             return Ok(true);
         }

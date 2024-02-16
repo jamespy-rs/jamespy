@@ -4,7 +4,7 @@ use poise::serenity_prelude::{self as serenity, UserId};
 
 pub async fn check_space(ctx: &serenity::Context, data: &Data) -> Result<(), Error> {
     let attachments = {
-        let data = data.config.read().unwrap();
+        let data = data.config.read();
 
         match data.attachment_store {
             Some(store) if store.enabled => store,
@@ -78,7 +78,7 @@ pub async fn hard_limit_hit(
     )
     .await?;
 
-    let mut config = data.config.write().unwrap();
+    let mut config = data.config.write();
 
     if let Some(attachments) = &mut config.attachment_store {
         attachments.enabled = false;

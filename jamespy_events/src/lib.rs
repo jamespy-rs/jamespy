@@ -11,8 +11,6 @@
     clippy::too_many_lines,
     clippy::unreadable_literal,
     clippy::unused_async, // fix.
-
-
 )]
 
 use jamespy_data::structs::{Data, Error};
@@ -102,7 +100,7 @@ pub async fn event_handler(
             id,
             guild_id,
         } => {
-            let guilds = { data.config.read().unwrap().vcstatus.guilds.clone() };
+            let guilds = { data.config.read().vcstatus.guilds.clone() };
             if let Some(guilds) = guilds {
                 if guilds.contains(guild_id) {
                     channels::voice_channel_status_update(ctx, old, status, id, guild_id, data)
