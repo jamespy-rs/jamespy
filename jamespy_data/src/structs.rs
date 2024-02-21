@@ -76,9 +76,14 @@ impl Data {
     }
 
     pub async fn check_or_insert_user(&self, user_id: UserId, name: String) {
+        // this logic is barebones and should probably use drain or something else?
+        // i don't plan on changing the limit at runtime so the current implementation should be fine.
+        const MAX_LENGTH: usize = 250;
+
         // Iterate through the cached names and check if the user is present.
         // If the user is present, move them to the back, updating the value if needed.
         let mut update_db = false;
+        let mut check_db = false;
         {
             let names = &mut self.names.lock();
             let usernames = &mut names.usernames;
@@ -86,47 +91,48 @@ impl Data {
             if let Some(index) = usernames.iter().position(|(id, _)| id.eq(&user_id)) {
                 let (_, cached_name) = usernames.remove(index).unwrap();
 
-                if cached_name.eq(&name) {
-                    // Update the cached name moving it back.
-                    usernames.push_back((user_id, name.to_string()));
-                } else {
-                    usernames.push_back((user_id, name.clone()));
+                // only update the database if its different.
+                if !cached_name.eq(&name) {
                     update_db = true;
-
                 }
+
+                usernames.push_back((user_id, name.clone()));
+
+                if usernames.len() > MAX_LENGTH {
+                    usernames.pop_front();
+                }
+            } else {
+                check_db = true;
             }
         }
 
-        // Can't do this while holding a lock so have to do it this way.
-        // We early return here because we have already updated the database.
+        // update database after lock has been released.
         if update_db {
             self.insert_user_db(user_id, name.clone()).await;
-            return
+            return;
         }
 
-        // if the name couldn't be found in the cache, check the database.
-        if let Some(db_name) = self.get_latest_username_psql(user_id).await {
-            // The name is in the database, but isn't the same.
-            if !db_name.eq(&name) {
+        if check_db {
+            // if the name couldn't be found in the cache, check the database.
+            if let Some(db_name) = self.get_latest_username_psql(user_id).await {
+                // The name is in the database, but isn't the same.
+                if !db_name.eq(&name) {
+                    self.insert_user_db(user_id, name.clone()).await;
+                }
+            } else {
                 self.insert_user_db(user_id, name.clone()).await;
             }
 
-            self.names
-            .lock()
-            .usernames
-            .push_back((user_id, name));
+            // cache the username.
+            println!("triggering");
+            let usernames = &mut self.names.lock().usernames;
+            usernames.push_back((user_id, name));
 
-
-        } else {
-            self.names
-                .lock()
-                .usernames
-                .push_back((user_id, name.clone()));
-
-            self.insert_user_db(user_id, name).await;
+            if usernames.len() > MAX_LENGTH {
+                usernames.pop_front();
+            }
         }
     }
-
 
     async fn insert_user_db(&self, user_id: UserId, name: String) {
         let timestamp: NaiveDateTime = sqlx::types::chrono::Utc::now().naive_utc();
@@ -140,8 +146,6 @@ impl Data {
         .execute(&self.db)
         .await;
     }
-
-
 
     async fn get_latest_username_psql(&self, user_id: UserId) -> Option<String> {
         let result = query!(

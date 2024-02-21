@@ -166,13 +166,21 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
 
 #[poise::command(prefix_command, hide_in_help)]
 async fn test(ctx: Context<'_>) -> Result<(), Error> {
-    ctx.say(format!("{:?}", ctx.data().names.lock().usernames)).await?;
+    ctx.say(format!("{:?}", ctx.data().names.lock().usernames))
+        .await?;
 
     Ok(())
 }
 
-
 #[must_use]
 pub fn commands() -> [crate::Command; 7] {
-    [uptime(), source(), help(), ping(), register(), stats(), test()]
+    [
+        uptime(),
+        source(),
+        help(),
+        ping(),
+        register(),
+        stats(),
+        test(),
+    ]
 }

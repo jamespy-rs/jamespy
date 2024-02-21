@@ -19,7 +19,8 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         return Ok(());
     }
 
-    data.check_or_insert_user(msg.author.id, msg.author.tag()).await;
+    data.check_or_insert_user(msg.author.id, msg.author.tag())
+        .await;
 
     let guild_id = msg.guild_id;
     let guild_name = get_guild_name_override(ctx, &data, guild_id);
