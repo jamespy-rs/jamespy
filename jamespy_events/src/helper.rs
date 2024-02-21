@@ -47,7 +47,6 @@ pub async fn get_channel_name(
     guild_id: Option<GuildId>,
     channel_id: ChannelId,
 ) -> String {
-
     // Right now all threads make a HTTP request even if they are cached because
     // they go through the channel logic first, and fail to get the channel.
     // This is not efficient at all and eats requests.

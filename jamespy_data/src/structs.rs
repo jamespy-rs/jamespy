@@ -1,7 +1,14 @@
 use dashmap::DashMap;
-use parking_lot::RwLock;
-use serenity::all::UserId;
-use std::sync::{atomic::AtomicBool, Arc};
+use parking_lot::{Mutex, RwLock};
+use std::collections::HashMap;
+
+use poise::serenity_prelude::{GuildId, UserId};
+use sqlx::{query, types::chrono::NaiveDateTime};
+
+use std::{
+    collections::VecDeque,
+    sync::{atomic::AtomicBool, Arc},
+};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -15,6 +22,20 @@ pub struct Data {
     pub reqwest: reqwest::Client,
     pub config: RwLock<jamespy_config::JamespyConfig>,
     pub dm_activity: DashMap<UserId, DmActivity>,
+    pub names: Mutex<Names>,
+}
+
+#[derive(Clone, Default, Debug)]
+pub struct Names {
+    pub usernames: VecDeque<(UserId, String)>,
+    pub global_names: VecDeque<(UserId, String)>,
+    pub nicknames: HashMap<GuildId, VecDeque<(UserId, String)>>,
+}
+
+impl Names {
+    fn new() -> Self {
+        Self::default()
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -49,8 +70,91 @@ impl Data {
             time_started: std::time::Instant::now(),
             reqwest: reqwest::Client::new(),
             config: RwLock::new(config),
-            dm_activity: dashmap::DashMap::new(),
+            dm_activity: DashMap::new(),
+            names: Mutex::new(Names::new()),
         })
+    }
+
+    pub async fn check_or_insert_user(&self, user_id: UserId, name: String) {
+        // Iterate through the cached names and check if the user is present.
+        // If the user is present, move them to the back, updating the value if needed.
+        let mut update_db = false;
+        {
+            let names = &mut self.names.lock();
+            let usernames = &mut names.usernames;
+
+            if let Some(index) = usernames.iter().position(|(id, _)| id.eq(&user_id)) {
+                let (_, cached_name) = usernames.remove(index).unwrap();
+
+                if cached_name.eq(&name) {
+                    // Update the cached name moving it back.
+                    usernames.push_back((user_id, name.to_string()));
+                } else {
+                    usernames.push_back((user_id, name.clone()));
+                    update_db = true;
+
+                }
+            }
+        }
+
+        // Can't do this while holding a lock so have to do it this way.
+        // We early return here because we have already updated the database.
+        if update_db {
+            self.insert_user_db(user_id, name.clone()).await;
+            return
+        }
+
+        // if the name couldn't be found in the cache, check the database.
+        if let Some(db_name) = self.get_latest_username_psql(user_id).await {
+            // The name is in the database, but isn't the same.
+            if !db_name.eq(&name) {
+                self.insert_user_db(user_id, name.clone()).await;
+            }
+
+            self.names
+            .lock()
+            .usernames
+            .push_back((user_id, name));
+
+
+        } else {
+            self.names
+                .lock()
+                .usernames
+                .push_back((user_id, name.clone()));
+
+            self.insert_user_db(user_id, name).await;
+        }
+    }
+
+
+    async fn insert_user_db(&self, user_id: UserId, name: String) {
+        let timestamp: NaiveDateTime = sqlx::types::chrono::Utc::now().naive_utc();
+
+        let _ = query!(
+            "INSERT INTO usernames (user_id, username, timestamp) VALUES ($1, $2, $3)",
+            i64::from(user_id),
+            name,
+            timestamp
+        )
+        .execute(&self.db)
+        .await;
+    }
+
+
+
+    async fn get_latest_username_psql(&self, user_id: UserId) -> Option<String> {
+        let result = query!(
+            "SELECT * FROM usernames WHERE user_id = $1 ORDER BY timestamp DESC LIMIT 1",
+            i64::from(user_id)
+        )
+        .fetch_one(&self.db)
+        .await;
+
+        match result {
+            Ok(record) => Some(record.username),
+            Err(_) => None,
+        }
     }
 
     pub async fn get_activity_check(&self, user_id: UserId) -> Option<DmActivity> {
