@@ -124,7 +124,6 @@ impl Data {
             }
 
             // cache the username.
-            println!("triggering");
             let usernames = &mut self.names.lock().usernames;
             usernames.push_back((user_id, name));
 
