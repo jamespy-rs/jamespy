@@ -27,7 +27,7 @@ pub struct JamespyConfig {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Checks {
-    // Users under  this will have access to all owner commands.
+    // Users under this will have access to all owner commands.
     pub owners_all: HashSet<UserId>,
     pub owners_single: HashMap<String, HashSet<UserId>>,
 }
@@ -52,14 +52,7 @@ impl JamespyConfig {
     #[must_use]
     pub fn new() -> Self {
         JamespyConfig {
-            events: Events {
-                no_log_channels: None,
-                no_log_users: None,
-                regex: None,
-                badlist: None,
-                fixlist: None,
-                guild_name_override: None,
-            },
+            events: Events::default(),
             vcstatus: VCStatus {
                 action: false,
                 post_channel: None,
@@ -209,7 +202,7 @@ pub struct AttachmentHook {
     pub channel_id: Option<ChannelId>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Default)]
 pub struct Events {
     pub no_log_channels: Option<Vec<u64>>,
     pub no_log_users: Option<Vec<u64>>,

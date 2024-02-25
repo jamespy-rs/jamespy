@@ -42,10 +42,6 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let config = jamespy_config::JamespyConfig::load_config();
-
-    config.write_config();
-
     let options = poise::FrameworkOptions {
         commands: jamespy_commands::commands(),
         prefix_options: poise::PrefixFrameworkOptions {

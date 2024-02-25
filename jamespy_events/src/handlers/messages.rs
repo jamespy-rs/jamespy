@@ -13,11 +13,23 @@ use poise::serenity_prelude::{
 use sqlx::query;
 
 pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) -> Result<(), Error> {
-    let config = { data.config.read().events.clone() };
 
-    if should_skip_msg(config.no_log_users, config.no_log_channels, msg) {
-        return Ok(());
-    }
+    let (flagged_words, patterns) = {
+        let config = &data.config.read().events;
+
+        if should_skip_msg(&config.no_log_users, &config.no_log_channels, msg) {
+            return Ok(());
+        }
+
+        let flagged_words = get_blacklisted_words(
+            msg,
+            &config.badlist,
+            &config.fixlist,
+        );
+
+        (flagged_words, config.regex.clone())
+
+    };
 
     data.check_or_insert_user(msg.author.id, msg.author.tag())
         .await;
@@ -26,7 +38,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     let guild_name = get_guild_name_override(ctx, &data, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, msg.channel_id).await;
 
-    if let Some(patterns) = config.regex {
+    if let Some(patterns) = patterns {
         check_event_dm_regex(ctx, msg, &get_guild_name(ctx, guild_id), &patterns).await?;
     };
 
@@ -36,12 +48,6 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
 
     let author_string = author_string(ctx, msg);
 
-    // TODO: fix this before working on the bot after rewrite.
-    let flagged_words = get_blacklisted_words(
-        msg,
-        &config.badlist.unwrap_or_default(),
-        &config.fixlist.unwrap_or_default(),
-    );
 
     let flagged_str = if flagged_words.is_empty() {
         ""
@@ -224,14 +230,14 @@ pub async fn message_delete(
 }
 
 fn should_skip_msg(
-    no_log_users: Option<Vec<u64>>,
-    no_log_channels: Option<Vec<u64>>,
+    no_log_users: &Option<Vec<u64>>,
+    no_log_channels: &Option<Vec<u64>>,
     message: &Message,
 ) -> bool {
-    let user_condition = no_log_users.is_some_and(|vec| vec.contains(&message.author.id.get()));
+    let user_condition = no_log_users.as_ref().is_some_and(|vec| vec.contains(&message.author.id.get()));
 
     let channel_condition =
-        no_log_channels.is_some_and(|vec| vec.contains(&message.channel_id.get()));
+        no_log_channels.as_ref().is_some_and(|vec| vec.contains(&message.channel_id.get()));
 
     // ignore commands in mudae channel.
     let mudae_cmd = message.content.starts_with('$') && message.channel_id == 850342078034870302;
@@ -344,8 +350,8 @@ fn attachments_embed_fmt(new_message: &Message) -> (Option<String>, Option<Strin
 
 fn get_blacklisted_words(
     new_message: &Message,
-    badlist: &HashSet<String>,
-    fixlist: &HashSet<String>,
+    badlist: &Option<HashSet<String>>,
+    fixlist: &Option<HashSet<String>>,
 ) -> Vec<String> {
     let messagewords: Vec<String> = new_message
         .content
@@ -358,20 +364,20 @@ fn get_blacklisted_words(
         .into_iter()
         .filter(|word| {
             // Check if the word is in the badlist and not in the fixlist
-            let is_blacklisted = badlist.iter().any(|badword| {
-                word.contains(badword) && !fixlist.iter().any(|fixword| word.contains(fixword))
-            });
+            let is_blacklisted = match (badlist, fixlist) {
+                (Some(bad_set), Some(fix_set)) => {
+                    bad_set.iter().any(|badword| word.contains(badword))
+                        && !fix_set.iter().any(|fixword| word.contains(fixword))
+                }
+                (Some(bad_set), None) => bad_set.iter().any(|badword| word.contains(badword)),
+                _ => false,
+            };
 
             is_blacklisted
         })
         .collect();
 
-    let flagged_words: Vec<String> = blacklisted_words
-        .iter()
-        .map(|word| (*word).clone())
-        .collect();
-
-    flagged_words
+    blacklisted_words
 }
 
 fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
