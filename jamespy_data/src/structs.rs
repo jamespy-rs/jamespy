@@ -28,7 +28,7 @@ pub struct Data {
 #[derive(Clone, Default, Debug)]
 pub struct Names {
     pub usernames: VecDeque<(UserId, UserNames)>,
-    pub nicknames: HashMap<GuildId, VecDeque<(UserId, String)>>,
+    pub nicknames: HashMap<GuildId, VecDeque<(UserId, Option<String>)>>,
 }
 
 // I feel like doing it this way instead of a tuple has better representation.
@@ -114,10 +114,12 @@ impl Data {
                 // Update the user in the database if the username is different.
                 update_user = !cached_name.username.eq(&user.tag());
 
-                let global_name = user.global_name.as_ref().map(std::string::ToString::to_string);
+                let global_name = user
+                    .global_name
+                    .as_ref()
+                    .map(std::string::ToString::to_string);
 
                 update_display = cached_name.global_name.eq(&global_name);
-
 
                 if let Some(global) = &user.global_name {
                     // only update this if they have a new display name, also use old name if new is none.
@@ -163,22 +165,94 @@ impl Data {
                 self.insert_user_db(user.id, user.tag()).await;
             }
 
-
             if let Some(db_name) = self.get_latest_global_name_psql(user.id).await {
-                if !db_name.eq(&user.tag()) {
-                    self.insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string())).await;
+                // never insert if no name.
+                if let Some(user_global_name) = &user.global_name {
+                    if !db_name.eq(user_global_name) {
+                        self.insert_display_db(
+                            user.id,
+                            user.global_name.clone().map(|s| s.to_string()),
+                        )
+                        .await;
+                    }
                 }
             } else {
-                self.insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string())).await;
+                // optional values are handled internally on this function.
+                self.insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string()))
+                    .await;
             }
-
 
             // cache the names.
             let usernames = &mut self.names.lock().usernames;
-            usernames.push_back((user.id, UserNames::new(user.tag(), user.global_name.clone().map(|s| s.to_string()))));
+            usernames.push_back((
+                user.id,
+                UserNames::new(user.tag(), user.global_name.clone().map(|s| s.to_string())),
+            ));
 
             if usernames.len() > MAX_LENGTH {
                 usernames.pop_front();
+            }
+        }
+    }
+
+    pub async fn check_or_insert_nick(
+        &self,
+        guild_id: GuildId,
+        user_id: UserId,
+        nick: Option<String>,
+    ) {
+        const MAX_LENGTH: usize = 250;
+
+        let mut update_user = false;
+        let mut check_db = false;
+
+        {
+            let names = &mut self.names.lock();
+            let nicknames = names.nicknames.entry(guild_id).or_default();
+
+            if let Some(index) = nicknames.iter().position(|(id, _)| id.eq(&user_id)) {
+                let (_, cached_name) = nicknames.remove(index).unwrap();
+
+                // Update the nickname in database if different.
+                update_user = !cached_name.eq(&nick);
+
+                nicknames.push_back((user_id, nick.clone()));
+
+                // Length will not be configurable at this time so this doesn't need to do anything fancy.
+                if nicknames.len() > MAX_LENGTH {
+                    nicknames.pop_front();
+                }
+            } else {
+                check_db = true;
+            }
+        }
+
+        if update_user {
+            self.insert_nick_db(guild_id, user_id, nick).await;
+            return;
+        }
+
+        if check_db {
+            if let Some(db_name) = self.get_latest_nickname_psql(guild_id, user_id).await {
+                // never insert if no name.
+                if let Some(nick) = nick.clone() {
+                    if !db_name.eq(&nick) {
+                        // optional stuff is handled internally.
+                        self.insert_nick_db(guild_id, user_id, Some(nick)).await;
+                    }
+                }
+            } else {
+                // optional values are handled internally on this function.
+                self.insert_nick_db(guild_id, user_id, nick.clone()).await;
+            }
+
+            let names = &mut self.names.lock();
+            let nicknames = names.nicknames.entry(guild_id).or_default();
+
+            nicknames.push_back((user_id, nick));
+
+            if nicknames.len() > MAX_LENGTH {
+                nicknames.pop_front();
             }
         }
     }
@@ -214,6 +288,26 @@ impl Data {
         .await;
     }
 
+    async fn insert_nick_db(&self, guild_id: GuildId, user_id: UserId, name: Option<String>) {
+        if name.is_none() {
+            return;
+        }
+        let name = name.unwrap();
+
+        let timestamp: NaiveDateTime = sqlx::types::chrono::Utc::now().naive_utc();
+
+        let _ = query!(
+            "INSERT INTO nicknames (guild_id, user_id, nickname, timestamp) VALUES ($1, $2, $3, \
+             $4)",
+            i64::from(guild_id),
+            i64::from(user_id),
+            name,
+            timestamp
+        )
+        .execute(&self.db)
+        .await;
+    }
+
     async fn get_latest_username_psql(&self, user_id: UserId) -> Option<String> {
         let result = query!(
             "SELECT * FROM usernames WHERE user_id = $1 ORDER BY timestamp DESC LIMIT 1",
@@ -238,6 +332,22 @@ impl Data {
 
         match result {
             Ok(record) => Some(record.global_name),
+            Err(_) => None,
+        }
+    }
+
+    async fn get_latest_nickname_psql(&self, guild_id: GuildId, user_id: UserId) -> Option<String> {
+        let result = query!(
+            "SELECT * FROM nicknames WHERE guild_id = $1 AND user_id = $2 ORDER BY timestamp DESC \
+             LIMIT 1",
+            i64::from(guild_id),
+            i64::from(user_id)
+        )
+        .fetch_one(&self.db)
+        .await;
+
+        match result {
+            Ok(record) => Some(record.nickname),
             Err(_) => None,
         }
     }
