@@ -111,20 +111,19 @@ impl Data {
                 // remove so the user can be moved later.
                 let (_, cached_name) = usernames.remove(index).unwrap();
 
+                // Update the user in the database if the username is different.
                 update_user = !cached_name.username.eq(&user.tag());
 
-                let global_name = if let Some(global) = &user.global_name {
+                let global_name = user.global_name.as_ref().map(std::string::ToString::to_string);
+
+                update_display = cached_name.global_name.eq(&global_name);
+
+
+                if let Some(global) = &user.global_name {
                     // only update this if they have a new display name, also use old name if new is none.
                     update_display = cached_name.global_name.eq(&Some(global.to_string()));
-
-                    // new name for cache.
-                    Some(global.to_string())
-                } else {
-                    // use old name because new is none.
-                    cached_name.global_name
                 };
 
-                // I know i did a check before to *not* update the DB if it is None but fwiw i'll do a check later and I need to add to the cache anyway.
                 usernames.push_back((user.id, UserNames::new(user.tag(), global_name)));
 
                 // Length will not be configurable at this time so this doesn't need to do anything fancy.
