@@ -20,6 +20,16 @@ pub async fn guild_member_update(
     let guild_id = event.guild_id;
     let guild_name = get_guild_name_override(ctx, &data, Some(guild_id));
 
+    // check names.
+    data.check_or_insert_user(&event.user).await;
+
+    if let Some(member) = new {
+        let nick = member.nick.clone().map(|s| s.to_string());
+
+        data.check_or_insert_nick(event.guild_id, event.user.id, nick)
+            .await;
+    }
+
     if let Some(old_member) = old_if_available {
         if let Some(new_member) = new {
             let old_nickname = old_member.nick.as_deref().unwrap_or("None");
