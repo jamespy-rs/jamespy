@@ -1,6 +1,7 @@
 use crate::{owner::owner, Context, Error};
 use poise::serenity_prelude::{self as serenity, CreateEmbedFooter};
-use sqlx::{query, Row};
+use sqlx::{query, Pool, Postgres, Row};
+use std::fmt::Write;
 
 #[poise::command(
     rename = "dbstats",
@@ -12,25 +13,29 @@ use sqlx::{query, Row};
 )]
 pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
     let db_pool = &ctx.data().db;
-    let table_info = vec![
+
+    let messages_tables = [
         ("msgs", "message_id"),
         ("msgs_edits", "message_id"),
         ("msgs_deletions", "message_id"),
-        ("join_tracks", "user_id"),
-        ("dm_activity", "user_id"),
     ];
+    let names_tables = [
+        ("usernames", "user_id"),
+        ("global_names", "user_id"),
+        ("nicknames", "user_id"),
+    ];
+    let misc_tables = [("join_tracks", "user_id"), ("dm_activity", "user_id")];
 
     let mut embed = serenity::CreateEmbed::default().title("Database Stats");
 
-    for (table_name, pk_column) in table_info {
-        let sql_query = format!("SELECT COUNT({pk_column}) FROM {table_name}");
+    let messages_info = query_table_info(db_pool, &messages_tables).await?;
+    embed = embed.field("Messages", messages_info, true);
 
-        let row = query(&sql_query).fetch_one(db_pool).await?;
+    let names_info = query_table_info(db_pool, &names_tables).await?;
+    embed = embed.field("Names", names_info, true);
 
-        let count: i64 = row.get(0);
-
-        embed = embed.field(table_name, count.to_string(), false);
-    }
+    let misc_info = query_table_info(db_pool, &misc_tables).await?;
+    embed = embed.field("Miscellaneous", misc_info, true);
 
     let db_size_query = "SELECT pg_database_size(current_database())";
     let row = query(db_size_query).fetch_one(db_pool).await?;
@@ -40,6 +45,24 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
     embed = embed.footer(CreateEmbedFooter::new(format!("Database size: {db_size}")));
     ctx.send(poise::CreateReply::default().embed(embed)).await?;
     Ok(())
+}
+
+async fn query_table_info(
+    db_pool: &Pool<Postgres>,
+    tables: &[(&str, &str)],
+) -> Result<String, Error> {
+    let mut info = String::new();
+
+    for (table_name, pk_column) in tables {
+        let sql_query = format!("SELECT COUNT({pk_column}) FROM {table_name}");
+        let row = query(&sql_query).fetch_one(db_pool).await?;
+
+        let count: i64 = row.get(0);
+
+        writeln!(info, "**{table_name}**\n{count}").unwrap();
+    }
+
+    Ok(info)
 }
 
 #[poise::command(
