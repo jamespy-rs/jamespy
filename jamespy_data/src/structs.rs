@@ -2,7 +2,7 @@ use dashmap::DashMap;
 use parking_lot::{Mutex, RwLock};
 use std::collections::HashMap;
 
-use poise::serenity_prelude::{GuildId, UserId};
+use poise::serenity_prelude::{GuildId, User, UserId};
 use sqlx::{query, types::chrono::NaiveDateTime};
 
 use std::{
@@ -27,9 +27,25 @@ pub struct Data {
 
 #[derive(Clone, Default, Debug)]
 pub struct Names {
-    pub usernames: VecDeque<(UserId, String)>,
-    pub global_names: VecDeque<(UserId, String)>,
+    pub usernames: VecDeque<(UserId, UserNames)>,
     pub nicknames: HashMap<GuildId, VecDeque<(UserId, String)>>,
+}
+
+// I feel like doing it this way instead of a tuple has better representation.
+#[derive(Clone, Default, Debug)]
+pub struct UserNames {
+    pub username: String,
+    pub global_name: Option<String>,
+}
+
+impl UserNames {
+    #[must_use]
+    pub fn new(username: String, global_name: Option<String>) -> Self {
+        UserNames {
+            username,
+            global_name,
+        }
+    }
 }
 
 impl Names {
@@ -75,29 +91,43 @@ impl Data {
         })
     }
 
-    pub async fn check_or_insert_user(&self, user_id: UserId, name: String) {
+    pub async fn check_or_insert_user(&self, user: &User) {
         // this logic is barebones and should probably use drain or something else?
         // i don't plan on changing the limit at runtime so the current implementation should be fine.
         const MAX_LENGTH: usize = 250;
 
         // Iterate through the cached names and check if the user is present.
         // If the user is present, move them to the back, updating the value if needed.
-        let mut update_db = false;
+
+        let mut update_user = false;
+        let mut update_display = false;
         let mut check_db = false;
+
         {
             let names = &mut self.names.lock();
             let usernames = &mut names.usernames;
 
-            if let Some(index) = usernames.iter().position(|(id, _)| id.eq(&user_id)) {
+            if let Some(index) = usernames.iter().position(|(id, _)| id.eq(&user.id)) {
+                // remove so the user can be moved later.
                 let (_, cached_name) = usernames.remove(index).unwrap();
 
-                // only update the database if its different.
-                if !cached_name.eq(&name) {
-                    update_db = true;
-                }
+                update_user = !cached_name.username.eq(&user.tag());
 
-                usernames.push_back((user_id, name.clone()));
+                let global_name = if let Some(global) = &user.global_name {
+                    // only update this if they have a new display name, also use old name if new is none.
+                    update_display = cached_name.global_name.eq(&Some(global.to_string()));
 
+                    // new name for cache.
+                    Some(global.to_string())
+                } else {
+                    // use old name because new is none.
+                    cached_name.global_name
+                };
+
+                // I know i did a check before to *not* update the DB if it is None but fwiw i'll do a check later and I need to add to the cache anyway.
+                usernames.push_back((user.id, UserNames::new(user.tag(), global_name)));
+
+                // Length will not be configurable at this time so this doesn't need to do anything fancy.
                 if usernames.len() > MAX_LENGTH {
                     usernames.pop_front();
                 }
@@ -106,26 +136,47 @@ impl Data {
             }
         }
 
-        // update database after lock has been released.
-        if update_db {
-            self.insert_user_db(user_id, name.clone()).await;
-            return;
+        match (update_user, update_display) {
+            (true, true) => {
+                self.insert_user_db(user.id, user.tag()).await;
+                self.insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string()))
+                    .await;
+                return;
+            }
+            (true, false) => {
+                self.insert_user_db(user.id, user.tag()).await;
+                return;
+            }
+            (false, true) => {
+                self.insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string()))
+                    .await;
+                return;
+            }
+            (false, false) => (),
         }
 
         if check_db {
-            // if the name couldn't be found in the cache, check the database.
-            if let Some(db_name) = self.get_latest_username_psql(user_id).await {
-                // The name is in the database, but isn't the same.
-                if !db_name.eq(&name) {
-                    self.insert_user_db(user_id, name.clone()).await;
+            if let Some(db_name) = self.get_latest_username_psql(user.id).await {
+                if !db_name.eq(&user.tag()) {
+                    self.insert_user_db(user.id, user.tag()).await;
                 }
             } else {
-                self.insert_user_db(user_id, name.clone()).await;
+                self.insert_user_db(user.id, user.tag()).await;
             }
 
-            // cache the username.
+
+            if let Some(db_name) = self.get_latest_global_name_psql(user.id).await {
+                if !db_name.eq(&user.tag()) {
+                    self.insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string())).await;
+                }
+            } else {
+                self.insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string())).await;
+            }
+
+
+            // cache the names.
             let usernames = &mut self.names.lock().usernames;
-            usernames.push_back((user_id, name));
+            usernames.push_back((user.id, UserNames::new(user.tag(), user.global_name.clone().map(|s| s.to_string()))));
 
             if usernames.len() > MAX_LENGTH {
                 usernames.pop_front();
@@ -146,6 +197,24 @@ impl Data {
         .await;
     }
 
+    async fn insert_display_db(&self, user_id: UserId, name: Option<String>) {
+        if name.is_none() {
+            return;
+        }
+        let name = name.unwrap();
+
+        let timestamp: NaiveDateTime = sqlx::types::chrono::Utc::now().naive_utc();
+
+        let _ = query!(
+            "INSERT INTO global_names (user_id, global_name, timestamp) VALUES ($1, $2, $3)",
+            i64::from(user_id),
+            name,
+            timestamp
+        )
+        .execute(&self.db)
+        .await;
+    }
+
     async fn get_latest_username_psql(&self, user_id: UserId) -> Option<String> {
         let result = query!(
             "SELECT * FROM usernames WHERE user_id = $1 ORDER BY timestamp DESC LIMIT 1",
@@ -156,6 +225,20 @@ impl Data {
 
         match result {
             Ok(record) => Some(record.username),
+            Err(_) => None,
+        }
+    }
+
+    async fn get_latest_global_name_psql(&self, user_id: UserId) -> Option<String> {
+        let result = query!(
+            "SELECT * FROM global_names WHERE user_id = $1 ORDER BY timestamp DESC LIMIT 1",
+            i64::from(user_id)
+        )
+        .fetch_one(&self.db)
+        .await;
+
+        match result {
+            Ok(record) => Some(record.global_name),
             Err(_) => None,
         }
     }

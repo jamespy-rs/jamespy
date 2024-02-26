@@ -13,7 +13,6 @@ use poise::serenity_prelude::{
 use sqlx::query;
 
 pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) -> Result<(), Error> {
-
     let (flagged_words, patterns) = {
         let config = &data.config.read().events;
 
@@ -21,18 +20,12 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
             return Ok(());
         }
 
-        let flagged_words = get_blacklisted_words(
-            msg,
-            &config.badlist,
-            &config.fixlist,
-        );
+        let flagged_words = get_blacklisted_words(msg, &config.badlist, &config.fixlist);
 
         (flagged_words, config.regex.clone())
-
     };
 
-    data.check_or_insert_user(msg.author.id, msg.author.tag())
-        .await;
+    data.check_or_insert_user(&msg.author).await;
 
     let guild_id = msg.guild_id;
     let guild_name = get_guild_name_override(ctx, &data, guild_id);
@@ -47,7 +40,6 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     let (attachments, embeds) = attachments_embed_fmt(msg);
 
     let author_string = author_string(ctx, msg);
-
 
     let flagged_str = if flagged_words.is_empty() {
         ""
@@ -234,10 +226,13 @@ fn should_skip_msg(
     no_log_channels: &Option<Vec<u64>>,
     message: &Message,
 ) -> bool {
-    let user_condition = no_log_users.as_ref().is_some_and(|vec| vec.contains(&message.author.id.get()));
+    let user_condition = no_log_users
+        .as_ref()
+        .is_some_and(|vec| vec.contains(&message.author.id.get()));
 
-    let channel_condition =
-        no_log_channels.as_ref().is_some_and(|vec| vec.contains(&message.channel_id.get()));
+    let channel_condition = no_log_channels
+        .as_ref()
+        .is_some_and(|vec| vec.contains(&message.channel_id.get()));
 
     // ignore commands in mudae channel.
     let mudae_cmd = message.content.starts_with('$') && message.channel_id == 850342078034870302;
