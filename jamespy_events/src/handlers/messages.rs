@@ -32,12 +32,10 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     // check names.
     data.check_or_insert_user(&msg.author).await;
 
-    if let Some(id) = guild_id {
-        // partial member should always be a thing in a guild on a create message event, shouldn't panic.
-        let member = msg.member.as_ref().unwrap();
-        let nick = member.nick.clone().map(|s| s.to_string());
-
-        data.check_or_insert_nick(id, msg.author.id, nick).await;
+    if let (Some(id), Some(member)) = (guild_id, msg.member.as_ref()) {
+        if let Some(nick) = member.nick.as_ref().map(std::string::ToString::to_string) {
+            data.check_or_insert_nick(id, msg.author.id, Some(nick)).await;
+        }
     }
 
     if let Some(patterns) = patterns {
