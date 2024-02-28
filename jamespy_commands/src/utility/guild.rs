@@ -25,10 +25,12 @@ pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
 
         let mut description = String::new();
         if let Some(desc) = sticker.description.clone() {
+            println!("{}: {}", sticker.name, desc.len());
             writeln!(description, "**Description:** {desc}").unwrap();
         };
 
         // if it can be parsed its just numbers and therefore a guild emote.
+        // or it was custom set outside the discord client and is just random numbers.
         let related_emoji = if let Ok(id) = sticker.tags[0].parse::<u64>() {
             if let Some(emoji) = ctx.guild().unwrap().emojis.get(&EmojiId::from(id)) {
                 format!("{emoji}")
@@ -36,7 +38,16 @@ pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
                 id.to_string()
             }
         } else {
-            format!(":{}:", sticker.tags[0])
+            let emoji_regex = regex::Regex::new(r"[\p{Emoji}]+").unwrap();
+
+            // technically this isn't flawless given discord lets you put random text
+            // if you just use the api directly.
+            // at least that is what i think.
+            if emoji_regex.is_match(&sticker.tags[0]) {
+                sticker.tags[0].to_string()
+            } else {
+                format!(":{}:", sticker.tags[0])
+            }
         };
 
 
