@@ -34,7 +34,8 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
 
     if let (Some(id), Some(member)) = (guild_id, msg.member.as_ref()) {
         if let Some(nick) = member.nick.as_ref().map(std::string::ToString::to_string) {
-            data.check_or_insert_nick(id, msg.author.id, Some(nick)).await;
+            data.check_or_insert_nick(id, msg.author.id, Some(nick))
+                .await;
         }
     }
 

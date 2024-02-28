@@ -1,27 +1,20 @@
 use crate::{Context, Error};
 use poise::serenity_prelude::{
-    self as serenity, StickerFormatType, CreateActionRow, ComponentInteractionCollector, CreateInteractionResponse, EmojiId
+    self as serenity, ComponentInteractionCollector, CreateActionRow, CreateInteractionResponse,
+    EmojiId, StickerFormatType,
 };
 use std::fmt::Write;
 
-#[poise::command(
-    slash_command,
-    prefix_command,
-    category = "Utility",
-    guild_only,
-)]
+#[poise::command(slash_command, prefix_command, category = "Utility", guild_only)]
 pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
-
     let stickers = {
         let guild = ctx.guild().unwrap();
         guild.stickers.clone()
     };
 
-
     let mut pages = vec![];
     for (id, sticker) in stickers {
         let mut embed = serenity::CreateEmbed::new().title(format!("{} (ID:{})", sticker.name, id));
-
 
         let mut description = String::new();
         if let Some(desc) = sticker.description.clone() {
@@ -50,10 +43,14 @@ pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
             }
         };
 
-
         writeln!(description, "**Related Emoji:** {related_emoji}").unwrap();
 
-        writeln!(description, "**Format Type:** {}", sticker_format_type_str(&sticker.format_type)).unwrap();
+        writeln!(
+            description,
+            "**Format Type:** {}",
+            sticker_format_type_str(&sticker.format_type)
+        )
+        .unwrap();
         writeln!(description, "**Available:** {}", sticker.available).unwrap();
         embed = embed.description(description);
 
@@ -70,7 +67,6 @@ pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
 
     let mut current_page = 0;
 
-
     let msg = ctx
         .send(
             poise::CreateReply::default()
@@ -82,8 +78,7 @@ pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
         )
         .await?;
 
-
-        while let Some(press) = ComponentInteractionCollector::new(ctx.serenity_context().shard.clone())
+    while let Some(press) = ComponentInteractionCollector::new(ctx.serenity_context().shard.clone())
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))
         .timeout(std::time::Duration::from_secs(180))
         .await
@@ -110,15 +105,16 @@ pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
             .await?;
     }
     // clear components.
-    msg.edit(ctx, poise::CreateReply::new().embed(pages[current_page].clone()).components(vec![])).await?;
-
-
-
-
+    msg.edit(
+        ctx,
+        poise::CreateReply::new()
+            .embed(pages[current_page].clone())
+            .components(vec![]),
+    )
+    .await?;
 
     Ok(())
 }
-
 
 fn sticker_format_type_str(sticker_fmt: &StickerFormatType) -> &str {
     match *sticker_fmt {
@@ -126,10 +122,9 @@ fn sticker_format_type_str(sticker_fmt: &StickerFormatType) -> &str {
         StickerFormatType::Lottie => "LOTTIE",
         StickerFormatType::Apng => "APNG",
         StickerFormatType::Gif => "GIF",
-        _ => "Unknown"
+        _ => "Unknown",
     }
 }
-
 
 #[must_use]
 pub fn commands() -> [crate::Command; 1] {
