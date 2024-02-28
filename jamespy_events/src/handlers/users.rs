@@ -20,7 +20,7 @@ pub async fn guild_member_update(
     let guild_id = event.guild_id;
     let guild_name = get_guild_name_override(ctx, &data, Some(guild_id));
 
-    // check names.
+    // check names, maybe i should hook this into old info as well.
     data.check_or_insert_user(&event.user).await;
 
     if let Some(member) = new {

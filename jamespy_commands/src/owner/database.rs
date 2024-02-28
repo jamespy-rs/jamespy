@@ -65,6 +65,34 @@ async fn query_table_info(
     Ok(info)
 }
 
+/// Inserts all users in the current guild into the names cache.
+#[poise::command(
+    rename = "insert-all-names",
+    prefix_command,
+    category = "Owner - Database",
+    owners_only,
+    guild_only,
+    hide_in_help
+)]
+pub async fn insert_all_users(ctx: Context<'_>) -> Result<(), Error> {
+    let guild_id = ctx.guild_id().unwrap();
+    // expensive, maybe find a better way.
+    let members = {
+        let guild = ctx.cache().guild(guild_id).unwrap();
+        guild.members.clone()
+    };
+    // this is not efficient in the slightest and locks the data several thousand times for massive guilds.
+    // I should really provide a better way of doing this in bulk.
+    for member in members {
+        ctx.data().check_or_insert_user(&member.1.user).await;
+        ctx.data()
+            .check_or_insert_nick(guild_id, member.0, member.1.nick.map(|s| s.to_string()))
+            .await;
+    }
+
+    Ok(())
+}
+
 #[poise::command(
     rename = "sql",
     prefix_command,
@@ -120,6 +148,6 @@ pub async fn sql(
 }
 
 #[must_use]
-pub fn commands() -> [crate::Command; 2] {
-    [dbstats(), sql()]
+pub fn commands() -> [crate::Command; 3] {
+    [dbstats(), insert_all_users(), sql()]
 }
