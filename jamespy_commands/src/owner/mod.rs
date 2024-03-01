@@ -31,7 +31,7 @@ pub async fn owner(ctx: Context<'_>) -> Result<bool, Error> {
     let user_id = &ctx.author().id;
 
     // Owners will always be able to execute.
-    if ctx.framework().options.owners.get(user_id).is_some() {
+    if ctx.framework().options.owners.contains(user_id) {
         return Ok(true);
     };
 

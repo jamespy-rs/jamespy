@@ -27,7 +27,6 @@ pub async fn ready(ctx: &serenity::Context, ready: &Ready, data: Arc<Data>) -> R
     if is_last_shard && !data.has_started.load(Ordering::SeqCst) {
         finalize_start(ctx, &data);
         println!("Logged in as {}", ready.user.tag());
-
     }
 
     Ok(())
