@@ -20,20 +20,33 @@ pub async fn ready(ctx: &serenity::Context, ready: &Ready, data: Arc<Data>) -> R
     };
     ctx.set_activity(Some(activity_data));
 
-    let ctx_clone = ctx.clone();
+    let shard_count = ctx.cache.shard_count();
+    let is_last_shard = (ctx.shard_id.0 + 1) == shard_count.get();
 
-    if !data.has_started.load(Ordering::SeqCst) {
-        tokio::spawn(async move {
-            let mut interval: tokio::time::Interval =
-                tokio::time::interval(std::time::Duration::from_secs(60 * 10));
-            loop {
-                interval.tick().await;
-                let _ = crate::tasks::check_space(&ctx_clone, &data).await;
-            }
-        });
+
+    if is_last_shard && !data.has_started.load(Ordering::SeqCst) {
+        finalize_start(ctx, &data);
         println!("Logged in as {}", ready.user.tag());
+
     }
+
     Ok(())
+}
+
+fn finalize_start(ctx: &serenity::Context, data: &Arc<Data>) {
+    let ctx_clone = ctx.clone();
+    let data_clone = data.clone();
+
+    tokio::spawn(async move {
+        let mut interval: tokio::time::Interval =
+            tokio::time::interval(std::time::Duration::from_secs(60 * 10));
+        loop {
+            interval.tick().await;
+            let _ = crate::tasks::check_space(&ctx_clone, &data_clone).await;
+        }
+    });
+
+    data.has_started.store(true, Ordering::SeqCst);
 }
 
 // TODO: Cache join tracking.
