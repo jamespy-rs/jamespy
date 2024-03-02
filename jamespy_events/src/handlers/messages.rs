@@ -324,7 +324,7 @@ async fn handle_dm(ctx: &serenity::Context, msg: &Message) -> Result<(), Error> 
     Ok(())
 }
 
-fn attachments_embed_fmt(new_message: &Message) -> (Option<String>, Option<String>) {
+pub fn attachments_embed_fmt(new_message: &Message) -> (Option<String>, Option<String>) {
     let attachments = &new_message.attachments;
     let attachments_fmt: Option<String> = if attachments.is_empty() {
         None
@@ -383,7 +383,7 @@ fn get_blacklisted_words(
     blacklisted_words
 }
 
-fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
+pub fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
     // No member meaning no roles.
     if msg.member.is_none() {
         return msg.author.tag();
