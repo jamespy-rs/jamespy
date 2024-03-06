@@ -61,7 +61,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
 
     println!(
         "\x1B[90m[{guild_name}] [#{channel_name}]\x1B[0m {author_string}: \
-         {flagged_str}{}\x1B[36m{}{}\x1B[0m",
+         {flagged_str}{}\x1B[0m\x1B[36m{}{}\x1B[0m",
         msg.content,
         attachments.as_deref().unwrap_or(""),
         embeds.as_deref().unwrap_or("")
@@ -324,6 +324,7 @@ async fn handle_dm(ctx: &serenity::Context, msg: &Message) -> Result<(), Error> 
     Ok(())
 }
 
+#[must_use]
 pub fn attachments_embed_fmt(new_message: &Message) -> (Option<String>, Option<String>) {
     let attachments = &new_message.attachments;
     let attachments_fmt: Option<String> = if attachments.is_empty() {
@@ -383,6 +384,7 @@ fn get_blacklisted_words(
     blacklisted_words
 }
 
+#[must_use]
 pub fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
     // No member meaning no roles.
     if msg.member.is_none() {

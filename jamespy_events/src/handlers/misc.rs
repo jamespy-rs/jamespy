@@ -11,7 +11,6 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 pub async fn ready(ctx: &serenity::Context, ready: &Ready, data: Arc<Data>) -> Result<(), Error> {
-    // TODO: eventually get this from data to prevent resets on new ready?
     let activity_data = ActivityData {
         name: FixedString::from_str_trunc("you inside your home."),
         kind: ActivityType::Watching,

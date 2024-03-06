@@ -1,5 +1,5 @@
 use crate::{owner::owner, Context, Error};
-use poise::serenity_prelude::Channel;
+use poise::serenity_prelude::ChannelId;
 
 use jamespy_events::{handlers::messages::attachments_embed_fmt, helper::get_channel_name};
 
@@ -11,7 +11,7 @@ use jamespy_events::{handlers::messages::attachments_embed_fmt, helper::get_chan
 )]
 pub async fn msgs(
     ctx: Context<'_>,
-    channel: Option<Channel>,
+    channel: Option<ChannelId>,
     limit: Option<usize>,
 ) -> Result<(), Error> {
     if limit == Some(0) {
@@ -21,7 +21,7 @@ pub async fn msgs(
 
     let channel_id = {
         if let Some(channel) = channel {
-            channel.id()
+            channel
         } else {
             ctx.channel_id().to_channel(ctx).await?.id()
         }
@@ -74,7 +74,7 @@ pub async fn msgs(
 
         content.push_str(&string);
     }
-
+    // technically a condition exists where the only thing that exists is the codeblock.
     content.push_str("\n```");
     ctx.say(content).await?;
 
