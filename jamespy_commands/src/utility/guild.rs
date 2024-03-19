@@ -13,8 +13,9 @@ pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     let mut pages = vec![];
-    for (id, sticker) in stickers {
-        let mut embed = serenity::CreateEmbed::new().title(format!("{} (ID:{})", sticker.name, id));
+    for sticker in stickers {
+        let mut embed =
+            serenity::CreateEmbed::new().title(format!("{} (ID:{})", sticker.name, sticker.id));
 
         let mut description = String::new();
         if let Some(desc) = sticker.description.clone() {

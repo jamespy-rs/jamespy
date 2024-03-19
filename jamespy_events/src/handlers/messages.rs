@@ -5,7 +5,7 @@ use std::sync::Arc;
 use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
 use crate::{Data, Error};
 
-use chrono::NaiveDateTime;
+use chrono::DateTime;
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
     MessageUpdateEvent, UserId,
@@ -67,8 +67,9 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         embeds.as_deref().unwrap_or("")
     );
 
-    let timestamp: NaiveDateTime =
-        NaiveDateTime::from_timestamp_opt(msg.timestamp.timestamp(), 0).unwrap();
+    let timestamp = DateTime::from_timestamp(msg.timestamp.timestamp(), 0)
+        .unwrap()
+        .naive_utc();
 
     let _ = query!(
         "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, \
@@ -131,11 +132,10 @@ pub async fn message_edit(
                     embeds.as_deref().unwrap_or("")
                 );
 
-                let timestamp: NaiveDateTime = NaiveDateTime::from_timestamp_opt(
-                    new_message.edited_timestamp.unwrap().timestamp(),
-                    0,
-                )
-                .unwrap();
+                let timestamp =
+                    DateTime::from_timestamp(new_message.edited_timestamp.unwrap().timestamp(), 0)
+                        .unwrap()
+                        .naive_utc();
 
                 let _ = query!(
                     "INSERT INTO msgs_edits (guild_id, channel_id, message_id, user_id, \
@@ -202,7 +202,7 @@ pub async fn message_delete(
             embeds_fmt.as_deref().unwrap_or("")
         );
 
-        let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
+        let timestamp = chrono::Utc::now().naive_utc();
 
         let _ = query!(
             "INSERT INTO msgs_deletions (guild_id, channel_id, message_id, user_id, content, \

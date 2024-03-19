@@ -84,9 +84,9 @@ pub async fn insert_all_users(ctx: Context<'_>) -> Result<(), Error> {
     // this is not efficient in the slightest and locks the data several thousand times for massive guilds.
     // I should really provide a better way of doing this in bulk.
     for member in members {
-        ctx.data().check_or_insert_user(&member.1.user).await;
+        ctx.data().check_or_insert_user(&member.user).await;
         ctx.data()
-            .check_or_insert_nick(guild_id, member.0, member.1.nick.map(|s| s.to_string()))
+            .check_or_insert_nick(guild_id, member.user.id, member.nick.map(|s| s.to_string()))
             .await;
     }
 

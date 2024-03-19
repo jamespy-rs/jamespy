@@ -41,50 +41,60 @@ pub fn get_guild_name(ctx: &serenity::Context, guild_id: Option<GuildId>) -> Str
     }
 }
 
+// TODO: add a version that knows its in a guild to remove the check for it.
+
 // Helper function for getting the channel name.
 pub async fn get_channel_name(
     ctx: &serenity::Context,
     guild_id: Option<GuildId>,
     channel_id: ChannelId,
 ) -> String {
-    // Right now all threads make a HTTP request even if they are cached because
-    // they go through the channel logic first, and fail to get the channel.
-    // This is not efficient at all and eats requests.
-
-    // to get around this you should probably check if the channel is cached.
-
-    // if not cached, check if its a thread, and then check over http.
-
-    match channel_id.name(ctx).await {
-        Ok(name) => name,
-        Err(_) => get_channel_name_thread(ctx, guild_id, channel_id).await,
-    }
-}
-
-// Helper function for getting the channel name if its a thread.
-async fn get_channel_name_thread(
-    ctx: &serenity::Context,
-    guild_id: Option<GuildId>,
-    channel_id: ChannelId,
-) -> String {
+    // private channels don't really have names, serenity was doing sugar but its removed now.
     if guild_id.is_none() {
-        return "Unknown Channel".to_string();
+        return "None".to_string();
     }
 
-    let id = guild_id.unwrap();
-    let Some(guild_cache) = ctx.cache.guild(id) else {
-        return "Unknown Channel".to_string();
-    };
+    let name = retrieve_cached_name(ctx, guild_id.unwrap(), channel_id);
 
-    let threads = &guild_cache.threads;
+    if let Some(name) = name {
+        return name;
+    }
 
-    for thread in threads {
-        if thread.id == channel_id.get() {
-            return thread.name.to_string();
+    if let Ok(channel) = channel_id.to_channel(ctx).await {
+        if let Some(guild_channel) = channel.guild() {
+            return guild_channel.name.to_string();
         }
     }
 
-    "Unknown Channel".to_string()
+    "None".to_string()
+}
+
+// get the name from the guild cache if available.
+fn retrieve_cached_name(
+    ctx: &serenity::Context,
+    guild_id: GuildId,
+    channel_id: ChannelId,
+) -> Option<String> {
+    let guild_cache = ctx.cache.guild(guild_id);
+    guild_cache.as_ref()?;
+
+    // not efficient? but keeps indents down, redo later.
+    let guild_cache = guild_cache.unwrap();
+
+    if let Some(channel) = guild_cache.channels.get(&channel_id) {
+        Some(channel.name.to_string())
+    } else {
+        // check for thread.
+        let threads = &guild_cache.threads;
+
+        for thread in threads {
+            if thread.id == channel_id.get() {
+                return Some(thread.name.to_string());
+            }
+        }
+        // none if failure to find a channel or thread.
+        None
+    }
 }
 
 #[must_use]

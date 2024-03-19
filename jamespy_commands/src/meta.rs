@@ -119,14 +119,14 @@ async fn stats(ctx: Context<'_>) -> Result<(), Error> {
         .title("Bot & System Statistics")
         .thumbnail(ctx.cache().current_user().face());
 
+    // TODO: readd guild channel count by iterating.
     embed = embed.field(
         "Bot Info",
         format!(
-            "Up: {}\nShards: **{}**\nGuilds: **{}**\nChannels: **{}**",
+            "Up: {}\nShards: **{}**\nGuilds: **{}**",
             bot_uptime,
             ctx.cache().shard_count(),
             ctx.cache().guilds().len(),
-            ctx.cache().guild_channel_count()
         ),
         true,
     );

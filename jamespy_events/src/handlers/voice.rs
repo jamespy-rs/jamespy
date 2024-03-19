@@ -36,8 +36,8 @@ async fn handle_switch(
     // Should be fine given as voice states shouldn't be on private channels.
     let old_channel = old_id.to_channel(ctx).await?.guild().unwrap();
     let new_channel = new_id.to_channel(ctx).await?.guild().unwrap();
-    let old_name = old_channel.name();
-    let new_name = new_channel.name();
+    let old_name = old_channel.name;
+    let new_name = new_channel.name;
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(new_channel.guild_id));
 
@@ -61,7 +61,7 @@ async fn handle_leave(
 
     // Should be fine given as voice states shouldn't be on private channels.
     let old_channel = channel_id.to_channel(ctx).await?.guild().unwrap();
-    let channel_name = old_channel.name();
+    let channel_name = old_channel.name;
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(old_channel.guild_id));
 
@@ -75,7 +75,7 @@ async fn handle_joins(ctx: &serenity::Context, new: &VoiceState) -> Result<(), E
 
     // Should be fine given as voice states shouldn't be on private channels.
     let channel = channel_id.to_channel(ctx).await?.guild().unwrap();
-    let channel_name = channel.name();
+    let channel_name = channel.name;
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(channel.guild_id));
 

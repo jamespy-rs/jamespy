@@ -1,6 +1,7 @@
 use crate::helper::{
     auto_archive_duration_to_string, channel_type_to_string, forum_layout_to_string,
-    get_guild_name_override, get_permission_changes, overwrite_removal, sort_order_to_string,
+    get_channel_name, get_guild_name_override, get_permission_changes, overwrite_removal,
+    sort_order_to_string,
 };
 
 use crate::{Data, Error};
@@ -39,7 +40,6 @@ pub async fn channel_update(
     let mut channel_name = String::new();
     let mut kind = String::new();
     let mut diff = String::new();
-
     let guild_name = get_guild_name_override(ctx, &data, Some(new.guild_id));
 
     if let Some(old) = old {
@@ -60,16 +60,26 @@ pub async fn channel_update(
                 writeln!(
                     diff,
                     "Parent: {} -> {}",
-                    old_parent_id.name(ctx).await?,
-                    new_parent_id.name(ctx).await?
+                    get_channel_name(ctx, Some(new.guild_id), old_parent_id).await,
+                    get_channel_name(ctx, Some(new.guild_id), new_parent_id).await
                 )
                 .unwrap();
             }
             (None, Some(parent_id)) => {
-                writeln!(diff, "Parent: None -> {}", parent_id.name(ctx).await?).unwrap();
+                writeln!(
+                    diff,
+                    "Parent: None -> {}",
+                    get_channel_name(ctx, Some(new.guild_id), parent_id).await
+                )
+                .unwrap();
             }
             (Some(parent_id), None) => {
-                writeln!(diff, "Parent: {} -> None", parent_id.name(ctx).await?).unwrap();
+                writeln!(
+                    diff,
+                    "Parent: {} -> None",
+                    get_channel_name(ctx, Some(new.guild_id), parent_id).await
+                )
+                .unwrap();
             }
             _ => {}
         }
@@ -296,7 +306,7 @@ pub async fn thread_create(
     let kind = channel_type_to_string(thread.kind);
 
     let parent_channel_name = if let Some(parent_id) = thread.parent_id {
-        parent_id.name(ctx).await?
+        get_channel_name(ctx, Some(thread.guild_id), parent_id).await
     } else {
         "Unknown Channel".to_string()
     };
@@ -320,7 +330,7 @@ pub async fn thread_update(
     let mut diff = String::new();
 
     let parent_channel_name = if let Some(parent_id) = new.parent_id {
-        parent_id.name(ctx).await?
+        get_channel_name(ctx, Some(new.guild_id), parent_id).await
     } else {
         "Unknown Channel".to_string()
     };
@@ -404,7 +414,7 @@ pub async fn thread_delete(
         kind = channel_type_to_string(full_thread.kind);
 
         if let Some(parent_id) = full_thread.parent_id {
-            parent_channel_name = parent_id.name(ctx).await?;
+            parent_channel_name = get_channel_name(ctx, Some(thread.guild_id), parent_id).await;
         } else {
             parent_channel_name = "Unknown Channel".to_string();
         }
@@ -494,7 +504,7 @@ pub async fn add(
             Some(VoiceChannelStatus(VoiceChannelStatusAction::StatusUpdate)),
             None,
             None,
-            Some(5),
+            Some(nonmax::NonMaxU8::new(5).unwrap()),
         )
         .await?;
     let mut user_id: Option<UserId> = None;

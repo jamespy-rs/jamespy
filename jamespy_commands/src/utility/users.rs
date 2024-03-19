@@ -83,7 +83,7 @@ pub async fn statuses(ctx: Context<'_>) -> Result<(), Error> {
     let mut status_counts = HashMap::new();
     let mut message = String::new();
     for presence in &guild.presences {
-        let status = presence.1.status;
+        let status = presence.status;
 
         let count = status_counts.entry(status).or_insert(0);
         *count += 1;
@@ -121,11 +121,12 @@ pub async fn playing(ctx: Context<'_>) -> Result<(), Error> {
     let guild_id = ctx.guild_id().unwrap();
 
     let cache = &ctx.cache();
+    // i really should try and avoid this clone.
     let guild = cache.guild(guild_id).unwrap().clone();
 
     let total_members = guild
         .presences
-        .values()
+        .iter()
         .filter(|presence| {
             presence
                 .activities
@@ -135,7 +136,7 @@ pub async fn playing(ctx: Context<'_>) -> Result<(), Error> {
         .count();
 
     let mut activity_counts: HashMap<&str, u32> = HashMap::new();
-    for presence in guild.presences.values() {
+    for presence in &guild.presences {
         for activity in &presence.activities {
             if activity.kind == ActivityType::Playing {
                 let name = &activity.name;

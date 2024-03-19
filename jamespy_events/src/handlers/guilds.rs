@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use sqlx::query;
 
-use crate::{helper::get_guild_name_override, Data, Error};
+use crate::{
+    helper::{get_channel_name, get_guild_name_override},
+    Data, Error,
+};
 use poise::serenity_prelude::{
     self as serenity, AuditLogEntry, AutoModAction, ChannelId, CreateEmbedAuthor, Guild, GuildId,
     Member, User, UserId,
@@ -167,10 +170,7 @@ pub async fn guild_audit_log_entry_create(
 
         let mut status = format!(
             "Unknown (check #{})",
-            ChannelId::new(id)
-                .name(&ctx)
-                .await
-                .unwrap_or("Unknown".to_string())
+            get_channel_name(ctx, Some(*guild_id), ChannelId::new(id)).await
         )
         .to_string();
 
@@ -198,10 +198,7 @@ pub async fn guild_audit_log_entry_create(
         let footer = serenity::CreateEmbedFooter::new(format!(
             "User ID: {} • Please check status manually in #{}",
             entry.user_id,
-            ChannelId::new(id)
-                .name(&ctx)
-                .await
-                .unwrap_or("Unknown".to_string())
+            get_channel_name(ctx, Some(*guild_id), ChannelId::new(id)).await
         ));
         let mut embed = serenity::CreateEmbed::default()
             .author(CreateEmbedAuthor::new(author_title).icon_url(avatar_url))
