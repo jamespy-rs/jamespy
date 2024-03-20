@@ -34,14 +34,25 @@ async fn handle_switch(
     let new_id = new.channel_id.unwrap();
 
     // Should be fine given as voice states shouldn't be on private channels.
-    let old_channel = old_id.to_channel(ctx).await?.guild().unwrap();
-    let new_channel = new_id.to_channel(ctx).await?.guild().unwrap();
-    let old_name = old_channel.name;
-    let new_name = new_channel.name;
+
+    let user_name = new.user_id.to_user(ctx).await?.tag();
+
+    let guild_cache = ctx.cache.guild(new.guild_id.unwrap());
+    // will fire real error in the future.
+    if guild_cache.is_none() {
+        return Ok(())
+    }
+    // will clean up the "manual" unwrap later, this is slower, probably but looks nicer.
+    let guild_cache = guild_cache.unwrap();
+
+    let old_channel = guild_cache.channels.get(&old_id).unwrap();
+    let new_channel = guild_cache.channels.get(&new_id).unwrap();
+
+    let old_name = &old_channel.name;
+    let new_name = &new_channel.name;
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(new_channel.guild_id));
 
-    let user_name = new.user_id.to_user(ctx).await?.tag();
 
     println!(
         "\x1B[32m[{guild_name}] {user_name}: {old_name} (ID:{old_id}) -> {new_name} \
@@ -56,16 +67,17 @@ async fn handle_leave(
     new: &VoiceState,
 ) -> Result<(), Error> {
     // There is no new channel ID.
-
     let channel_id = old.channel_id.unwrap();
+    let user_name = new.user_id.to_user(ctx).await?.tag();
 
-    // Should be fine given as voice states shouldn't be on private channels.
-    let old_channel = channel_id.to_channel(ctx).await?.guild().unwrap();
-    let channel_name = old_channel.name;
+    // going to unwrap because i'm lazy and this is fine usually, private bot private issues.
+    let guild_cache = ctx.cache.guild(new.guild_id.unwrap()).unwrap();
+
+    let old_channel = guild_cache.channels.get(&channel_id).unwrap();
+    let channel_name = &old_channel.name;
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(old_channel.guild_id));
 
-    let user_name = new.user_id.to_user(ctx).await?.tag();
 
     println!("\x1B[32m[{guild_name}] {user_name} left {channel_name} (ID:{channel_id})\x1B[0m");
     Ok(())
@@ -73,13 +85,15 @@ async fn handle_leave(
 async fn handle_joins(ctx: &serenity::Context, new: &VoiceState) -> Result<(), Error> {
     let channel_id = new.channel_id.unwrap();
 
-    // Should be fine given as voice states shouldn't be on private channels.
-    let channel = channel_id.to_channel(ctx).await?.guild().unwrap();
-    let channel_name = channel.name;
+    let user_name = new.user_id.to_user(ctx).await?.tag();
+
+    let guild_cache = ctx.cache.guild(new.guild_id.unwrap()).unwrap();
+    let channel = guild_cache.channels.get(&channel_id).unwrap();
+
+    let channel_name = &channel.name;
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(channel.guild_id));
 
-    let user_name = new.user_id.to_user(ctx).await?.tag();
 
     println!("\x1B[32m[{guild_name}] {user_name} joined {channel_name} (ID:{channel_id})\x1B[0m");
     Ok(())
