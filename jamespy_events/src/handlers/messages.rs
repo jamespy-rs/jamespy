@@ -303,24 +303,23 @@ async fn handle_dm(ctx: &serenity::Context, msg: &Message) -> Result<(), Error> 
         return Ok(());
     }
 
-    let user_id = UserId::from(158567567487795200);
-    let user = user_id.to_user(ctx.clone()).await?;
 
     let embed = serenity::CreateEmbed::default()
-        .title("I was messaged!")
-        .description(format!("**{}**: {}", msg.author.tag(), msg.content))
-        .color(Colour::from_rgb(0, 255, 0))
-        .footer(CreateEmbedFooter::new(format!("{}", msg.channel_id)));
+    .title("I was messaged!")
+    .description(format!("**{}**: {}", msg.author.tag(), msg.content))
+    .color(Colour::from_rgb(0, 255, 0))
+    .footer(CreateEmbedFooter::new(format!("{}", msg.channel_id)));
 
-    let msg = serenity::CreateMessage::default()
-        .content(format!(
-            "{} (ID:{}) messaged me",
-            msg.author.tag(),
-            msg.author.id
-        ))
-        .embed(embed);
+let msg = serenity::CreateMessage::default()
+.content(format!(
+    "{} (ID:{}) messaged me",
+    msg.author.tag(),
+    msg.author.id
+))
+.embed(embed);
 
-    user.dm(&ctx.http, msg).await?;
+    // dm me about the mention of me.
+    UserId::from(158567567487795200).dm(&ctx.http, msg).await?;
     Ok(())
 }
 

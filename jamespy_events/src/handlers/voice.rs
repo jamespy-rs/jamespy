@@ -40,7 +40,7 @@ async fn handle_switch(
     let guild_cache = ctx.cache.guild(new.guild_id.unwrap());
     // will fire real error in the future.
     if guild_cache.is_none() {
-        return Ok(())
+        return Ok(());
     }
     // will clean up the "manual" unwrap later, this is slower, probably but looks nicer.
     let guild_cache = guild_cache.unwrap();
@@ -52,7 +52,6 @@ async fn handle_switch(
     let new_name = &new_channel.name;
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(new_channel.guild_id));
-
 
     println!(
         "\x1B[32m[{guild_name}] {user_name}: {old_name} (ID:{old_id}) -> {new_name} \
@@ -78,7 +77,6 @@ async fn handle_leave(
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(old_channel.guild_id));
 
-
     println!("\x1B[32m[{guild_name}] {user_name} left {channel_name} (ID:{channel_id})\x1B[0m");
     Ok(())
 }
@@ -93,7 +91,6 @@ async fn handle_joins(ctx: &serenity::Context, new: &VoiceState) -> Result<(), E
     let channel_name = &channel.name;
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(channel.guild_id));
-
 
     println!("\x1B[32m[{guild_name}] {user_name} joined {channel_name} (ID:{channel_id})\x1B[0m");
     Ok(())

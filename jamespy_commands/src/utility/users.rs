@@ -40,6 +40,7 @@ pub async fn last_reactions(ctx: Context<'_>) -> Result<(), Error> {
                 components[3].parse::<u32>().unwrap(),
             );
 
+            // TODO: collect all usernames and make a hashmap out of them to save the request.
             let username = UserId::new(user_id)
                 .to_user(ctx)
                 .await

@@ -5,21 +5,22 @@ use std::sync::Arc;
 
 use poise::serenity_prelude::{
     self as serenity, AutoArchiveDuration, ChannelId, ChannelType, Context, ForumLayoutType,
-    GuildId, PermissionOverwrite, PermissionOverwriteType, Permissions, SortOrder, UserId, User
+    GuildId, PermissionOverwrite, PermissionOverwriteType, Permissions, SortOrder, User, UserId,
 };
-
 
 pub async fn get_user(ctx: &serenity::Context, guild_id: GuildId, user_id: UserId) -> Option<User> {
     // guild cache should always be present, though, i should handle it anyway.
-    let guild = ctx.cache.guild(guild_id).unwrap();
+    let cached_user = {
+        let guild = ctx.cache.guild(guild_id).unwrap();
+        guild.members.get(&user_id).map(|m| m.user.clone())
+    };
 
-    if let Some(user) = guild.members.get(&user_id).map(|m| m.user.clone()) {
+    if let Some(user) = cached_user {
         Some(user)
     } else {
         user_id.to_user(ctx).await.ok()
     }
 }
-
 
 // Helper function for getting the guild name override or guild name even if None.
 pub fn get_guild_name_override(
@@ -179,9 +180,9 @@ pub async fn get_permission_changes(
     kind: PermissionOverwriteType,
 ) -> String {
     let name = match kind {
-        PermissionOverwriteType::Member(user_id) => match user_id.to_user(ctx).await {
-            Ok(user) => user.tag(),
-            Err(_) => String::from("Unknown User"),
+        PermissionOverwriteType::Member(user_id) => match get_user(ctx, guild_id, user_id).await {
+            Some(user) => user.tag(),
+            None => String::from("Unknown User"),
         },
         PermissionOverwriteType::Role(role_id) => ctx
             .cache

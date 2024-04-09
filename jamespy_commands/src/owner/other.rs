@@ -137,8 +137,11 @@ pub async fn dm(
     #[description = "Message"]
     message: String,
 ) -> Result<(), Error> {
-    let user = user_id.to_user(&ctx).await?;
-    user.direct_message(ctx.http(), serenity::CreateMessage::default().content(message))
+    user_id
+        .dm(
+            ctx.http(),
+            serenity::CreateMessage::default().content(message),
+        )
         .await?;
 
     Ok(())
