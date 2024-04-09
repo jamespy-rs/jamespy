@@ -8,6 +8,9 @@ use poise::serenity_prelude::{
     GuildId, PermissionOverwrite, PermissionOverwriteType, Permissions, SortOrder, User, UserId,
 };
 
+// this function serves to help reduce the magic usage of to_user, serenity no longer
+// iterates through all caches to get the information, and that was poor anyway,
+// almost all code can be adjusted to prevent the iteration through all caches.
 pub async fn get_user(ctx: &serenity::Context, guild_id: GuildId, user_id: UserId) -> Option<User> {
     // guild cache should always be present, though, i should handle it anyway.
     let cached_user = {
@@ -18,6 +21,8 @@ pub async fn get_user(ctx: &serenity::Context, guild_id: GuildId, user_id: UserI
     if let Some(user) = cached_user {
         Some(user)
     } else {
+        // uses temp_cache (if the feature is enabled)
+        // otherwise does a http call.
         user_id.to_user(ctx).await.ok()
     }
 }
