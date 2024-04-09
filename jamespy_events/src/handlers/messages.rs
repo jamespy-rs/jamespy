@@ -290,7 +290,7 @@ async fn pattern_matched(ctx: &serenity::Context, msg: &Message, guild: &str) ->
         ))
         .embed(embed);
 
-    user.dm(&ctx, msg).await?;
+    user.dm(&ctx.http, msg).await?;
 
     Ok(())
 }
@@ -320,7 +320,7 @@ async fn handle_dm(ctx: &serenity::Context, msg: &Message) -> Result<(), Error> 
         ))
         .embed(embed);
 
-    user.dm(&ctx.clone(), msg).await?;
+    user.dm(&ctx.http, msg).await?;
     Ok(())
 }
 

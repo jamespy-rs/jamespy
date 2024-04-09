@@ -71,7 +71,7 @@ pub async fn guild_member_addition(
 
             match guild_id.member(ctx, authorid).await {
                 Ok(member) => {
-                    member.user.dm(ctx, reply_builder).await?;
+                    member.user.dm(&ctx.http, reply_builder).await?;
                     // in the future i should check for if this fails and why, and remove depending on the situation.
                     let _ = query!(
                         "DELETE FROM join_tracks WHERE guild_id = $1 AND author_id = $2 AND \

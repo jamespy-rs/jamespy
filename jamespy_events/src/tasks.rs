@@ -48,7 +48,7 @@ pub async fn soft_limit_hit(
     let user_id = UserId::from(158567567487795200);
     let user = user_id.to_user(ctx.clone()).await?;
     user.dm(
-        &ctx,
+        &ctx.http,
         serenity::CreateMessage::default().content(format!(
             "Soft limit has been reached!: {}MB/{}MB",
             folder_size / 1_000_000,
@@ -69,7 +69,7 @@ pub async fn hard_limit_hit(
     let user_id = UserId::from(58567567487795200);
     let user = user_id.to_user(ctx.clone()).await?;
     user.dm(
-        &ctx,
+        &ctx.http,
         serenity::CreateMessage::default().content(format!(
             "Hard limit has been reached, Disabling!: {}MB/{}MB",
             folder_size / 1_000_000,

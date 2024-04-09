@@ -80,7 +80,7 @@ pub async fn cache_ready(
                         );
                         let reply_builder =
                             serenity::CreateMessage::default().content(reply_content);
-                        author.user.dm(ctx, reply_builder).await?;
+                        author.user.dm(&ctx.http, reply_builder).await?;
                     }
                 } else {
                     let _ = query!(
