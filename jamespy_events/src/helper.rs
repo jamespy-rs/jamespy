@@ -5,8 +5,21 @@ use std::sync::Arc;
 
 use poise::serenity_prelude::{
     self as serenity, AutoArchiveDuration, ChannelId, ChannelType, Context, ForumLayoutType,
-    GuildId, PermissionOverwrite, PermissionOverwriteType, Permissions, SortOrder,
+    GuildId, PermissionOverwrite, PermissionOverwriteType, Permissions, SortOrder, UserId, User
 };
+
+
+pub async fn get_user(ctx: &serenity::Context, guild_id: GuildId, user_id: UserId) -> Option<User> {
+    // guild cache should always be present, though, i should handle it anyway.
+    let guild = ctx.cache.guild(guild_id).unwrap();
+
+    if let Some(user) = guild.members.get(&user_id).map(|m| m.user.clone()) {
+        Some(user)
+    } else {
+        user_id.to_user(ctx).await.ok()
+    }
+}
+
 
 // Helper function for getting the guild name override or guild name even if None.
 pub fn get_guild_name_override(

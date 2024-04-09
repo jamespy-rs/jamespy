@@ -30,8 +30,8 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 
             let _ = ctx.say(msg).await;
         }
-        poise::FrameworkError::EventHandler { error, event, framework, .. } => {
-            println!("{error:?}: {event:?}");
+        poise::FrameworkError::EventHandler { error, .. } => {
+            println!("Error in event handler: {error}");
         }
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
