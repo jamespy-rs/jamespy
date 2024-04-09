@@ -9,26 +9,38 @@ jamespy_events = { path = "jamespy_events" }
 jamespy_config = { path = "jamespy_config" }
 jamespy_commands = { path = "jamespy_commands" }
 
-serenity = { git = "https://github.com/serenity-rs/serenity", branch = "next" }
-poise = { git = "https://github.com/serenity-rs/poise", branch = "serenity-next" }
-#serenity = { path = "../serenity" }
-
-
-
-tokio = { version = "1.33.0", features = ["macros", "signal", "rt-multi-thread", "net", "io-util"] }
-sqlx = { version = "0.7.1", features = ["macros", "runtime-tokio-rustls", "postgres", "time", "chrono"] }
-dashmap = "5.5.3"
-rand = "0.8.5"
-bb8-redis = "0.13.1"
-reqwest = "0.11.23"
+sqlx = { workspace = true }
+tokio = { workspace = true }
+poise = { workspace = true }
+serenity = { workspace = true }
+reqwest = { workspace = true }
 
 tracing-subscriber = "0.3.18"
-tracing = "0.1.40"
 
 
 [workspace]
 members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config", "jamespy_commands"]
 
+[workspace.dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "signal", "parking_lot"] }
+sqlx = { version = "0.7", features = ["macros", "postgres", "runtime-tokio-rustls", "chrono"] }
+bb8-redis = "0.13"
+reqwest = "0.12"
+rand = "0.8"
+small-fixed-array = "0.4"
+chrono = "0.4"
+
+
+[workspace.dependencies.serenity]
+git = "https://github.com/serenity-rs/serenity"
+features = ["temp_cache"]
+default-features = false
+branch = "next"
+
+[workspace.dependencies.poise]
+git = "https://github.com/serenity-rs/poise"
+features = ["cache"]
+branch = "serenity-next"
 
 
 [profile.release]

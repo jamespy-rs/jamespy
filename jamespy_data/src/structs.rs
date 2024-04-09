@@ -3,7 +3,8 @@ use parking_lot::{Mutex, RwLock};
 use std::collections::HashMap;
 
 use poise::serenity_prelude::{GuildId, User, UserId};
-use sqlx::{query, types::chrono::NaiveDateTime};
+use sqlx::query;
+use chrono::{NaiveDateTime, Utc};
 
 use std::{
     collections::VecDeque,
@@ -258,7 +259,7 @@ impl Data {
     }
 
     async fn insert_user_db(&self, user_id: UserId, name: String) {
-        let timestamp: NaiveDateTime = sqlx::types::chrono::Utc::now().naive_utc();
+        let timestamp: NaiveDateTime = Utc::now().naive_utc();
 
         let _ = query!(
             "INSERT INTO usernames (user_id, username, timestamp) VALUES ($1, $2, $3)",
@@ -276,7 +277,7 @@ impl Data {
         }
         let name = name.unwrap();
 
-        let timestamp: NaiveDateTime = sqlx::types::chrono::Utc::now().naive_utc();
+        let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
 
         let _ = query!(
             "INSERT INTO global_names (user_id, global_name, timestamp) VALUES ($1, $2, $3)",
@@ -294,7 +295,7 @@ impl Data {
         }
         let name = name.unwrap();
 
-        let timestamp: NaiveDateTime = sqlx::types::chrono::Utc::now().naive_utc();
+        let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
 
         let _ = query!(
             "INSERT INTO nicknames (guild_id, user_id, nickname, timestamp) VALUES ($1, $2, $3, \

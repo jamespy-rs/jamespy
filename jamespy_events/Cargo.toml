@@ -9,18 +9,16 @@ edition = "2021"
 jamespy_data = { path = "../jamespy_data" }
 jamespy_config = { path = "../jamespy_config" }
 
-
-serenity = { git = "https://github.com/serenity-rs/serenity", branch = "next" }
-poise = { git = "https://github.com/serenity-rs/poise", branch = "serenity-next" }
-
-sqlx = { version = "0.7.1", features = ["macros", "runtime-tokio-rustls", "postgres", "time", "chrono"] }
-tokio = { version = "1.33.0", features = ["macros", "signal", "rt-multi-thread", "net", "io-util"] }
+serenity = { workspace = true }
+poise = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+bb8-redis = { workspace = true }
+small-fixed-array = { workspace = true }
 
 
 serde_json = "1.0"
-bb8-redis = "0.13.1"
 regex = "1.9.3"
 chrono = "0.4.31"
 fs_extra = "1.3.0"
-small-fixed-array = "0.4.0"
 nonmax = "0.5.5"
