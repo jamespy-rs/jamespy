@@ -15,7 +15,7 @@ pub async fn reaction_add(
     // will need to to_user when guild_id is none and i'm not adding complexity
     // for reactions that don't matter.
     if add_reaction.guild_id.is_none() {
-        return Ok(())
+        return Ok(());
     };
 
     // recieved over gateway, so a user is present.
@@ -65,7 +65,7 @@ pub async fn reaction_remove(
 ) -> Result<(), Error> {
     // ditto.
     if removed_reaction.guild_id.is_none() {
-        return Ok(())
+        return Ok(());
     };
 
     // ditto.

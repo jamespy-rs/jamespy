@@ -1,4 +1,7 @@
-use crate::{helper::{get_guild_name_override, get_user}, Error};
+use crate::{
+    helper::{get_guild_name_override, get_user},
+    Error,
+};
 use poise::serenity_prelude::{self as serenity, VoiceState};
 
 pub async fn voice_state_update(
@@ -34,7 +37,7 @@ async fn handle_switch(
 
     let user_name = match get_user(ctx, new.guild_id.unwrap(), new.user_id).await {
         Some(user) => user.tag(),
-        None => return Ok(())
+        None => return Ok(()),
     };
 
     let guild_cache = ctx.cache.guild(new.guild_id.unwrap());
@@ -68,9 +71,9 @@ async fn handle_leave(
     // There is no new channel ID.
     let channel_id = old.channel_id.unwrap();
     // they are leaving so old should hold the guild_id, see handle_joins for justification.
-    let user_name = match get_user(ctx, old.guild_id.unwrap(), new.user_id).await {
+    let user_name = match get_user(ctx, new.guild_id.unwrap(), new.user_id).await {
         Some(user) => user.tag(),
-        None => return Ok(())
+        None => return Ok(()),
     };
 
     // going to unwrap because i'm lazy and this is fine usually, private bot private issues.
@@ -91,7 +94,7 @@ async fn handle_joins(ctx: &serenity::Context, new: &VoiceState) -> Result<(), E
     // they are joining, so a guild_id is present.
     let user_name = match get_user(ctx, new.guild_id.unwrap(), new.user_id).await {
         Some(user) => user.tag(),
-        None => return Ok(())
+        None => return Ok(()),
     };
 
     let guild_cache = ctx.cache.guild(new.guild_id.unwrap()).unwrap();
