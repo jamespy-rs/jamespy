@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::helper::{get_channel_name, get_guild_name_override};
+use crate::helper::{get_channel_name, get_guild_name_override, get_user};
 use crate::{Data, Error};
 
 use bb8_redis::redis::AsyncCommands;
@@ -11,15 +11,23 @@ pub async fn reaction_add(
     add_reaction: &Reaction,
     data: Arc<Data>,
 ) -> Result<(), Error> {
+    // I'm not bothered here anymore.
+    // will need to to_user when guild_id is none and i'm not adding complexity
+    // for reactions that don't matter.
+    if add_reaction.guild_id.is_none() {
+        return Ok(())
+    };
+
+    // recieved over gateway, so a user is present.
     let user_id = add_reaction.user_id.unwrap();
-    let user_name = match user_id.to_user(ctx).await {
-        Ok(user) => {
+    let user_name = match get_user(ctx, add_reaction.guild_id.unwrap(), user_id).await {
+        Some(user) => {
             if user.bot() {
                 return Ok(());
             }
             user.tag()
         }
-        Err(_) => String::from("Unknown User"),
+        None => String::from("Unknown User"),
     };
 
     let guild_id = add_reaction.guild_id;
@@ -55,15 +63,21 @@ pub async fn reaction_remove(
     removed_reaction: &Reaction,
     data: Arc<Data>,
 ) -> Result<(), Error> {
+    // ditto.
+    if removed_reaction.guild_id.is_none() {
+        return Ok(())
+    };
+
+    // ditto.
     let user_id = removed_reaction.user_id.unwrap();
-    let user_name = match user_id.to_user(ctx).await {
-        Ok(user) => {
+    let user_name = match get_user(ctx, removed_reaction.guild_id.unwrap(), user_id).await {
+        Some(user) => {
             if user.bot() {
                 return Ok(());
             }
             user.tag()
         }
-        Err(_) => String::from("Unknown User"),
+        None => String::from("Unknown User"),
     };
     let guild_id = removed_reaction.guild_id;
     let guild_name = get_guild_name_override(ctx, &data, guild_id);

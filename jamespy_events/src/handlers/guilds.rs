@@ -3,7 +3,7 @@ use std::sync::Arc;
 use sqlx::query;
 
 use crate::{
-    helper::{get_channel_name, get_guild_name_override},
+    helper::{get_channel_name, get_guild_name_override, get_user},
     Data, Error,
 };
 use poise::serenity_prelude::{
@@ -144,7 +144,8 @@ pub async fn guild_audit_log_entry_create(
     }
 
     let (user_name, avatar_url) = {
-        let user = entry.user_id.to_user(&ctx).await.unwrap();
+        // TODO: i'm not happy with the unwrap but i'd rather avoid the http request now.
+        let user = get_user(ctx, *guild_id, entry.user_id).await.unwrap();
         (user.tag(), user.face())
     };
 

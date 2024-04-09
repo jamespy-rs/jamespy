@@ -1,4 +1,4 @@
-use crate::{helper::get_guild_name_override, Error};
+use crate::{helper::{get_guild_name_override, get_user}, Error};
 use poise::serenity_prelude::{self as serenity, VoiceState};
 
 pub async fn voice_state_update(
@@ -25,17 +25,17 @@ async fn handle_switch(
     old: &VoiceState,
     new: &VoiceState,
 ) -> Result<(), Error> {
-    // unwraping this should be fine because the user should
-    // have this when switching a channel, i'll know if this fails.
-    // Potentially might die with no cache.
+    // unwrapping this is probably fine considering i already handle this before?
+    // I don't think i've seen a panic here?
     let old_id = old.channel_id.unwrap();
 
     // Ditto.
     let new_id = new.channel_id.unwrap();
 
-    // Should be fine given as voice states shouldn't be on private channels.
-
-    let user_name = new.user_id.to_user(ctx).await?.tag();
+    let user_name = match get_user(ctx, new.guild_id.unwrap(), new.user_id).await {
+        Some(user) => user.tag(),
+        None => return Ok(())
+    };
 
     let guild_cache = ctx.cache.guild(new.guild_id.unwrap());
     // will fire real error in the future.
@@ -67,7 +67,11 @@ async fn handle_leave(
 ) -> Result<(), Error> {
     // There is no new channel ID.
     let channel_id = old.channel_id.unwrap();
-    let user_name = new.user_id.to_user(ctx).await?.tag();
+    // they are leaving so old should hold the guild_id, see handle_joins for justification.
+    let user_name = match get_user(ctx, old.guild_id.unwrap(), new.user_id).await {
+        Some(user) => user.tag(),
+        None => return Ok(())
+    };
 
     // going to unwrap because i'm lazy and this is fine usually, private bot private issues.
     let guild_cache = ctx.cache.guild(new.guild_id.unwrap()).unwrap();
@@ -83,7 +87,12 @@ async fn handle_leave(
 async fn handle_joins(ctx: &serenity::Context, new: &VoiceState) -> Result<(), Error> {
     let channel_id = new.channel_id.unwrap();
 
-    let user_name = new.user_id.to_user(ctx).await?.tag();
+    // unwrapping the guild should be fine here unless the discord api is being funky
+    // they are joining, so a guild_id is present.
+    let user_name = match get_user(ctx, new.guild_id.unwrap(), new.user_id).await {
+        Some(user) => user.tag(),
+        None => return Ok(())
+    };
 
     let guild_cache = ctx.cache.guild(new.guild_id.unwrap()).unwrap();
     let channel = guild_cache.channels.get(&channel_id).unwrap();

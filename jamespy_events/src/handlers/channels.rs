@@ -1,6 +1,6 @@
 use crate::helper::{
     auto_archive_duration_to_string, channel_type_to_string, forum_layout_to_string,
-    get_channel_name, get_guild_name_override, get_permission_changes, overwrite_removal,
+    get_channel_name, get_guild_name_override, get_permission_changes, get_user, overwrite_removal,
     sort_order_to_string,
 };
 
@@ -547,6 +547,7 @@ pub async fn add(
         ctx,
         data,
         *id,
+        *guild_id,
         old_field.as_deref(),
         new_field.as_deref(),
         user_id,
@@ -560,16 +561,19 @@ async fn check_blacklisted(msg: &str, patterns: &[regex::Regex]) -> bool {
     patterns.iter().any(|pattern| pattern.is_match(msg))
 }
 
+// should probably fix the ordering of arguments.
+#[allow(clippy::too_many_arguments)]
 async fn post_messages(
     ctx: &serenity::Context,
     data: &Data,
-    id: ChannelId,
+    channel_id: ChannelId,
+    guild_id: GuildId,
     old: Option<&str>,
     new: Option<&str>,
     user_id: UserId,
     blacklisted: bool,
 ) -> Result<(), Error> {
-    let channel_str: &str = &format!("<#{}>", id.get());
+    let channel_str: &str = &format!("<#{}>", channel_id.get());
 
     let old_field = match old {
         Some(value) if !value.is_empty() => ("Old", value, true),
@@ -583,7 +587,8 @@ async fn post_messages(
 
     let fields = [("Channel", channel_str, true), old_field, new_field];
 
-    let user: serenity::User = user_id.to_user(&ctx).await.unwrap();
+    // i 100% shouldn't unwrap here but i'm only reducing http requests right now not fixing jank.
+    let user: serenity::User = get_user(ctx, guild_id, user_id).await.unwrap();
     let author_title = format!("{} changed a channel status", user.name);
     let author = serenity::CreateEmbedAuthor::new(author_title).icon_url(user.face());
     let footer = serenity::CreateEmbedFooter::new(format!(

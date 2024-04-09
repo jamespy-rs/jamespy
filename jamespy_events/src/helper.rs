@@ -269,9 +269,9 @@ pub async fn overwrite_removal(
     overwrite: &PermissionOverwrite,
 ) -> String {
     let name = match overwrite.kind {
-        PermissionOverwriteType::Member(user_id) => match user_id.to_user(ctx).await {
-            Ok(user) => user.tag(),
-            Err(_) => String::from("Unknown User"),
+        PermissionOverwriteType::Member(user_id) => match get_user(ctx, guild_id, user_id).await {
+            Some(user) => user.tag(),
+            None => String::from("Unknown User"),
         },
         PermissionOverwriteType::Role(role_id) => ctx
             .cache
