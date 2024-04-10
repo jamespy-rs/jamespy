@@ -41,7 +41,7 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     aliases("conn"),
     prefix_command,
-    category = "Utility",
+    category = "Owner - Utility",
     channel_cooldown = "5",
     check = "owner",
     guild_only,
@@ -346,6 +346,6 @@ pub fn commands() -> [crate::Command; 8] {
         skip(),
         stop(),
         remove(),
-        play(),
+        join(),
     ]
 }
