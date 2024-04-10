@@ -18,6 +18,7 @@ pub type Command = poise::Command<Data, Error>;
 pub struct Data {
     pub has_started: AtomicBool,
     pub db: sqlx::PgPool,
+    pub songbird: Arc<songbird::Songbird>,
     pub redis: crate::database::RedisPool,
     pub time_started: std::time::Instant,
     pub reqwest: reqwest::Client,
@@ -84,6 +85,7 @@ impl Data {
             has_started: AtomicBool::new(false),
             db: db_pool,
             redis: redis_pool,
+            songbird: songbird::Songbird::serenity(),
             time_started: std::time::Instant::now(),
             reqwest: reqwest::Client::new(),
             config: RwLock::new(config),
