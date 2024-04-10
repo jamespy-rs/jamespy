@@ -10,7 +10,6 @@ mod error;
 async fn main() {
     tracing_subscriber::fmt::init();
 
-
     let options = poise::FrameworkOptions {
         commands: jamespy_commands::commands(),
         prefix_options: poise::PrefixFrameworkOptions {
@@ -34,9 +33,9 @@ async fn main() {
 
     let token = var("JAMESPY_TOKEN").expect("Missing `JAMESPY_TOKEN` env var. Aborting...");
     let intents = serenity::GatewayIntents::non_privileged()
-    | serenity::GatewayIntents::MESSAGE_CONTENT
-    | serenity::GatewayIntents::GUILD_MEMBERS
-    | serenity::GatewayIntents::GUILD_PRESENCES;
+        | serenity::GatewayIntents::MESSAGE_CONTENT
+        | serenity::GatewayIntents::GUILD_MEMBERS
+        | serenity::GatewayIntents::GUILD_PRESENCES;
 
     let mut settings = serenity::Settings::default();
     settings.max_messages = 350;

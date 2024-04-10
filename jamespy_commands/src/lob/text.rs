@@ -1,5 +1,4 @@
 use jamespy_data::lob::*;
-use ::serenity::all::GuildChannel;
 
 use crate::{Context, Error};
 use poise::serenity_prelude as serenity;
@@ -163,53 +162,8 @@ pub async fn send_lobs(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-/// i lob
-#[poise::command(
-    prefix_command,
-    category = "Utility",
-    channel_cooldown = "5",
-    owners_only,
-    guild_only
-)]
-pub async fn conn(ctx: Context<'_>, channel_id: GuildChannel) -> Result<(), Error> {
-    ctx.data().songbird.join(ctx.guild_id().unwrap(), channel_id.id).await?;
-
-    Ok(())
-}
-
-use songbird::input::YoutubeDl;
-
-#[poise::command(
-    prefix_command,
-    category = "Utility",
-    channel_cooldown = "5",
-    owners_only,
-    guild_only
-)]
-pub async fn fun(ctx: Context<'_>) -> Result<(), Error> {
-    let manager = &ctx.data().songbird;
-    let guild_id = ctx.guild_id().unwrap();
-
-    if let Some(handler_lock) = manager.get(guild_id) {
-        let option = get_random_lob();
-
-        if let Some(lob) = option {
-            let mut handler = handler_lock.lock().await;
-            let src = YoutubeDl::new(ctx.data().reqwest.clone(), lob.clone());
-            handler.enqueue_input(src.into()).await;
-
-            ctx.say(format!("playing: {lob}")).await?;
-        }
-    } else {
-        ctx.say("Cannot play without being in a voice channel!").await?;
-    }
-
-    Ok(())
-}
-
-
 #[must_use]
-pub fn commands() -> [crate::Command; 9] {
+pub fn commands() -> [crate::Command; 7] {
     [
         lob(),
         reload_lob(),
@@ -218,7 +172,5 @@ pub fn commands() -> [crate::Command; 9] {
         delete_lob(),
         total_lobs(),
         send_lobs(),
-        conn(),
-        fun(),
     ]
 }

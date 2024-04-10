@@ -16,7 +16,7 @@
 
 use jamespy_data::structs::{Command, Context, Data, Error};
 
-pub mod general;
+pub mod lob;
 pub mod meta;
 pub mod owner;
 pub mod register;
@@ -29,7 +29,7 @@ pub fn commands() -> Vec<Command> {
     meta::commands()
         .into_iter()
         .chain(owner::commands())
-        .chain(general::commands())
+        .chain(lob::commands())
         .chain(utility::commands())
         .collect()
 }

@@ -1222,6 +1222,7 @@ dependencies = [
  "sysinfo",
  "tracing",
  "tracing-subscriber",
+ "url",
 ]
 
 [[package]]

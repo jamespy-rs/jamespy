@@ -1,6 +1,5 @@
 use jamespy_data::structs::{Data, Error};
 
-
 pub async fn handler(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
         poise::FrameworkError::Command { error, ctx, .. } => {
