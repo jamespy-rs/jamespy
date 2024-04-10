@@ -18,10 +18,7 @@ songbird = { workspace = true }
 
 tracing-subscriber = "0.3.18"
 
-[dependencies.symphonia]
-features = ["mp3", "ogg", "wav", "pcm"]
-default-features = false
-version = "0.5.3"
+symphonia = { features = ["aac", "mp3", "isomp4", "alac"], version = "0.5.2" }
 
 
 [workspace]
