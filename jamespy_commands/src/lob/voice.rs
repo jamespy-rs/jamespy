@@ -56,6 +56,22 @@ pub async fn connect(ctx: Context<'_>, channel: GuildChannel) -> Result<(), Erro
     Ok(())
 }
 
+/// I lreave
+#[poise::command(
+    aliases("disconn", "disconnect"),
+    prefix_command,
+    category = "Utility",
+    channel_cooldown = "5",
+    check = "trontin",
+    guild_only,
+    hide_in_help
+)]
+pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.data().songbird.leave(ctx.guild_id().unwrap()).await?;
+
+    Ok(())
+}
+
 #[poise::command(
     prefix_command,
     category = "Utility",
@@ -337,7 +353,7 @@ pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 #[must_use]
-pub fn commands() -> [crate::Command; 8] {
+pub fn commands() -> [crate::Command; 9] {
     [
         connect(),
         fun(),
@@ -347,5 +363,6 @@ pub fn commands() -> [crate::Command; 8] {
         stop(),
         remove(),
         join(),
+        leave(),
     ]
 }
