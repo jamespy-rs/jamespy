@@ -253,7 +253,7 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
         let handler = handler_lock.lock().await;
 
         // will be true if theres tracks to skip to.
-        let skip = handler.queue().is_empty();
+        let skip = handler.queue().len() > 1;
 
         // stops the current song, which will start the next.
         handler.queue().skip()?;
