@@ -222,7 +222,7 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     guild_only,
     hide_in_help
 )]
-pub async fn remove(ctx: Context<'_>, keyword: String) -> Result<(), Error> {
+pub async fn remove(ctx: Context<'_>, #[rest] keyword: String) -> Result<(), Error> {
     let manager = &ctx.data().songbird;
     let guild_id = ctx.guild_id().unwrap();
 
@@ -232,12 +232,12 @@ pub async fn remove(ctx: Context<'_>, keyword: String) -> Result<(), Error> {
         let index = handler.queue().current_queue().iter().position(|t| {
             let data: Arc<TrackData> = t.data();
 
-            if data.url.starts_with(&keyword) {
+            if data.url.starts_with(&keyword.to_lowercase()) {
                 return true;
             }
 
             if let Some(title) = &data.name {
-                if title.starts_with(&keyword) {
+                if title.starts_with(&keyword.to_lowercase()) {
                     return true;
                 }
             }
