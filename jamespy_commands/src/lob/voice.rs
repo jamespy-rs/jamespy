@@ -1,4 +1,4 @@
-use crate::{Context, Error};
+use crate::{owner::owner, Context, Error};
 use jamespy_data::lob::*;
 
 use poise::serenity_prelude::{self as serenity, GuildChannel};
@@ -7,7 +7,34 @@ use std::{fmt::Write, sync::Arc};
 
 pub struct TrackData {
     pub name: Option<String>,
-    pub url: String
+    pub url: String,
+}
+
+/// I join
+#[poise::command(
+    prefix_command,
+    category = "Utility",
+    channel_cooldown = "5",
+    check = "trontin",
+    guild_only,
+    hide_in_help
+)]
+pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
+    let maybe_voice = {
+        let guild = ctx.guild().unwrap();
+        guild.voice_states.get(&ctx.author().id).cloned()
+    };
+
+    if let Some(voice) = maybe_voice {
+        if let Some(channel_id) = voice.channel_id {
+            ctx.data()
+                .songbird
+                .join(ctx.guild_id().unwrap(), channel_id)
+                .await?;
+        }
+    }
+
+    Ok(())
 }
 
 /// I connect
@@ -16,8 +43,9 @@ pub struct TrackData {
     prefix_command,
     category = "Utility",
     channel_cooldown = "5",
-    owners_only,
-    guild_only
+    check = "owner",
+    guild_only,
+    hide_in_help
 )]
 pub async fn connect(ctx: Context<'_>, channel: GuildChannel) -> Result<(), Error> {
     ctx.data()
@@ -32,8 +60,9 @@ pub async fn connect(ctx: Context<'_>, channel: GuildChannel) -> Result<(), Erro
     prefix_command,
     category = "Utility",
     channel_cooldown = "5",
-    owners_only,
-    guild_only
+    check = "trontin",
+    guild_only,
+    hide_in_help
 )]
 pub async fn fun(ctx: Context<'_>) -> Result<(), Error> {
     let manager = &ctx.data().songbird;
@@ -49,17 +78,22 @@ pub async fn fun(ctx: Context<'_>) -> Result<(), Error> {
 
             let metadata = TrackData {
                 name: data.next().unwrap().title,
-                url: lob.clone()
+                url: lob.clone(),
             };
 
             let track = Track::new_with_data(ytdl.into(), Arc::new(metadata));
 
             handler.enqueue(track).await;
             let mentions = serenity::CreateAllowedMentions::new()
-            .all_users(false)
-            .everyone(false)
-            .all_roles(false);
-            ctx.send(poise::CreateReply::new().content(format!("Queuing lob: {lob}")).allowed_mentions(mentions)).await?;
+                .all_users(false)
+                .everyone(false)
+                .all_roles(false);
+            ctx.send(
+                poise::CreateReply::new()
+                    .content(format!("Queuing lob: {lob}"))
+                    .allowed_mentions(mentions),
+            )
+            .await?;
         }
     } else {
         ctx.say("Cannot play without being in a voice channel!")
@@ -72,7 +106,10 @@ pub async fn fun(ctx: Context<'_>) -> Result<(), Error> {
 use url::Url;
 fn is_youtube_url(url: &str) -> bool {
     if let Ok(parsed_url) = Url::parse(url) {
-        matches!(parsed_url.domain(), Some("www.youtube.com"| "youtube.com" | "www.youtu.be" | "youtu.be"))
+        matches!(
+            parsed_url.domain(),
+            Some("www.youtube.com" | "youtube.com" | "www.youtu.be" | "youtu.be")
+        )
     } else {
         false
     }
@@ -82,8 +119,9 @@ fn is_youtube_url(url: &str) -> bool {
     prefix_command,
     category = "Utility",
     channel_cooldown = "5",
-    owners_only,
-    guild_only
+    check = "trontin",
+    guild_only,
+    hide_in_help
 )]
 pub async fn play(ctx: Context<'_>, mut track: String) -> Result<(), Error> {
     let manager = &ctx.data().songbird;
@@ -94,7 +132,7 @@ pub async fn play(ctx: Context<'_>, mut track: String) -> Result<(), Error> {
 
     if !is_youtube_url(&track) {
         ctx.say("I can only play YouTube.").await?;
-        return Ok(())
+        return Ok(());
     }
 
     if let Some(handler_lock) = manager.get(guild_id) {
@@ -104,7 +142,7 @@ pub async fn play(ctx: Context<'_>, mut track: String) -> Result<(), Error> {
 
         let metadata = TrackData {
             name: data.next().unwrap().title,
-            url: track.clone()
+            url: track.clone(),
         };
 
         let track = Track::new_with_data(ytdl.into(), Arc::new(metadata));
@@ -124,8 +162,9 @@ pub async fn play(ctx: Context<'_>, mut track: String) -> Result<(), Error> {
     prefix_command,
     category = "Utility",
     channel_cooldown = "5",
-    owners_only,
-    guild_only
+    check = "trontin",
+    guild_only,
+    hide_in_help
 )]
 pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     let manager = &ctx.data().songbird;
@@ -134,13 +173,11 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     if let Some(handler_lock) = manager.get(guild_id) {
         let handler = handler_lock.lock().await;
 
-
         let mut description = String::new();
 
         {
             let queue = handler.queue();
             if let Some(current) = queue.current() {
-
                 let data: Arc<TrackData> = current.data();
 
                 let track_str = if let Some(title) = &data.name {
@@ -165,11 +202,11 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
             }
         }
 
-
-        let embed = serenity::CreateEmbed::new().title("Voice Queue").description(description);
+        let embed = serenity::CreateEmbed::new()
+            .title("Voice Queue")
+            .description(description);
 
         ctx.send(poise::CreateReply::new().embed(embed)).await?;
-
     } else {
         ctx.say("Cannot get queue!").await?;
     }
@@ -181,8 +218,9 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     prefix_command,
     category = "Utility",
     channel_cooldown = "5",
-    owners_only,
-    guild_only
+    check = "trontin",
+    guild_only,
+    hide_in_help
 )]
 pub async fn remove(ctx: Context<'_>, keyword: String) -> Result<(), Error> {
     let manager = &ctx.data().songbird;
@@ -195,7 +233,7 @@ pub async fn remove(ctx: Context<'_>, keyword: String) -> Result<(), Error> {
             let data: Arc<TrackData> = t.data();
 
             if data.url.starts_with(&keyword) {
-                return true
+                return true;
             }
 
             if let Some(title) = &data.name {
@@ -219,17 +257,21 @@ pub async fn remove(ctx: Context<'_>, keyword: String) -> Result<(), Error> {
                 };
 
                 let mentions = serenity::CreateAllowedMentions::new()
-                .all_users(false)
-                .everyone(false)
-                .all_roles(false);
-                ctx.send(poise::CreateReply::new().content(format!("Removed: {track_str}")).allowed_mentions(mentions)).await?;
+                    .all_users(false)
+                    .everyone(false)
+                    .all_roles(false);
+                ctx.send(
+                    poise::CreateReply::new()
+                        .content(format!("Removed: {track_str}"))
+                        .allowed_mentions(mentions),
+                )
+                .await?;
             } else {
-               ctx.say("Track not found!").await?;
+                ctx.say("Track not found!").await?;
             }
         } else {
             ctx.say("Track not found!").await?;
         }
-
     } else {
         ctx.say("Cannot get queue!").await?;
     }
@@ -237,13 +279,13 @@ pub async fn remove(ctx: Context<'_>, keyword: String) -> Result<(), Error> {
     Ok(())
 }
 
-
 #[poise::command(
     prefix_command,
     category = "Utility",
     channel_cooldown = "5",
-    owners_only,
-    guild_only
+    check = "trontin",
+    guild_only,
+    hide_in_help
 )]
 pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
     let manager = &ctx.data().songbird;
@@ -274,8 +316,9 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
     prefix_command,
     category = "Utility",
     channel_cooldown = "5",
-    owners_only,
-    guild_only
+    check = "trontin",
+    guild_only,
+    hide_in_help
 )]
 pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {
     let manager = &ctx.data().songbird;
@@ -294,6 +337,15 @@ pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 #[must_use]
-pub fn commands() -> [crate::Command; 7] {
-    [connect(), fun(), play(), queue(), skip(), stop(), remove()]
+pub fn commands() -> [crate::Command; 8] {
+    [
+        connect(),
+        fun(),
+        play(),
+        queue(),
+        skip(),
+        stop(),
+        remove(),
+        play(),
+    ]
 }
