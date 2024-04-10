@@ -18,6 +18,11 @@ songbird = { workspace = true }
 
 tracing-subscriber = "0.3.18"
 
+[dependencies.symphonia]
+features = ["mp3", "ogg", "wav", "pcm"]
+default-features = false
+version = "0.5.3"
+
 
 [workspace]
 members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config", "jamespy_commands"]
