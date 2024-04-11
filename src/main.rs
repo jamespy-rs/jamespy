@@ -1,5 +1,6 @@
 #![warn(clippy::pedantic)]
-use jamespy_data::structs::Data;
+
+mod data;
 
 use poise::serenity_prelude::{self as serenity};
 use std::{env::var, sync::Arc, time::Duration};
@@ -40,7 +41,8 @@ async fn main() {
     let mut settings = serenity::Settings::default();
     settings.max_messages = 350;
 
-    let data = Data::new().await;
+    let data = data::setup().await;
+
     let mut client = serenity::Client::builder(&token, intents)
         .framework(framework)
         .voice_manager::<songbird::Songbird>(data.songbird.clone())

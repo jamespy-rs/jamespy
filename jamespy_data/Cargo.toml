@@ -15,6 +15,6 @@ bb8-redis = { workspace = true }
 reqwest = { workspace = true }
 chrono = { workspace = true }
 rand = { workspace = true }
+parking_lot = { workspace = true }
+dashmap = { workspace = true}
 tracing = "0.1.40"
-dashmap = "5.5.3"
-parking_lot = "0.12.1"

@@ -51,7 +51,8 @@ impl UserNames {
 }
 
 impl Names {
-    fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         Self::default()
     }
 }
@@ -76,24 +77,6 @@ impl DmActivity {
 
 #[allow(clippy::missing_panics_doc)]
 impl Data {
-    pub async fn new() -> Arc<Self> {
-        let db_pool = crate::database::init_data().await;
-        let redis_pool = crate::database::init_redis_pool().await;
-
-        let config = jamespy_config::JamespyConfig::load_config();
-        Arc::new(Data {
-            has_started: AtomicBool::new(false),
-            db: db_pool,
-            redis: redis_pool,
-            songbird: songbird::Songbird::serenity(),
-            time_started: std::time::Instant::now(),
-            reqwest: reqwest::Client::new(),
-            config: RwLock::new(config),
-            dm_activity: DashMap::new(),
-            names: Mutex::new(Names::new()),
-        })
-    }
-
     pub async fn check_or_insert_user(&self, user: &User) {
         // this logic is barebones and should probably use drain or something else?
         // i don't plan on changing the limit at runtime so the current implementation should be fine.
