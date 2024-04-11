@@ -40,7 +40,9 @@ pub async fn last_reactions(ctx: Context<'_>) -> Result<(), Error> {
                 components[3].parse::<u32>().unwrap(),
             );
 
-            // TODO: collect all usernames and make a hashmap out of them to save the request.
+            // TODO: try and move this to my guild cache function.
+            // its not nearly as bad because temp_cache is enabled.
+            // rather drop redis and cache this manually anyway.
             let username = UserId::new(user_id)
                 .to_user(ctx)
                 .await
