@@ -10,12 +10,34 @@ pub struct TrackData {
     pub url: String,
 }
 
+#[must_use]
+pub fn is_mod_mode(ctx: Context<'_>,) -> bool {
+    if ctx.framework().options.owners.contains(&ctx.author().id) {
+        return true;
+    };
+
+    if ctx.data().mod_mode.contains(&ctx.guild_id().unwrap()) {
+        return true;
+    }
+
+    false
+}
+
+pub async fn not_modemode(ctx: Context<'_>) -> Result<bool, Error> {
+    if is_mod_mode(ctx) {
+        return Err("Mod mode is enabled on this guild.".into());
+    }
+
+    Ok(true)
+}
+
 /// I join
 #[poise::command(
     prefix_command,
     category = "Utility",
     channel_cooldown = "5",
     check = "trontin",
+    check = "not_modemode",
     guild_only,
     hide_in_help
 )]
@@ -44,10 +66,12 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
     category = "Utility",
     channel_cooldown = "5",
     check = "trontin",
+    check = "not_modemode",
     guild_only,
     hide_in_help
 )]
 pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
+
     ctx.data().songbird.leave(ctx.guild_id().unwrap()).await?;
 
     Ok(())
@@ -58,12 +82,14 @@ pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
     category = "Utility",
     channel_cooldown = "5",
     check = "trontin",
+    check = "not_modemode",
     guild_only,
     hide_in_help
 )]
 pub async fn fun(ctx: Context<'_>) -> Result<(), Error> {
-    let manager = &ctx.data().songbird;
     let guild_id = ctx.guild_id().unwrap();
+
+    let manager = &ctx.data().songbird;
 
     if let Some(handler_lock) = manager.get(guild_id) {
         let option = get_random_lob();
@@ -117,12 +143,14 @@ fn is_youtube_url(url: &str) -> bool {
     category = "Utility",
     channel_cooldown = "5",
     check = "trontin",
+    check = "not_modemode",
     guild_only,
     hide_in_help
 )]
 pub async fn play(ctx: Context<'_>, mut track: String) -> Result<(), Error> {
-    let manager = &ctx.data().songbird;
     let guild_id = ctx.guild_id().unwrap();
+
+    let manager = &ctx.data().songbird;
 
     // trim start and end.
     track = track.trim_matches(|c| c == '<' || c == '>').to_string();
@@ -160,12 +188,14 @@ pub async fn play(ctx: Context<'_>, mut track: String) -> Result<(), Error> {
     category = "Utility",
     channel_cooldown = "5",
     check = "trontin",
+    check = "not_modemode",
     guild_only,
     hide_in_help
 )]
 pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
-    let manager = &ctx.data().songbird;
     let guild_id = ctx.guild_id().unwrap();
+
+    let manager = &ctx.data().songbird;
 
     if let Some(handler_lock) = manager.get(guild_id) {
         let handler = handler_lock.lock().await;
@@ -216,12 +246,14 @@ pub async fn queue(ctx: Context<'_>) -> Result<(), Error> {
     category = "Utility",
     channel_cooldown = "5",
     check = "trontin",
+    check = "not_modemode",
     guild_only,
     hide_in_help
 )]
 pub async fn remove(ctx: Context<'_>, #[rest] keyword: String) -> Result<(), Error> {
-    let manager = &ctx.data().songbird;
     let guild_id = ctx.guild_id().unwrap();
+
+    let manager = &ctx.data().songbird;
 
     if let Some(handler_lock) = manager.get(guild_id) {
         let handler = handler_lock.lock().await;
@@ -281,12 +313,14 @@ pub async fn remove(ctx: Context<'_>, #[rest] keyword: String) -> Result<(), Err
     category = "Utility",
     channel_cooldown = "5",
     check = "trontin",
+    check = "not_modemode",
     guild_only,
     hide_in_help
 )]
 pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
-    let manager = &ctx.data().songbird;
     let guild_id = ctx.guild_id().unwrap();
+
+    let manager = &ctx.data().songbird;
 
     if let Some(handler_lock) = manager.get(guild_id) {
         let handler = handler_lock.lock().await;
@@ -314,12 +348,14 @@ pub async fn skip(ctx: Context<'_>) -> Result<(), Error> {
     category = "Utility",
     channel_cooldown = "5",
     check = "trontin",
+    check = "not_modemode",
     guild_only,
     hide_in_help
 )]
 pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {
-    let manager = &ctx.data().songbird;
     let guild_id = ctx.guild_id().unwrap();
+
+    let manager = &ctx.data().songbird;
 
     if let Some(handler_lock) = manager.get(guild_id) {
         let handler = handler_lock.lock().await;
