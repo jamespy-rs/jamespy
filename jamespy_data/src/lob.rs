@@ -124,5 +124,5 @@ pub async fn trontin(ctx: Context<'_>) -> Result<bool, Error> {
         return Ok(true);
     }
 
-    Err("You are not worthy".into())
+    Err("You are not worthy of the lob.".into())
 }
