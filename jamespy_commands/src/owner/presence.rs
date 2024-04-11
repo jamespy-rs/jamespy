@@ -41,10 +41,8 @@ pub async fn status(
         }
     };
 
-    ctx.say(format!(
-        "Updating status to: **{status_type:?}**. (this could take a moment)"
-    ))
-    .await?;
+    ctx.say(format!("Updating status to: **{status_type:?}**."))
+        .await?;
 
     Ok(())
 }

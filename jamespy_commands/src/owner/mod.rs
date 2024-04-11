@@ -21,6 +21,7 @@ pub fn commands() -> Vec<crate::Command> {
             .chain(presence::commands())
             .chain(other::commands())
             .chain(spy_guild::commands())
+            .chain(voice::commands())
             .collect()
     }
 }

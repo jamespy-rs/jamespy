@@ -2,7 +2,10 @@ use dashmap::DashMap;
 use jamespy_data::structs::{Data, Names};
 
 use parking_lot::{Mutex, RwLock};
-use std::{collections::HashSet, sync::{atomic::AtomicBool, Arc}};
+use std::{
+    collections::HashSet,
+    sync::{atomic::AtomicBool, Arc},
+};
 
 pub async fn setup() -> Arc<Data> {
     let db_pool = jamespy_data::database::init_data().await;

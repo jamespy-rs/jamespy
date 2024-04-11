@@ -1,7 +1,7 @@
-use crate::{owner::owner, Context, Error};
+use crate::{Context, Error};
 use jamespy_data::lob::*;
 
-use poise::serenity_prelude::{self as serenity, GuildChannel};
+use poise::serenity_prelude as serenity;
 use songbird::{input::YoutubeDl, tracks::Track};
 use std::{fmt::Write, sync::Arc};
 
@@ -37,26 +37,7 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-/// I connect
-#[poise::command(
-    aliases("conn"),
-    prefix_command,
-    category = "Owner - Utility",
-    channel_cooldown = "5",
-    check = "owner",
-    guild_only,
-    hide_in_help
-)]
-pub async fn connect(ctx: Context<'_>, channel: GuildChannel) -> Result<(), Error> {
-    ctx.data()
-        .songbird
-        .join(ctx.guild_id().unwrap(), channel.id)
-        .await?;
-
-    Ok(())
-}
-
-/// I lreave
+/// I leave
 #[poise::command(
     aliases("disconn", "disconnect"),
     prefix_command,
@@ -353,9 +334,8 @@ pub async fn stop(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 #[must_use]
-pub fn commands() -> [crate::Command; 9] {
+pub fn commands() -> [crate::Command; 8] {
     [
-        connect(),
         fun(),
         play(),
         queue(),
