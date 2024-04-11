@@ -1,6 +1,6 @@
 use dashmap::DashMap;
 use parking_lot::{Mutex, RwLock};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use chrono::{NaiveDateTime, Utc};
 use poise::serenity_prelude::{GuildId, User, UserId};
@@ -20,6 +20,7 @@ pub struct Data {
     pub has_started: AtomicBool,
     /// Time the bot started.
     pub time_started: std::time::Instant,
+
     /// Bot database.
     pub db: sqlx::PgPool,
     /// Redis database that really doesn't need to used.
@@ -32,6 +33,8 @@ pub struct Data {
 
     /// Bot/Server Configuration
     pub config: RwLock<jamespy_config::JamespyConfig>,
+    /// Temporarily stops the usage of lobs in vc while the bot is "working".
+    pub mod_mode: HashSet<GuildId>,
     /// Runtime caches for dm activity.
     pub dm_activity: DashMap<UserId, DmActivity>,
     /// Runtime caches for user/global/nicks, used to reduce DB load.
