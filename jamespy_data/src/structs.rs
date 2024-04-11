@@ -16,14 +16,25 @@ pub type Context<'a> = poise::Context<'a, Data, Error>;
 pub type Command = poise::Command<Data, Error>;
 
 pub struct Data {
+    /// If the bots startup has been handled in the on_ready event.
     pub has_started: AtomicBool,
-    pub db: sqlx::PgPool,
-    pub songbird: Arc<songbird::Songbird>,
-    pub redis: crate::database::RedisPool,
+    /// Time the bot started.
     pub time_started: std::time::Instant,
+    /// Bot database.
+    pub db: sqlx::PgPool,
+    /// Redis database that really doesn't need to used.
+    pub redis: crate::database::RedisPool,
+
+    /// Voice manager.
+    pub songbird: Arc<songbird::Songbird>,
+    /// Http client for handling songbird & other commands.
     pub reqwest: reqwest::Client,
+
+    /// Bot/Server Configuration
     pub config: RwLock<jamespy_config::JamespyConfig>,
+    /// Runtime caches for dm activity.
     pub dm_activity: DashMap<UserId, DmActivity>,
+    /// Runtime caches for user/global/nicks, used to reduce DB load.
     pub names: Mutex<Names>,
 }
 

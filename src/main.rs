@@ -1,11 +1,10 @@
 #![warn(clippy::pedantic)]
 
 mod data;
+mod error;
 
 use poise::serenity_prelude::{self as serenity};
 use std::{env::var, sync::Arc, time::Duration};
-
-mod error;
 
 #[tokio::main]
 async fn main() {
