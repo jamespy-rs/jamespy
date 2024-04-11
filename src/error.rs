@@ -1,4 +1,5 @@
 use jamespy_data::structs::{Data, Error};
+use poise::serenity_prelude as serenity;
 
 pub async fn handler(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
@@ -24,6 +25,17 @@ pub async fn handler(error: poise::FrameworkError<'_, Data, Error>) {
             };
 
             let _ = ctx.say(msg).await;
+        }
+        poise::FrameworkError::CommandCheckFailed { error, ctx, .. } => {
+            let mut embed = serenity::CreateEmbed::new()
+                .title("You do not have permission to access this command.").colour(serenity::Colour::RED);
+
+            if let Some(err) = error {
+                embed = embed.description(err.to_string());
+            };
+
+            let msg = poise::CreateReply::new().embed(embed);
+            let _ = ctx.send(msg).await;
         }
         poise::FrameworkError::EventHandler { error, .. } => {
             println!("Error in event handler: {error}");

@@ -11,9 +11,9 @@ pub struct TrackData {
 }
 
 #[must_use]
-pub fn is_mod_mode(ctx: Context<'_>,) -> bool {
+pub fn is_mod_mode(ctx: Context<'_>) -> bool {
     if ctx.framework().options.owners.contains(&ctx.author().id) {
-        return true;
+        return false;
     };
 
     if ctx.data().mod_mode.contains(&ctx.guild_id().unwrap()) {
@@ -71,7 +71,6 @@ pub async fn join(ctx: Context<'_>) -> Result<(), Error> {
     hide_in_help
 )]
 pub async fn leave(ctx: Context<'_>) -> Result<(), Error> {
-
     ctx.data().songbird.leave(ctx.guild_id().unwrap()).await?;
 
     Ok(())

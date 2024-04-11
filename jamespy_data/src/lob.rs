@@ -120,7 +120,9 @@ pub async fn trontin(ctx: Context<'_>) -> Result<bool, Error> {
         326444255361105920,
     ]; // me, trontin, ruben, cv, link
     let user_id = ctx.author().id.get();
-    let trontin = allowed_users.contains(&user_id);
+    if allowed_users.contains(&user_id) {
+        return Ok(true);
+    }
 
-    Ok(trontin)
+    Err("You are not worthy".into())
 }

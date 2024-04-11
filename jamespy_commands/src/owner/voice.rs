@@ -63,12 +63,10 @@ pub async fn modmode(ctx: Context<'_>, lockout: Option<bool>) -> Result<(), Erro
             if let Some(handler_lock) = ctx.data().songbird.get(guild_id) {
                 handler_lock.lock().await.stop();
             }
-            ctx.say("Enabling Modmode.")
-                .await?;
+            ctx.say("Enabling Modmode.").await?;
         } else {
             ctx.data().mod_mode.remove(&guild_id);
-            ctx.say("Disabling Modmode.")
-                .await?;
+            ctx.say("Disabling Modmode.").await?;
         }
     } else if ctx.data().mod_mode.contains(&guild_id) {
         ctx.say("Modmode is currently enabled.").await?;
