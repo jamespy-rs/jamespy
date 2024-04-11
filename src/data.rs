@@ -1,11 +1,8 @@
-use dashmap::DashMap;
+use dashmap::{DashMap, DashSet};
 use jamespy_data::structs::{Data, Names};
 
 use parking_lot::{Mutex, RwLock};
-use std::{
-    collections::HashSet,
-    sync::{atomic::AtomicBool, Arc},
-};
+use std::sync::{atomic::AtomicBool, Arc};
 
 pub async fn setup() -> Arc<Data> {
     let db_pool = jamespy_data::database::init_data().await;
@@ -21,7 +18,7 @@ pub async fn setup() -> Arc<Data> {
         reqwest: reqwest::Client::new(),
         config: RwLock::new(config),
         dm_activity: DashMap::new(),
-        mod_mode: HashSet::new(),
+        mod_mode: DashSet::new(),
         names: Mutex::new(Names::new()),
     })
 }
