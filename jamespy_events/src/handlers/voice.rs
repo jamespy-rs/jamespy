@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::{
     helper::{get_guild_name_override, get_user},
     Error,
@@ -48,13 +50,24 @@ async fn handle_switch(
     // will clean up the "manual" unwrap later, this is slower, probably but looks nicer.
     let guild_cache = guild_cache.unwrap();
 
-    let old_channel = guild_cache.channels.get(&old_id).unwrap();
-    let new_channel = guild_cache.channels.get(&new_id).unwrap();
+    let channel_old_name = guild_cache.channels.get(&old_id).map(|c| &c.name);
+    let channel_new_name = guild_cache.channels.get(&new_id).map(|c| &c.name);
 
-    let old_name = &old_channel.name;
-    let new_name = &new_channel.name;
+    // maybe i should use fixedstring directly?
+    let old_name: Cow<str> = if let Some(channel_name) = channel_old_name {
+        Cow::Borrowed(channel_name)
+    } else {
+        Cow::Borrowed("None")
+    };
 
-    let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(new_channel.guild_id));
+    // ditto
+    let new_name: Cow<str> = if let Some(channel_name) = channel_new_name {
+        Cow::Borrowed(channel_name)
+    } else {
+        Cow::Borrowed("None")
+    };
+
+    let guild_name = get_guild_name_override(ctx, &ctx.data(), new.guild_id);
 
     println!(
         "\x1B[32m[{guild_name}] {user_name}: {old_name} (ID:{old_id}) -> {new_name} \

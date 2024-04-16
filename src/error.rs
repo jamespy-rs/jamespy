@@ -28,7 +28,8 @@ pub async fn handler(error: poise::FrameworkError<'_, Data, Error>) {
         }
         poise::FrameworkError::CommandCheckFailed { error, ctx, .. } => {
             let mut embed = serenity::CreateEmbed::new()
-                .title("You do not have permission to access this command.").colour(serenity::Colour::RED);
+                .title("You do not have permission to access this command.")
+                .colour(serenity::Colour::RED);
 
             if let Some(err) = error {
                 embed = embed.description(err.to_string());

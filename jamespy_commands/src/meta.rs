@@ -1,5 +1,6 @@
 use std::time::Instant;
 
+use ::serenity::all::{ChannelType, GuildChannel};
 use poise::serenity_prelude as serenity;
 use sysinfo::{Pid, System};
 
@@ -164,7 +165,52 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+#[poise::command(prefix_command, hide_in_help, guild_only)]
+async fn overwrite(ctx: Context<'_>, category: Option<GuildChannel>) -> Result<(), Error> {
+    let mut count = 0;
+
+    if let Some(category) = &category {
+        if category.kind != ChannelType::Category {
+            ctx.say("Not a category!").await?;
+        }
+    }
+
+    if let Some(category) = &category {
+        let guild = ctx.guild().unwrap();
+        for channel in &guild.channels {
+            if let Some(parent) = channel.parent_id {
+                if parent == category.id {
+                    count += channel.permission_overwrites.len();
+                }
+            };
+        }
+    } else {
+        let guild = ctx.guild().unwrap();
+        for channel in &guild.channels {
+            count += channel.permission_overwrites.len();
+        }
+    }
+
+    if let Some(category) = category {
+        ctx.say(format!("{count} overwrites for {category}"))
+            .await?;
+    } else {
+        ctx.say(format!("{count} channel overwrites for the whole server"))
+            .await?;
+    }
+
+    Ok(())
+}
+
 #[must_use]
-pub fn commands() -> [crate::Command; 6] {
-    [uptime(), source(), help(), ping(), register(), stats()]
+pub fn commands() -> [crate::Command; 7] {
+    [
+        uptime(),
+        source(),
+        help(),
+        ping(),
+        register(),
+        stats(),
+        overwrite(),
+    ]
 }

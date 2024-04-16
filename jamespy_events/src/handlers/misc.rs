@@ -43,7 +43,7 @@ fn finalize_start(ctx: &serenity::Context, data: &Arc<Data>) {
         }
     });
 
-    data.has_started.store(true, Ordering::SeqCst);
+    data.has_started.swap(true, Ordering::SeqCst);
 }
 
 // TODO: Cache join tracking.
