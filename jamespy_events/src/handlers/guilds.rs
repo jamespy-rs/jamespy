@@ -134,10 +134,10 @@ pub async fn guild_audit_log_entry_create(
         return Ok(());
     }
 
-    if entry.reason.is_none() {
-        return Ok(());
-    }
-    let reason = entry.reason.as_ref().unwrap();
+
+    let Some(reason) = &entry.reason else {
+        return Ok(())
+    };
 
     if !reason.starts_with("Voice Channel Status") {
         return Ok(());

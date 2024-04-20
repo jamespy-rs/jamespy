@@ -382,10 +382,10 @@ fn get_blacklisted_words(
 #[must_use]
 pub fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
     // No member meaning no roles.
-    if msg.member.is_none() {
+    let Some(member) = &msg.member else {
         return msg.author.tag();
-    }
-    let member = msg.member.as_ref().unwrap();
+    };
+
     let username = msg.author.tag();
 
     let guild = msg.guild(&ctx.cache).unwrap();

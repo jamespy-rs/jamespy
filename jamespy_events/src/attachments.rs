@@ -23,10 +23,9 @@ pub async fn download_attachments(
     };
 
     // cannot download if disabled.
-    if attachments_set.is_none() {
+    let Some(attachments_set) = attachments_set else {
         return Ok(());
-    }
-    let attachments_set = attachments_set.unwrap();
+    };
 
     if !attachments_set.enabled {
         return Ok(());
@@ -133,15 +132,13 @@ async fn announce_deleted_spy(
     message: Message,
     spy: Option<jamespy_config::SpyGuild>,
 ) -> Result<(), Error> {
-    if spy.is_none() {
+    let Some(spy) = spy else {
         return Ok(());
-    }
-    let spy = spy.unwrap();
+    };
 
-    if spy.attachment_hook.is_none() {
+    let Some(hook) = spy.attachment_hook else {
         return Ok(());
-    }
-    let hook = spy.attachment_hook.unwrap();
+    };
 
     // already checked if enabled by the time this is executed.
     if hook.channel_id.is_none() {

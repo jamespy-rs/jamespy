@@ -44,11 +44,10 @@ async fn handle_switch(
 
     let guild_cache = ctx.cache.guild(new.guild_id.unwrap());
     // will fire real error in the future.
-    if guild_cache.is_none() {
-        return Ok(());
-    }
-    // will clean up the "manual" unwrap later, this is slower, probably but looks nicer.
-    let guild_cache = guild_cache.unwrap();
+
+    let Some(guild_cache) = guild_cache else {
+        return Ok(())
+    };
 
     let channel_old_name = guild_cache.channels.get(&old_id).map(|c| &c.name);
     let channel_new_name = guild_cache.channels.get(&new_id).map(|c| &c.name);

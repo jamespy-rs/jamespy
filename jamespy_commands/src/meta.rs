@@ -1,8 +1,13 @@
 use std::time::Instant;
 
-use ::serenity::all::{ChannelType, GuildChannel};
+use ::serenity::all::{
+    ChannelId, ChannelType, GuildChannel, PermissionOverwriteType, RoleId, UserId,
+};
 use poise::serenity_prelude as serenity;
 use sysinfo::{Pid, System};
+
+use std::fmt::Write;
+use std::str::FromStr;
 
 use crate::{Context, Error};
 
@@ -165,7 +170,13 @@ async fn register(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-#[poise::command(prefix_command, hide_in_help, guild_only)]
+#[poise::command(
+    aliases("overwrites"),
+    prefix_command,
+    hide_in_help,
+    guild_only,
+    required_permissions = "MANAGE_MESSAGES"
+)]
 async fn overwrite(ctx: Context<'_>, category: Option<GuildChannel>) -> Result<(), Error> {
     let mut count = 0;
 
@@ -202,8 +213,94 @@ async fn overwrite(ctx: Context<'_>, category: Option<GuildChannel>) -> Result<(
     Ok(())
 }
 
+#[derive(Debug, poise::ChoiceParameter, PartialEq)]
+pub enum OverwriteChoices {
+    User,
+    Role,
+}
+
+/// Find permission overwrites for specific users.
+#[poise::command(
+    rename = "find-overwrites",
+    aliases("find-overwrite"),
+    prefix_command,
+    hide_in_help,
+    guild_only,
+    required_permissions = "MANAGE_MESSAGES"
+)]
+pub async fn find_overwrite(
+    ctx: Context<'_>,
+    #[description = "Item to find"] choice: OverwriteChoices,
+    #[description = "Item to find"] item: String,
+) -> Result<(), Error> {
+    // manual parsing beacuse no generic ID type exists.
+    let Ok(id) = u64::from_str(item.trim_matches(|c| c == '<' || c == '>' || c == '@' || c == '&'))
+    else {
+        ctx.say("Failure to parse item.").await?;
+        return Ok(());
+    };
+
+    let overwrite_kind = match choice {
+        OverwriteChoices::User => PermissionOverwriteType::Member(UserId::from(id)),
+        OverwriteChoices::Role => PermissionOverwriteType::Role(RoleId::from(id)),
+    };
+
+    let channel_ids = {
+        let guild = ctx.guild().unwrap();
+
+        let channel_ids: Vec<ChannelId> = guild
+            .channels
+            .iter()
+            .filter_map(|channel| {
+                channel
+                    .permission_overwrites
+                    .iter()
+                    .find(|overwrite| overwrite.kind == overwrite_kind)
+                    .map(|_| channel.id)
+            })
+            .collect();
+
+        channel_ids
+    };
+
+    if channel_ids.is_empty() {
+        ctx.say("No permission overwrites exist.").await?;
+        return Ok(());
+    };
+
+    let mut string = format!("{} total overwrites for ", channel_ids.len());
+    if choice == OverwriteChoices::User {
+        writeln!(string, "<@{id}>:").unwrap();
+    } else {
+        writeln!(string, "<@&{id}>:").unwrap();
+    }
+
+    let mut description = String::new();
+    for channel_id in channel_ids {
+        writeln!(description, "<#{channel_id}>").unwrap();
+    }
+
+    let mentions = serenity::CreateAllowedMentions::new()
+        .all_users(false)
+        .everyone(false)
+        .all_roles(false);
+    ctx.send(
+        poise::CreateReply::new()
+            .content(string)
+            .embed(
+                serenity::CreateEmbed::new()
+                    .description(description)
+                    .colour(serenity::Colour::BLUE),
+            )
+            .allowed_mentions(mentions),
+    )
+    .await?;
+
+    Ok(())
+}
+
 #[must_use]
-pub fn commands() -> [crate::Command; 7] {
+pub fn commands() -> [crate::Command; 8] {
     [
         uptime(),
         source(),
@@ -212,5 +309,6 @@ pub fn commands() -> [crate::Command; 7] {
         register(),
         stats(),
         overwrite(),
+        find_overwrite(),
     ]
 }

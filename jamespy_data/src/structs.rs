@@ -271,10 +271,9 @@ impl Data {
     }
 
     async fn insert_display_db(&self, user_id: UserId, name: Option<String>) {
-        if name.is_none() {
+        let Some(name) = name else {
             return;
-        }
-        let name = name.unwrap();
+        };
 
         let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
 
@@ -289,10 +288,9 @@ impl Data {
     }
 
     async fn insert_nick_db(&self, guild_id: GuildId, user_id: UserId, name: Option<String>) {
-        if name.is_none() {
+        let Some(name) = name else {
             return;
-        }
-        let name = name.unwrap();
+        };
 
         let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
 

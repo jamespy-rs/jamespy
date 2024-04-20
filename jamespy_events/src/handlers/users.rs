@@ -90,14 +90,12 @@ pub async fn guild_member_update(
 
             let old_stamp = data.get_activity_check(event.user.id).await;
 
-            if old_stamp.is_none() {
+            let Some(old_stamp) = old_stamp else {
                 dm_activity_new(ctx, event, 0).await?;
                 data.new_or_announced(event.user.id, now_utc, timestamp, Some(1))
                     .await;
                 return Ok(());
-            }
-
-            let old_stamp = old_stamp.unwrap();
+            };
 
             // If an until is currently set, its an update, otherwise its new.
             if let Some(until) = old_stamp.until {

@@ -524,12 +524,9 @@ pub async fn add(
         }
     }
 
-    // TODO: possibly improve.
-    if user_id.is_none() {
+    let Some(user_id) = user_id else {
         return Ok(());
-    }
-
-    let user_id = user_id.unwrap();
+    };
 
     let vcstatus = {
         let config = data.config.read();
