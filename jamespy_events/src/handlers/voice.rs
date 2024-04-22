@@ -46,7 +46,7 @@ async fn handle_switch(
     // will fire real error in the future.
 
     let Some(guild_cache) = guild_cache else {
-        return Ok(())
+        return Ok(());
     };
 
     let channel_old_name = guild_cache.channels.get(&old_id).map(|c| &c.name);
@@ -91,10 +91,12 @@ async fn handle_leave(
     // going to unwrap because i'm lazy and this is fine usually, private bot private issues.
     let guild_cache = ctx.cache.guild(new.guild_id.unwrap()).unwrap();
 
-    let old_channel = guild_cache.channels.get(&channel_id).unwrap();
-    let channel_name = &old_channel.name;
+    let channel_name = guild_cache
+        .channels
+        .get(&channel_id)
+        .map_or_else(|| "None", |c| c.name.as_str());
 
-    let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(old_channel.guild_id));
+    let guild_name = get_guild_name_override(ctx, &ctx.data(), old.guild_id);
 
     println!("\x1B[32m[{guild_name}] {user_name} left {channel_name} (ID:{channel_id})\x1B[0m");
     Ok(())
