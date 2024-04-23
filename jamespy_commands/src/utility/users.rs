@@ -167,7 +167,73 @@ pub async fn playing(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-/// See what games people are playing!
+/// See what osu! gamemodes people are playing!
+#[poise::command(
+    slash_command,
+    prefix_command,
+    category = "Utility",
+    guild_only,
+    user_cooldown = 5
+)]
+pub async fn osu(ctx: Context<'_>) -> Result<(), Error> {
+    let guild_id = ctx.guild_id().unwrap();
+
+    let cache = &ctx.cache();
+    // i really should try and avoid this clone.
+    let guild = cache.guild(guild_id).unwrap().clone();
+
+    let mut total = 0;
+    let mut osu = 0;
+    let mut mania = 0;
+    let mut taiko = 0;
+    let mut catch = 0;
+    let mut other = 0;
+    let mut unknown = 0;
+
+    for presence in &guild.presences {
+        for activity in &presence.activities {
+            if activity.application_id == Some(367827983903490050.into()) {
+                total += 1;
+
+                if let Some(assets) = &activity.assets {
+                    match assets.small_text.as_deref() {
+                        Some("osu!") => osu += 1,
+                        Some("osu!mania") => mania += 1,
+                        Some("osu!taiko") => taiko += 1,
+                        Some("osu!catch") => catch += 1,
+                        _ => other += 1,
+                    }
+                } else {
+                    unknown += 1;
+                }
+            }
+        }
+    }
+
+
+    let description = if other > 0 {
+        format!(
+            "Total: {total}\nosu!: {osu}\nmania: {mania}\ntaiko: {taiko}\ncatch: {catch}\nother: \
+             {other}\nunknown: {unknown}"
+        )
+    } else {
+        format!(
+            "Total: {total}\nosu!: {osu}\nmania: {mania}\ntaiko: {taiko}\ncatch: {catch}\nunknown: \
+             {unknown}"
+        )
+    };
+
+    let embed = serenity::CreateEmbed::new()
+        .title("osu! gamemode popularity")
+        .description(description)
+        .colour(serenity::Colour::BLUE);
+
+    ctx.send(poise::CreateReply::new().embed(embed)).await?;
+
+    Ok(())
+}
+
+/// See information about a users dm activity flag.
 #[poise::command(
     rename = "dm-activity-check",
     aliases("dm-activity"),
@@ -311,7 +377,7 @@ pub async fn get_member(ctx: Context<'_>, member: serenity::Member) -> Result<()
 }
 
 #[must_use]
-pub fn commands() -> [crate::Command; 6] {
+pub fn commands() -> [crate::Command; 7] {
     [
         last_reactions(),
         statuses(),
@@ -319,6 +385,7 @@ pub fn commands() -> [crate::Command; 6] {
         dm_activity_check(),
         flag_lb(),
         get_member(),
+        osu(),
     ]
 }
 
