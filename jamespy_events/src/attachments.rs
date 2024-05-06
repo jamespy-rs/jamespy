@@ -192,7 +192,11 @@ async fn announce_deleted_spy(
         )
         .components(action_rows);
 
-    let mut msg = hook.channel_id.unwrap().send_message(ctx, message).await?;
+    let mut msg = hook
+        .channel_id
+        .unwrap()
+        .send_message(&ctx.http, message)
+        .await?;
 
     while let Some(press) = serenity::ComponentInteractionCollector::new(ctx.shard.clone())
         .filter(move |press| press.data.custom_id.starts_with(&ctx_id.to_string()))

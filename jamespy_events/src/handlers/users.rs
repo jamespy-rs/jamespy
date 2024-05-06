@@ -192,7 +192,7 @@ async fn dm_activity_new(
     }
 
     ChannelId::new(158484765136125952)
-        .send_message(ctx, serenity::CreateMessage::default().embed(embed))
+        .send_message(&ctx.http, serenity::CreateMessage::default().embed(embed))
         .await?;
 
     Ok(())
@@ -255,7 +255,7 @@ async fn dm_activity_updated(
     }
 
     ChannelId::new(158484765136125952)
-        .send_message(ctx, serenity::CreateMessage::default().embed(embed))
+        .send_message(&ctx.http, serenity::CreateMessage::default().embed(embed))
         .await?;
 
     Ok(())

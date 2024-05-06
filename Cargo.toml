@@ -39,9 +39,12 @@ dashmap = "5.5.3"
 
 [workspace.dependencies.serenity]
 git = "https://github.com/serenity-rs/serenity"
+#path = "../serenity"
 features = ["temp_cache"]
 default-features = false
 branch = "next"
+
+
 
 [workspace.dependencies.poise]
 git = "https://github.com/serenity-rs/poise"
@@ -53,6 +56,9 @@ git = "https://github.com/serenity-rs/songbird"
 features = ["builtin-queue"]
 branch = "serenity-next"
 
+# patch for developing locally.
+#[patch."https://github.com/serenity-rs/serenity".serenity]
+#path = "../serenity"
 
 
 [profile.release]

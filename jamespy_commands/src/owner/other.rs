@@ -35,7 +35,7 @@ pub async fn say(
 ) -> Result<(), Error> {
     let target_channel = channel.unwrap_or(ctx.channel_id());
 
-    target_channel.say(&ctx.http(), string).await?;
+    target_channel.say(ctx.http(), string).await?;
 
     Ok(())
 }
@@ -111,7 +111,7 @@ pub async fn say_slash(
     };
 
     let result = ChannelId::new(channel.parse::<u64>().unwrap())
-        .send_message(ctx, b)
+        .send_message(ctx.http(), b)
         .await;
 
     // Respond to the slash command.
@@ -163,7 +163,7 @@ pub async fn react(
     let trimmed_string = string.trim_matches('`').trim_matches('\\').to_string();
     // React to the message with the specified emoji
     let reaction = trimmed_string.parse::<ReactionType>().unwrap(); // You may want to handle parsing errors
-    message.react(ctx, reaction).await?;
+    message.react(ctx.http(), reaction).await?;
 
     Ok(())
 }

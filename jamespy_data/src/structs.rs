@@ -16,7 +16,7 @@ pub type Context<'a> = poise::Context<'a, Data, Error>;
 pub type Command = poise::Command<Data, Error>;
 
 pub struct Data {
-    /// If the bots startup has been handled in the on_ready event.
+    /// If the bots startup has been handled in the `on_ready` event.
     pub has_started: AtomicBool,
     /// Time the bot started.
     pub time_started: std::time::Instant,

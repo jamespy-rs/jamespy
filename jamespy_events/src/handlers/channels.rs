@@ -518,7 +518,7 @@ pub async fn add(
 
         if let Some(str) = &options.status {
             if str == status.as_deref().unwrap_or_default() && options.channel_id == Some(*id) {
-                user_id = Some(log.user_id);
+                user_id = Some(log.user_id.unwrap());
                 break;
             }
         }
@@ -633,12 +633,12 @@ async fn send_msgs(
 
     if blacklisted {
         if let Some(announce) = announce {
-            announce.send_message(ctx, msg.clone()).await?;
+            announce.send_message(&ctx.http, msg.clone()).await?;
         }
     }
 
     if let Some(post) = post {
-        post.send_message(ctx, msg).await?;
+        post.send_message(&ctx.http, msg).await?;
     }
 
     Ok(())

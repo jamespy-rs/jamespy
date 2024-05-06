@@ -88,7 +88,6 @@ async fn handle_leave(
         None => return Ok(()),
     };
 
-
     let guild_cache = ctx.cache.guild(new.guild_id.unwrap());
     // will fire real error in the future.
     let Some(guild_cache) = guild_cache else {
@@ -114,7 +113,6 @@ async fn handle_joins(ctx: &serenity::Context, new: &VoiceState) -> Result<(), E
         Some(user) => user.tag(),
         None => return Ok(()),
     };
-
 
     let guild_cache = ctx.cache.guild(new.guild_id.unwrap());
     // will fire real error in the future.

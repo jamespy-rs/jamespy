@@ -144,7 +144,9 @@ pub async fn guild_audit_log_entry_create(
 
     let (user_name, avatar_url) = {
         // TODO: i'm not happy with the unwrap but i'd rather avoid the http request now.
-        let user = get_user(ctx, *guild_id, entry.user_id).await.unwrap();
+        let user = get_user(ctx, *guild_id, entry.user_id.unwrap())
+            .await
+            .unwrap();
         (user.tag(), user.face())
     };
 
@@ -180,7 +182,7 @@ pub async fn guild_audit_log_entry_create(
 
             if let Some(msgs) = msgs {
                 for msg in msgs.iter().rev() {
-                    if msg.author.id == entry.user_id {
+                    if msg.author.id == entry.user_id.unwrap() {
                         if let Some(kind) = &msg.embeds.first().and_then(|e| e.kind.clone()) {
                             if kind == "auto_moderation_message" {
                                 if let Some(description) = &msg.embeds[0].description {
@@ -197,7 +199,7 @@ pub async fn guild_audit_log_entry_create(
         let author_title = format!("{user_name} tried to set an inappropriate status");
         let footer = serenity::CreateEmbedFooter::new(format!(
             "User ID: {} • Please check status manually in #{}",
-            entry.user_id,
+            entry.user_id.unwrap(),
             get_channel_name(ctx, Some(*guild_id), ChannelId::new(id)).await
         ));
         let mut embed = serenity::CreateEmbed::default()
@@ -211,13 +213,13 @@ pub async fn guild_audit_log_entry_create(
 
         let builder = serenity::CreateMessage::default()
             .embed(embed)
-            .content(format!("<@{}>", entry.user_id));
+            .content(format!("<@{}>", entry.user_id.unwrap()));
         // this is gg/osu only, so i won't enable configurable stuff for this.
         ChannelId::new(158484765136125952)
-            .send_message(&ctx, builder.clone())
+            .send_message(&ctx.http, builder.clone())
             .await?;
         ChannelId::new(1163544192866336808)
-            .send_message(ctx, builder)
+            .send_message(&ctx.http, builder)
             .await?;
     }
     Ok(())

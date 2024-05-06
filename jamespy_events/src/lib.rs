@@ -132,7 +132,6 @@ pub async fn event_handler(
                 chunk.chunk_count
             );
         }
-
         _ => {}
     }
     Ok(())

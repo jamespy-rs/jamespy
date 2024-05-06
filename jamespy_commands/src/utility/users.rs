@@ -210,7 +210,6 @@ pub async fn osu(ctx: Context<'_>) -> Result<(), Error> {
         }
     }
 
-
     let description = if other > 0 {
         format!(
             "Total: {total}\nosu!: {osu}\nmania: {mania}\ntaiko: {taiko}\ncatch: {catch}\nother: \
@@ -218,8 +217,8 @@ pub async fn osu(ctx: Context<'_>) -> Result<(), Error> {
         )
     } else {
         format!(
-            "Total: {total}\nosu!: {osu}\nmania: {mania}\ntaiko: {taiko}\ncatch: {catch}\nunknown: \
-             {unknown}"
+            "Total: {total}\nosu!: {osu}\nmania: {mania}\ntaiko: {taiko}\ncatch: \
+             {catch}\nunknown: {unknown}"
         )
     };
 
@@ -330,6 +329,24 @@ pub async fn flag_lb(ctx: Context<'_>) -> Result<(), Error> {
 
 /// Display some details from the member object.
 #[poise::command(
+    prefix_command,
+    category = "Utility",
+    guild_only,
+    required_permissions = "MANAGE_MESSAGES"
+)]
+pub async fn presence(ctx: Context<'_>, member: serenity::Member) -> Result<(), Error> {
+    let data = {
+        let guild = ctx.guild().unwrap();
+        guild.presences.get(&member.user.id).cloned()
+    };
+
+    ctx.say(format!("{data:?}")).await?;
+
+    Ok(())
+}
+
+/// Display some details from the member object.
+#[poise::command(
     rename = "get-member",
     prefix_command,
     category = "Utility",
@@ -377,7 +394,7 @@ pub async fn get_member(ctx: Context<'_>, member: serenity::Member) -> Result<()
 }
 
 #[must_use]
-pub fn commands() -> [crate::Command; 7] {
+pub fn commands() -> [crate::Command; 8] {
     [
         last_reactions(),
         statuses(),
@@ -386,6 +403,7 @@ pub fn commands() -> [crate::Command; 7] {
         flag_lb(),
         get_member(),
         osu(),
+        presence(),
     ]
 }
 

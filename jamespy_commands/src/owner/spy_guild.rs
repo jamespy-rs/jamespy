@@ -33,7 +33,7 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
     // self regex, deleted media.
     let jamespy = guild_id
         .create_channel(
-            ctx,
+            ctx.http(),
             CreateChannel::new("jamespy").kind(ChannelType::Category),
         )
         .await?
@@ -41,7 +41,7 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
 
     let self_regex = guild_id
         .create_channel(
-            ctx,
+            ctx.http(),
             CreateChannel::new("self-regex")
                 .kind(ChannelType::Text)
                 .category(jamespy),
@@ -51,7 +51,7 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
 
     let attachment_hook_channel = guild_id
         .create_channel(
-            ctx,
+            ctx.http(),
             CreateChannel::new("deleted-media")
                 .kind(ChannelType::Text)
                 .category(jamespy),
@@ -62,7 +62,7 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
     // other regexes.
     let regexes = guild_id
         .create_channel(
-            ctx,
+            ctx.http(),
             CreateChannel::new("regexes").kind(ChannelType::Category),
         )
         .await?
@@ -70,7 +70,7 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
 
     let regex_channel = guild_id
         .create_channel(
-            ctx,
+            ctx.http(),
             CreateChannel::new("regex-default")
                 .kind(ChannelType::Text)
                 .category(regexes),
