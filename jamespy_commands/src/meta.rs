@@ -66,7 +66,14 @@ pub async fn help(
 }
 
 /// pong!
-#[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 10)]
+#[poise::command(
+    slash_command,
+    prefix_command,
+    category = "Meta",
+    user_cooldown = 10,
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm|PrivateChannel"
+)]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     let shard_latency = {
         let shard_id = ctx.serenity_context().shard_id;
@@ -127,7 +134,13 @@ fn bytes_to_mebibytes(bytes: u64) -> f64 {
     bytes as f64 / MEBIBYTE
 }
 
-#[poise::command(prefix_command, hide_in_help)]
+#[poise::command(
+    prefix_command,
+    slash_command,
+    hide_in_help,
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm|PrivateChannel"
+)]
 async fn stats(ctx: Context<'_>) -> Result<(), Error> {
     let pid = std::process::id();
 

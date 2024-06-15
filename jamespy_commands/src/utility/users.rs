@@ -351,7 +351,9 @@ pub async fn presence(ctx: Context<'_>, member: serenity::Member) -> Result<(), 
     prefix_command,
     category = "Utility",
     guild_only,
-    required_permissions = "MANAGE_MESSAGES"
+    required_permissions = "MANAGE_MESSAGES",
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm|PrivateChannel"
 )]
 pub async fn get_member(ctx: Context<'_>, member: serenity::Member) -> Result<(), Error> {
     let mut embed = serenity::CreateEmbed::default();

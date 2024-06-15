@@ -1,10 +1,21 @@
-use jamespy_data::structs::{Data, Error};
+use jamespy_commands::utils::handle_cooldown;
+use jamespy_data::structs::{Data, Error, InvocationData};
 use poise::serenity_prelude as serenity;
 
 pub async fn handler(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
         poise::FrameworkError::Command { error, ctx, .. } => {
-            println!("Error in command `{}`: {:?}", ctx.command().name, error,);
+            let Some(invocation_data) = ctx.invocation_data::<InvocationData>().await else {
+                println!("Error in command `{}`: {:?}", ctx.command().name, error);
+                return;
+            };
+
+            let Some(duration) = invocation_data.cooldown_remaining else {
+                println!("Error in command `{}`: {:?}", ctx.command().name, error);
+                return;
+            };
+
+            let _ = handle_cooldown(duration, ctx).await;
         }
         poise::FrameworkError::NotAnOwner { ctx, .. } => {
             let owner_bypass = {
@@ -40,6 +51,14 @@ pub async fn handler(error: poise::FrameworkError<'_, Data, Error>) {
         }
         poise::FrameworkError::EventHandler { error, .. } => {
             println!("Error in event handler: {error}");
+        }
+        poise::FrameworkError::CooldownHit {
+            remaining_cooldown,
+            ctx,
+            ..
+        } => {
+            // all cooldowns (framework and manual) should go to the same route.
+            let _ = handle_cooldown(remaining_cooldown, ctx).await;
         }
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {

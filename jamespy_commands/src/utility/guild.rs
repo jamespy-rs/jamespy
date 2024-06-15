@@ -1,6 +1,6 @@
 use crate::{Context, Error};
-use humantime::parse_duration;
 use ::serenity::all::{ChannelId, Colour, CreateEmbed, CreateEmbedFooter, UserId};
+use humantime::parse_duration;
 use poise::{
     serenity_prelude::{
         self as serenity, ComponentInteractionCollector, CreateActionRow,
@@ -12,7 +12,14 @@ use sqlx::{query, types::chrono::Utc};
 use std::collections::HashMap;
 use std::fmt::Write;
 
-#[poise::command(slash_command, prefix_command, category = "Utility", guild_only)]
+#[poise::command(
+    slash_command,
+    prefix_command,
+    install_context = "Guild|User",
+    interaction_context = "Guild",
+    category = "Utility",
+    guild_only
+)]
 pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
     let stickers = {
         let guild = ctx.guild().unwrap();
@@ -134,8 +141,6 @@ fn sticker_format_type_str(sticker_fmt: &StickerFormatType) -> &str {
     }
 }
 
-
-
 /// msglb, improved
 #[poise::command(
     slash_command,
@@ -153,7 +158,7 @@ pub async fn msglb(ctx: Context<'_>, #[rest] timestamp: Option<String>) -> Resul
     let time_filter = if let Some(timestamp) = timestamp {
         let Ok(duration) = parse_duration(&timestamp) else {
             ctx.say("Could not parse duration!").await?;
-            return Ok(())
+            return Ok(());
         };
 
         let now = Utc::now().naive_utc();
@@ -165,8 +170,9 @@ pub async fn msglb(ctx: Context<'_>, #[rest] timestamp: Option<String>) -> Resul
     let rows = query!(
         "SELECT user_id, channel_id, timestamp FROM msgs WHERE guild_id = $1",
         ctx.guild_id().unwrap().get() as i64
-    ).fetch_all(&ctx.data().db).await?;
-
+    )
+    .fetch_all(&ctx.data().db)
+    .await?;
 
     // I have to filter the timestamp after because the type is "different" between
     // a query that filters the timestamp and not.
@@ -177,7 +183,7 @@ pub async fn msglb(ctx: Context<'_>, #[rest] timestamp: Option<String>) -> Resul
         // checking this x amount of times is 100% slower but eh, i don't wanna fight the type system.
         if let Some(time_filter) = time_filter {
             if row.timestamp.unwrap() < time_filter {
-                continue
+                continue;
             }
         }
 
@@ -257,7 +263,6 @@ pub async fn msglb(ctx: Context<'_>, #[rest] timestamp: Option<String>) -> Resul
     if !current_response.is_empty() {
         paginated_responses.push(current_response);
     }
-
 
     msglb_paginator(ctx, &paginated_responses).await?;
     Ok(())

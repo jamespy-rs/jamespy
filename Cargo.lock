@@ -1222,6 +1222,7 @@ name = "jamespy_commands"
 version = "0.2.0"
 dependencies = [
  "bb8-redis",
+ "chrono",
  "humantime",
  "jamespy_config",
  "jamespy_data",
@@ -1817,11 +1818,12 @@ dependencies = [
 [[package]]
 name = "poise"
 version = "0.6.1"
-source = "git+https://github.com/serenity-rs/poise?branch=serenity-next#198c62d83a30811a4fa4801a23d2672edeb40caf"
+source = "git+https://github.com/jamesbt365/poise?branch=serenity-next-merged#795c22d60f1043f7cbfdf4079907a93e1bf56e15"
 dependencies = [
  "async-trait",
  "derivative",
  "futures-util",
+ "indexmap",
  "parking_lot",
  "poise_macros",
  "regex",
@@ -1834,7 +1836,7 @@ dependencies = [
 [[package]]
 name = "poise_macros"
 version = "0.6.1"
-source = "git+https://github.com/serenity-rs/poise?branch=serenity-next#198c62d83a30811a4fa4801a23d2672edeb40caf"
+source = "git+https://github.com/jamesbt365/poise?branch=serenity-next-merged#795c22d60f1043f7cbfdf4079907a93e1bf56e15"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -2508,8 +2510,8 @@ dependencies = [
 
 [[package]]
 name = "serenity"
-version = "0.12.1"
-source = "git+https://github.com/serenity-rs/serenity?branch=next#68e5e629d03a55acfbe463d78b2827c8c3d6ee8c"
+version = "0.12.2"
+source = "git+https://github.com/serenity-rs/serenity?branch=next#eb8495ff32b4683be5a0d25070773cdc597013f1"
 dependencies = [
  "arrayvec",
  "async-trait",

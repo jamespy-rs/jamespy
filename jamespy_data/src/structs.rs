@@ -41,6 +41,11 @@ pub struct Data {
     pub names: Mutex<Names>,
 }
 
+/// A struct only used to track if an error comes from a cooldown.
+pub struct InvocationData {
+    pub cooldown_remaining: Option<std::time::Duration>,
+}
+
 #[derive(Clone, Default, Debug)]
 pub struct Names {
     pub usernames: VecDeque<(UserId, UserNames)>,

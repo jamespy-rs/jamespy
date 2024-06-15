@@ -1,14 +1,70 @@
+use std::time::Duration;
+
 use jamespy_data::lob::*;
 
-use crate::{Context, Error};
-use poise::serenity_prelude as serenity;
+use crate::{Context, Error, InvocationData};
+use poise::serenity_prelude::{self as serenity, UserId};
 
 /// i lob
-#[poise::command(slash_command, prefix_command, category = "Utility")]
+#[poise::command(
+    slash_command,
+    prefix_command,
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm|PrivateChannel",
+    category = "Utility",
+    manual_cooldowns
+)]
 pub async fn lob(ctx: Context<'_>) -> Result<(), Error> {
+    lob_cooldown(ctx).await?;
     let option = get_random_lob();
     if let Some(lob) = option {
         ctx.say(lob).await?;
+    }
+
+    Ok(())
+}
+
+/// manual cooldown function for lob command.
+async fn lob_cooldown(ctx: Context<'_>) -> Result<(), Error> {
+    let duration = {
+        let mut cooldown_tracker = ctx.command().cooldowns.lock().unwrap();
+        let mut cooldown_durations = poise::CooldownConfig::default();
+
+        let osu_game_allowed_users = [
+            UserId::from(101090238067113984), // Phil
+            UserId::from(158567567487795200), // me
+        ];
+
+        // osugame
+        if ctx.guild_id() == Some(98226572468690944.into()) {
+            cooldown_durations.channel = Some(Duration::from_secs(15));
+
+            // Cooldowns do not apply to these people.
+            if osu_game_allowed_users.contains(&ctx.author().id) {
+                return Ok(());
+            }
+        }
+
+        if let Some(remaining) =
+            cooldown_tracker.remaining_cooldown(ctx.cooldown_context(), &cooldown_durations)
+        {
+            Some(remaining)
+        } else {
+            cooldown_tracker.start_cooldown(ctx.cooldown_context());
+            None
+        }
+    };
+
+    // This will be used in the error handling to determine the response.
+    // the error we return does not matter because it will not be used.
+    if let Some(duration) = duration {
+        // handle error differently down the line.
+        ctx.set_invocation_data(InvocationData {
+            cooldown_remaining: Some(duration),
+        })
+        .await;
+
+        return Err("".into());
     }
 
     Ok(())

@@ -10,7 +10,9 @@ use rand::RngCore;
     prefix_command,
     category = "Utility",
     user_cooldown = "3",
-    track_edits
+    track_edits,
+    install_context = "Guild|User",
+    interaction_context = "Guild|BotDm|PrivateChannel"
 )]
 #[allow(clippy::similar_names)]
 pub async fn choose(

@@ -15,6 +15,7 @@ poise = { workspace = true }
 sqlx = { workspace = true }
 reqwest = { workspace = true }
 songbird = { workspace = true }
+chrono = { workspace = true }
 
 small-fixed-array = { workspace = true }
 rand = { workspace = true }
