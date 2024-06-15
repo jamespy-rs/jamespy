@@ -1,6 +1,6 @@
-use ::serenity::gateway::ChunkGuildFilter;
 use poise::serenity_prelude::{
-    self as serenity, Attachment, ChannelId, Message, ReactionType, StickerId, UserId,
+    self as serenity, Attachment, ChannelId, ChunkGuildFilter, Message, ReactionType, StickerId,
+    UserId,
 };
 
 use crate::{owner::owner, Context, Error};

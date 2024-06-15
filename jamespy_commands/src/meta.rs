@@ -68,6 +68,26 @@ pub async fn help(
 /// pong!
 #[poise::command(slash_command, prefix_command, category = "Meta", user_cooldown = 10)]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
+    let shard_latency = {
+        let shard_id = ctx.serenity_context().shard_id;
+        let runners = ctx.framework().shard_manager.runners.lock().await;
+        let runner = runners.get(&shard_id);
+
+        // shard doesn't exist.
+        let Some(runner) = runner else { return Ok(()) };
+
+        runner.latency
+    };
+
+    // right now i don't have the patience to drop the allocations here where they could be avoided.
+    // i'll wait until a macro exists to do this for me.
+
+    let shard = if let Some(latency) = shard_latency {
+        ("Shard Latency", format!("{}ms", latency.as_millis()), false)
+    } else {
+        ("Shard Latency", "Not available".to_string(), false)
+    };
+
     let now = Instant::now();
 
     ctx.data()
@@ -85,10 +105,11 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
         .edit(
             ctx,
             poise::CreateReply::default().content("").embed(
-                serenity::CreateEmbed::default()
-                    .title("Pong!")
-                    .field("GET Latency", format!("{get_latency}ms"), false)
-                    .field("POST Latency", format!("{post_latency}ms"), false),
+                serenity::CreateEmbed::default().title("Pong!").fields([
+                    shard,
+                    ("GET Latency", format!("{get_latency}ms"), false),
+                    ("POST Latency", format!("{post_latency}ms"), false),
+                ]),
             ),
         )
         .await?;

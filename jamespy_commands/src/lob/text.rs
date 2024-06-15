@@ -4,12 +4,7 @@ use crate::{Context, Error};
 use poise::serenity_prelude as serenity;
 
 /// i lob
-#[poise::command(
-    slash_command,
-    prefix_command,
-    category = "Utility",
-    channel_cooldown = "5"
-)]
+#[poise::command(slash_command, prefix_command, category = "Utility")]
 pub async fn lob(ctx: Context<'_>) -> Result<(), Error> {
     let option = get_random_lob();
     if let Some(lob) = option {
@@ -59,6 +54,8 @@ pub async fn no_lob(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+use small_fixed_array::FixedString;
+
 #[poise::command(
     rename = "add-lob",
     aliases("addlob", "add_lob"),
@@ -71,7 +68,7 @@ pub async fn new_lob(
     ctx: Context<'_>,
     #[description = "new lob"]
     #[rest]
-    item: String,
+    item: FixedString<u16>,
 ) -> Result<(), Error> {
     let lines = item.lines();
     let count = item.lines().count();

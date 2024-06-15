@@ -22,7 +22,7 @@ pub async fn ready(ctx: &serenity::Context, ready: &Ready, data: Arc<Data>) -> R
     let shard_count = ctx.cache.shard_count();
     let is_last_shard = (ctx.shard_id.0 + 1) == shard_count.get();
 
-    if is_last_shard && !data.has_started.load(Ordering::SeqCst) {
+    if is_last_shard && !data.has_started.swap(true, Ordering::SeqCst) {
         finalize_start(ctx, &data);
         println!("Logged in as {}", ready.user.tag());
     }
