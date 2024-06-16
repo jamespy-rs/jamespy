@@ -20,14 +20,17 @@ pub async fn bot_ban(ctx: Context<'_>, user: User) -> Result<(), Error> {
         let data = ctx.data();
         let mut config = data.config.write();
 
-        if let Some(banned_users) = &mut config.banned_users {
+        let inserted = if let Some(banned_users) = &mut config.banned_users {
             banned_users.insert(user.id)
         } else {
             let mut banned_users = std::collections::HashSet::new();
             banned_users.insert(user.id);
             config.banned_users = Some(banned_users);
             true
-        }
+        };
+
+        config.write_config();
+        inserted
     };
 
     let msg = if inserted {
