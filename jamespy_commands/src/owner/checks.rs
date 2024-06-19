@@ -57,11 +57,14 @@ pub async fn bot_unban(ctx: Context<'_>, user: User) -> Result<(), Error> {
         let data = ctx.data();
         let mut config = data.config.write();
 
-        if let Some(banned_users) = &mut config.banned_users {
+        let banned = if let Some(banned_users) = &mut config.banned_users {
             banned_users.remove(&user.id)
         } else {
             false
-        }
+        };
+
+        config.write_config();
+        banned
     };
 
     let msg = if banned {
