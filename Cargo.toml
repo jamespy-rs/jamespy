@@ -21,10 +21,11 @@ dashmap = { workspace = true }
 tracing-subscriber = "0.3.18"
 
 symphonia = { features = ["aac", "mp3", "isomp4", "alac"], version = "0.5.2" }
+tokio-tungstenite = { version = "0.21", features = ["rustls-tls-webpki-roots"], optional = true  }
 
 
 [workspace]
-members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config", "jamespy_commands"]
+members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config", "jamespy_commands", "jamespy_websocket"]
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "signal", "parking_lot"] }

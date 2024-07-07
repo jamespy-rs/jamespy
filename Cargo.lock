@@ -1214,6 +1214,7 @@ dependencies = [
  "sqlx",
  "symphonia",
  "tokio",
+ "tokio-tungstenite 0.21.0",
  "tracing-subscriber",
 ]
 
@@ -1282,16 +1283,35 @@ dependencies = [
  "bb8-redis",
  "chrono",
  "fs_extra",
+ "futures-channel",
+ "futures-util",
  "jamespy_config",
  "jamespy_data",
+ "jamespy_websocket",
  "nonmax",
  "poise",
  "regex",
+ "serde",
  "serde_json",
  "serenity",
  "small-fixed-array",
  "sqlx",
  "tokio",
+ "tokio-tungstenite 0.21.0",
+]
+
+[[package]]
+name = "jamespy_websocket"
+version = "0.1.0"
+dependencies = [
+ "arrayvec",
+ "futures-channel",
+ "futures-util",
+ "serde",
+ "serde_json",
+ "serenity",
+ "tokio",
+ "tokio-tungstenite 0.23.1",
 ]
 
 [[package]]
@@ -2476,9 +2496,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.117"
+version = "1.0.120"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "455182ea6142b14f93f4bc5320a2b31c1f266b66a4a5c858b013302a5d8cbfc3"
+checksum = "4e0d21c9a8cae1235ad58a00c11cb40d4b1e5c784f1ef2c537876ed6ffd8b7c5"
 dependencies = [
  "itoa",
  "ryu",
@@ -3472,6 +3492,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-tungstenite"
+version = "0.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6989540ced10490aaf14e6bad2e3d33728a2813310a0c71d1574304c49631cd"
+dependencies = [
+ "futures-util",
+ "log",
+ "tokio",
+ "tungstenite 0.23.0",
+]
+
+[[package]]
 name = "tokio-util"
 version = "0.7.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3674,6 +3706,24 @@ dependencies = [
  "sha1",
  "thiserror",
  "url",
+ "utf-8",
+]
+
+[[package]]
+name = "tungstenite"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e2e2ce1e47ed2994fd43b04c8f618008d4cabdd5ee34027cf14f9d918edd9c8"
+dependencies = [
+ "byteorder",
+ "bytes",
+ "data-encoding",
+ "http 1.1.0",
+ "httparse",
+ "log",
+ "rand",
+ "sha1",
+ "thiserror",
  "utf-8",
 ]
 
