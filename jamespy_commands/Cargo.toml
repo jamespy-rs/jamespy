@@ -16,6 +16,7 @@ sqlx = { workspace = true }
 reqwest = { workspace = true }
 songbird = { workspace = true }
 chrono = { workspace = true }
+unicode_names2 = { workspace = true }
 
 small-fixed-array = { workspace = true }
 rand = { workspace = true }

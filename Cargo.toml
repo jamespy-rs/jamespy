@@ -37,6 +37,7 @@ small-fixed-array = "0.4"
 chrono = "0.4"
 parking_lot = "0.12.1"
 dashmap = "5.5.3"
+unicode_names2 = "1.2.2"
 
 [workspace.dependencies.serenity]
 git = "https://github.com/serenity-rs/serenity"
