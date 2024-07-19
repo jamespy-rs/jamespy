@@ -13,13 +13,8 @@ use std::fmt::Write;
 )]
 pub async fn charinfo(
     ctx: Context<'_>,
-    #[description = "String containing characters, limited to 25."] string: String,
+    #[description = "String containing characters"] string: String,
 ) -> Result<(), Error> {
-    if string.len() > 25 {
-        ctx.say("This command is limited to 25 characters!").await?;
-        return Ok(());
-    }
-
     let mut result = String::new();
     for c in string.chars() {
         if let Some(name) = unicode_names2::name(c) {

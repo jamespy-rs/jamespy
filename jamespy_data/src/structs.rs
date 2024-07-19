@@ -39,7 +39,14 @@ pub struct Data {
     pub dm_activity: DashMap<UserId, DmActivity>,
     /// Runtime caches for user/global/nicks, used to reduce DB load.
     pub names: Mutex<Names>,
+    //pub websocket: Arc<Mutex<WebSocketWhitelist>>,
 }
+/*
+pub struct WebSocketWhitelist {
+    pub whitelist: bool,
+    pub allowed_addresses: Vec<String>,
+    pub password: Option<String>,
+} */
 
 /// A struct only used to track if an error comes from a cooldown.
 pub struct InvocationData {

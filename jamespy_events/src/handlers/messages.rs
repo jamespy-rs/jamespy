@@ -10,6 +10,7 @@ use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
     MessageUpdateEvent, UserId,
 };
+use small_fixed_array::FixedString;
 use sqlx::query;
 
 pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) -> Result<(), Error> {
@@ -351,18 +352,12 @@ fn get_blacklisted_words(
     new_message: &Message,
     badlist: &Option<HashSet<String>>,
     fixlist: &Option<HashSet<String>>,
-) -> Vec<String> {
-    let messagewords: Vec<String> = new_message
-        .content
-        .to_lowercase()
-        .split_whitespace()
-        .map(String::from)
-        .collect();
+) -> Vec<FixedString<u16>> {
+    let message_lowercase = new_message.content.to_lowercase();
 
-    let blacklisted_words: Vec<String> = messagewords
-        .into_iter()
-        .filter(|word| {
-            // Check if the word is in the badlist and not in the fixlist
+    message_lowercase
+        .split_whitespace()
+        .filter_map(|word| {
             let is_blacklisted = match (badlist, fixlist) {
                 (Some(bad_set), Some(fix_set)) => {
                     bad_set.iter().any(|badword| word.contains(badword))
@@ -372,11 +367,13 @@ fn get_blacklisted_words(
                 _ => false,
             };
 
-            is_blacklisted
+            if is_blacklisted {
+                Some(FixedString::<u16>::from_str_trunc(word))
+            } else {
+                None
+            }
         })
-        .collect();
-
-    blacklisted_words
+        .collect()
 }
 
 #[must_use]

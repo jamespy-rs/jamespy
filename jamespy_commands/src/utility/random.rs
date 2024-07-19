@@ -29,7 +29,7 @@ pub async fn choose(
     #[description = "Choice 10"] choice10: Option<String>,
 ) -> Result<(), Error> {
     let mut choices = vec![choice1, choice2];
-    let optional_choices = vec![
+    let optional_choices = [
         choice3, choice4, choice5, choice6, choice7, choice8, choice9, choice10,
     ];
 
