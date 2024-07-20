@@ -21,7 +21,8 @@ pub async fn charinfo(
             let digit = c as u32;
             writeln!(
                 result,
-                "[`\\U{digit:08x}`](http://www.fileformat.info/info/unicode/char/{digit:08x}): {name} — {c}",
+                "[`\\U{digit:08x}`](http://www.fileformat.info/info/unicode/char/{digit:08x}): \
+                 {name} — {c}",
             )
             .unwrap();
         } else {

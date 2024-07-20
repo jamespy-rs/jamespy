@@ -53,8 +53,8 @@ pub async fn reaction_add(
 
     let reaction_info_json = serde_json::to_string(&reaction_info)?;
 
-    redis_conn.lpush(&reaction_key, reaction_info_json).await?;
-    redis_conn.ltrim(&reaction_key, 0, 249).await?;
+    let _: () = redis_conn.lpush(&reaction_key, reaction_info_json).await?;
+    let _: () = redis_conn.ltrim(&reaction_key, 0, 249).await?;
     Ok(())
 }
 
@@ -101,7 +101,7 @@ pub async fn reaction_remove(
 
     let reaction_info_json = serde_json::to_string(&reaction_info)?;
 
-    redis_conn.lpush(&reaction_key, reaction_info_json).await?;
-    redis_conn.ltrim(&reaction_key, 0, 249).await?;
+    let _: () = redis_conn.lpush(&reaction_key, reaction_info_json).await?;
+    let _: () = redis_conn.ltrim(&reaction_key, 0, 249).await?;
     Ok(())
 }
