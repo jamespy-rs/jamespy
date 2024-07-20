@@ -1,8 +1,8 @@
 use crate::{Context, Error};
-use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{
     self as serenity, ActivityType, Colour, GuildMemberFlags, OnlineStatus, User, UserId,
 };
+use redis::AsyncCommands;
 use std::collections::HashMap;
 use std::fmt::Write;
 

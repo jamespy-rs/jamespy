@@ -191,7 +191,18 @@ checksum = "cd456361ba8e4e7f5fe58e1697ce078a149c85ebce13bf9c6b483d3f566fc9c3"
 dependencies = [
  "async-trait",
  "bb8",
- "redis",
+ "redis 0.23.3",
+]
+
+[[package]]
+name = "bb8-redis"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7eb4f141b33a750b5f667c445bd8588de10b8f2b045cd2aabc040ca746fb53ae"
+dependencies = [
+ "async-trait",
+ "bb8",
+ "redis 0.25.4",
 ]
 
 [[package]]
@@ -1231,7 +1242,7 @@ dependencies = [
 name = "jamespy_commands"
 version = "0.2.0"
 dependencies = [
- "bb8-redis",
+ "bb8-redis 0.13.1",
  "chrono",
  "humantime",
  "jamespy_config",
@@ -1240,6 +1251,7 @@ dependencies = [
  "libc",
  "poise",
  "rand",
+ "redis 0.25.4",
  "regex",
  "reqwest",
  "serde",
@@ -1271,7 +1283,7 @@ dependencies = [
 name = "jamespy_data"
 version = "0.2.0"
 dependencies = [
- "bb8-redis",
+ "bb8-redis 0.15.0",
  "chrono",
  "dashmap",
  "jamespy_config",
@@ -1290,7 +1302,7 @@ dependencies = [
 name = "jamespy_events"
 version = "0.2.0"
 dependencies = [
- "bb8-redis",
+ "bb8-redis 0.15.0",
  "chrono",
  "fs_extra",
  "futures-channel",
@@ -2046,6 +2058,27 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "ryu",
+ "tokio",
+ "tokio-util",
+ "url",
+]
+
+[[package]]
+name = "redis"
+version = "0.25.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0d7a6955c7511f60f3ba9e86c6d02b3c3f144f8c24b288d1f4e18074ab8bbec"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "combine",
+ "futures-util",
+ "itoa",
+ "percent-encoding",
+ "pin-project-lite",
+ "ryu",
+ "sha1_smol",
+ "socket2",
  "tokio",
  "tokio-util",
  "url",

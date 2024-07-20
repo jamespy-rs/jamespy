@@ -30,7 +30,7 @@ members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config"
 [workspace.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "signal", "parking_lot"] }
 sqlx = { version = "0.7", features = ["macros", "postgres", "runtime-tokio-rustls", "chrono"] }
-bb8-redis = "0.13"
+bb8-redis = "0.15"
 reqwest = "0.12"
 rand = "0.8"
 small-fixed-array = "0.4"
