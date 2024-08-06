@@ -3,6 +3,7 @@ pub mod checks;
 pub mod cooldowns;
 pub mod database;
 pub mod other;
+pub mod phil;
 pub mod presence;
 pub mod spy_guild;
 pub mod voice;
@@ -24,6 +25,7 @@ pub fn commands() -> Vec<crate::Command> {
             .chain(spy_guild::commands())
             .chain(voice::commands())
             .chain(cooldowns::commands())
+            .chain(phil::commands())
             .collect()
     }
 }
