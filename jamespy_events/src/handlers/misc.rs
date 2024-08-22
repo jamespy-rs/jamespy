@@ -1,6 +1,5 @@
 use crate::helper::get_guild_name;
 use crate::{Data, Error};
-use jamespy_websocket::start_server;
 use poise::serenity_prelude::{
     self as serenity, ActivityData, ActivityType, GuildId, Ready, UserId,
 };
@@ -43,12 +42,6 @@ fn finalize_start(ctx: &serenity::Context, data: &Arc<Data>) {
             let _ = crate::tasks::check_space(&ctx_clone, &data_clone).await;
         }
     });
-
-    let ctx_clone = ctx.clone();
-    tokio::spawn(async move {
-        start_server(ctx_clone).await;
-    });
-
 }
 
 // TODO: Cache join tracking.

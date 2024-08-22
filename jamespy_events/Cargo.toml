@@ -26,4 +26,3 @@ tokio-tungstenite = { version = "0.21", features = ["rustls-tls-webpki-roots"] }
 futures-util = "0.3.30"
 futures-channel = "0.3.30"
 serde = "1.0.203"
-jamespy_websocket = { version = "0.1.0", path = "../jamespy_websocket" }

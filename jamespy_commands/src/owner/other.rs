@@ -189,11 +189,15 @@ async fn malloc_trim(ctx: Context<'_>) -> Result<(), Error> {
     hide_in_help,
     guild_only
 )]
-async fn chunk_guild_members(ctx: Context<'_>) -> Result<(), Error> {
+async fn chunk_guild_members(ctx: Context<'_>, presences: Option<bool>) -> Result<(), Error> {
     let guild_id = ctx.guild_id().unwrap();
-    ctx.serenity_context()
-        .shard
-        .chunk_guild(guild_id, None, false, ChunkGuildFilter::None, None);
+    ctx.serenity_context().shard.chunk_guild(
+        guild_id,
+        None,
+        presences.unwrap_or(false),
+        ChunkGuildFilter::None,
+        None,
+    );
 
     ctx.say("Requesting guild member chunks").await?;
 

@@ -13,7 +13,9 @@ use std::fmt::Write;
 )]
 pub async fn charinfo(
     ctx: Context<'_>,
-    #[description = "String containing characters"] string: String,
+    #[description = "String containing characters"]
+    #[rest]
+    string: String,
 ) -> Result<(), Error> {
     let mut result = String::new();
     for c in string.chars() {

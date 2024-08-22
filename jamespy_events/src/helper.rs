@@ -88,17 +88,13 @@ pub async fn get_channel_name(
     "None".to_string()
 }
 
-// get the name from the guild cache if available.
+/// get the name from the guild cache if available.
 fn retrieve_cached_name(
     ctx: &serenity::Context,
     guild_id: GuildId,
     channel_id: ChannelId,
 ) -> Option<String> {
-    let guild_cache = ctx.cache.guild(guild_id);
-    guild_cache.as_ref()?;
-
-    // not efficient? but keeps indents down, redo later.
-    let guild_cache = guild_cache.unwrap();
+    let guild_cache = ctx.cache.guild(guild_id)?;
 
     if let Some(channel) = guild_cache.channels.get(&channel_id) {
         Some(channel.name.to_string())

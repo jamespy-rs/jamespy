@@ -141,7 +141,7 @@ pub async fn message_edit(
                 let _ = query!(
                     "INSERT INTO msgs_edits (guild_id, channel_id, message_id, user_id, \
                      old_content, new_content, attachments, embeds, timestamp)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
                     guild_id.map(|g| i64::from(g)),
                     new_message.channel_id.get() as i64,
                     new_message.id.get() as i64,
@@ -157,6 +157,7 @@ pub async fn message_edit(
             }
         }
         (None, None) => {
+            println!("{event:?}");
             println!(
                 "\x1B[36mA message (ID:{}) was edited but was not in cache\x1B[0m",
                 event.id
