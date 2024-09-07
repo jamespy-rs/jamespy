@@ -1,5 +1,5 @@
 use dashmap::{DashMap, DashSet};
-use jamespy_data::structs::{Data, Names};
+use jamespy_data::structs::{AntiDeleteCache, Data, Names};
 
 use parking_lot::{Mutex, RwLock};
 use serenity::all::GuildId;
@@ -28,5 +28,6 @@ pub async fn setup() -> Arc<Data> {
         mod_mode,
         names: Mutex::new(Names::new()),
         join_announce: AtomicBool::new(false),
+        anti_delete_cache: AntiDeleteCache::default(),
     })
 }

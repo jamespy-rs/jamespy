@@ -1,6 +1,7 @@
 use dashmap::{DashMap, DashSet};
 use parking_lot::{Mutex, RwLock};
-use std::collections::HashMap;
+use serenity::all::MessageId;
+use std::{collections::HashMap, time::Instant};
 
 use chrono::{NaiveDateTime, Utc};
 use poise::serenity_prelude::{GuildId, User, UserId};
@@ -20,17 +21,14 @@ pub struct Data {
     pub has_started: AtomicBool,
     /// Time the bot started.
     pub time_started: std::time::Instant,
-
     /// Bot database.
     pub db: sqlx::PgPool,
     /// Redis database that really doesn't need to used.
     pub redis: crate::database::RedisPool,
-
     /// Voice manager.
     pub songbird: Arc<songbird::Songbird>,
     /// Http client for handling songbird & other commands.
     pub reqwest: reqwest::Client,
-
     /// Bot/Server Configuration
     pub config: RwLock<jamespy_config::JamespyConfig>,
     /// Temporarily stops the usage of lobs in vc while the bot is "working".
@@ -39,14 +37,48 @@ pub struct Data {
     pub dm_activity: DashMap<UserId, DmActivity>,
     /// Runtime caches for user/global/nicks, used to reduce DB load.
     pub names: Mutex<Names>,
+    /// osu!game handling for showing this in general. Hardcoded as usual.
     pub join_announce: AtomicBool,
+    pub anti_delete_cache: AntiDeleteCache,
 }
-/*
-pub struct WebSocketWhitelist {
-    pub whitelist: bool,
-    pub allowed_addresses: Vec<String>,
-    pub password: Option<String>,
-} */
+
+#[derive(Default)]
+pub struct AntiDeleteCache {
+    pub val: DashMap<GuildId, Decay>,
+    pub map: DashMap<GuildId, HashMap<MessageId, UserId>>,
+}
+
+pub struct Decay {
+    pub val: u16,
+    pub last_update: Instant,
+}
+
+impl AntiDeleteCache {
+    /// Check if all values should be decayed and if so, decay them.
+    pub fn decay_proc(&self) {
+        let now = Instant::now();
+
+        let mut to_remove = vec![];
+        for mut entry in self.val.iter_mut() {
+            let guild = entry.value_mut();
+            let elapsed = now.duration_since(guild.last_update).as_secs();
+
+            // time without messages deleted to decay, hardcoded currently.
+            if elapsed > 5 {
+                guild.val -= 1;
+                println!("Guild heat is now: {}", guild.val);
+            }
+
+            if guild.val == 0 {
+                to_remove.push(*entry.key());
+            }
+        }
+
+        for entry in to_remove {
+            self.val.remove(&entry);
+        }
+    }
+}
 
 /// A struct only used to track if an error comes from a cooldown.
 pub struct InvocationData {

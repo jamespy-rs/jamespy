@@ -1,11 +1,14 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 use std::sync::Arc;
+use std::time::Instant;
 
 use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
 use crate::{Data, Error};
 
+use ::serenity::all::{CreateEmbed, CreateMessage, GetMessages};
 use chrono::DateTime;
+use jamespy_data::structs::Decay;
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
     MessageUpdateEvent, UserId,
@@ -167,6 +170,85 @@ pub async fn message_edit(
     Ok(())
 }
 
+async fn fetch(
+    ctx: &serenity::Context,
+    channel_id: &ChannelId,
+    guild_id: &GuildId,
+    deleted_message_id: &MessageId,
+    data: &Arc<Data>,
+) {
+    let builder = GetMessages::new().before(*deleted_message_id).limit(100);
+    println!("Fetching from http.");
+    let Ok(msgs) = channel_id.messages(&ctx, builder).await else {
+        return;
+    };
+
+    if let Some(mut value) = data.anti_delete_cache.map.get_mut(guild_id) {
+        for msg in msgs {
+            value.insert(msg.id, msg.author.id);
+        }
+    } else {
+        let mut map = HashMap::new();
+        for msg in msgs {
+            map.insert(msg.id, msg.author.id);
+        }
+        data.anti_delete_cache.map.insert(*guild_id, map);
+    }
+}
+
+async fn anti_delete(
+    ctx: &serenity::Context,
+    data: &Arc<Data>,
+    channel_id: &ChannelId,
+    guild_id: &GuildId,
+    deleted_message_id: &MessageId,
+) -> Option<UserId> {
+    println!("checking: {guild_id}, {channel_id}, {deleted_message_id}");
+    // increase value.
+    {
+        let Some(mut value) = data.anti_delete_cache.val.get_mut(guild_id) else {
+            data.anti_delete_cache.val.insert(
+                *guild_id,
+                Decay {
+                    val: 1,
+                    last_update: Instant::now(),
+                },
+            );
+
+            return None;
+        };
+
+        if value.val > 0 && value.val < 5 {
+            value.val += 1;
+            println!("Guild heat is now: {}", value.val);
+
+            // low heat = no check.
+            if value.val < 3 {
+                return None;
+            }
+        }
+    }
+
+    {
+        let Some(value) = data.anti_delete_cache.map.get(guild_id) else {
+            fetch(ctx, channel_id, guild_id, deleted_message_id, data).await;
+            return None;
+        };
+
+        for (m, u) in value.value() {
+            if m == deleted_message_id {
+                println!("Found.");
+                return Some(*u);
+            }
+        }
+    }
+
+    // here!
+    fetch(ctx, channel_id, guild_id, deleted_message_id, data).await;
+
+    None
+}
+
 pub async fn message_delete(
     ctx: &serenity::Context,
     channel_id: &ChannelId,
@@ -174,6 +256,22 @@ pub async fn message_delete(
     guild_id: &Option<GuildId>,
     data: Arc<Data>,
 ) -> Result<(), Error> {
+    if let Some(guild_id) = guild_id {
+        if let Some(user) = anti_delete(ctx, &data, channel_id, guild_id, deleted_message_id).await
+        {
+            if guild_id.get() == 98226572468690944 {
+                let embed = CreateEmbed::new()
+                    .title("Message deleted.")
+                    .description(format!("Triggered on {user}"));
+
+                let builder = CreateMessage::new().embed(embed);
+                let _ = ChannelId::new(158484765136125952)
+                    .send_message(&ctx.http, builder)
+                    .await;
+            };
+        }
+    }
+
     let db_pool = &data.db;
 
     let guild_name = get_guild_name_override(ctx, &data, *guild_id);

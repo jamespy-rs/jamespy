@@ -9,6 +9,7 @@ use small_fixed_array::FixedString;
 
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::time::Duration;
 
 pub async fn ready(ctx: &serenity::Context, ready: &Ready, data: Arc<Data>) -> Result<(), Error> {
     let activity_data = ActivityData {
@@ -36,10 +37,21 @@ fn finalize_start(ctx: &serenity::Context, data: &Arc<Data>) {
 
     tokio::spawn(async move {
         let mut interval: tokio::time::Interval =
-            tokio::time::interval(std::time::Duration::from_secs(60 * 10));
+            tokio::time::interval(Duration::from_secs(60 * 10));
         loop {
             interval.tick().await;
             let _ = crate::tasks::check_space(&ctx_clone, &data_clone).await;
+        }
+    });
+
+    let data_clone = data.clone();
+
+    // Temporary solution, hopefully I come up with something better.
+    tokio::spawn(async move {
+        let mut interval: tokio::time::Interval = tokio::time::interval(Duration::from_secs(2));
+        loop {
+            interval.tick().await;
+            crate::tasks::decay_checker(&data_clone);
         }
     });
 }
