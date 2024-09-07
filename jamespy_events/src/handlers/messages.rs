@@ -157,7 +157,6 @@ pub async fn message_edit(
             }
         }
         (None, None) => {
-            println!("{event:?}");
             println!(
                 "\x1B[36mA message (ID:{}) was edited but was not in cache\x1B[0m",
                 event.id

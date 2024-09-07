@@ -39,7 +39,7 @@ pub struct Data {
     pub dm_activity: DashMap<UserId, DmActivity>,
     /// Runtime caches for user/global/nicks, used to reduce DB load.
     pub names: Mutex<Names>,
-    //pub websocket: Arc<Mutex<WebSocketWhitelist>>,
+    pub join_announce: AtomicBool,
 }
 /*
 pub struct WebSocketWhitelist {

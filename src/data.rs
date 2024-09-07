@@ -27,5 +27,6 @@ pub async fn setup() -> Arc<Data> {
         dm_activity: DashMap::new(),
         mod_mode,
         names: Mutex::new(Names::new()),
+        join_announce: AtomicBool::new(false),
     })
 }
