@@ -45,7 +45,13 @@ pub struct Data {
 #[derive(Default)]
 pub struct AntiDeleteCache {
     pub val: DashMap<GuildId, Decay>,
-    pub map: DashMap<GuildId, HashMap<MessageId, UserId>>,
+    // Dashmap using guild key, containing the last deleted msg and a hashmap of stored message ids.
+    pub map: DashMap<GuildId, InnerCache>,
+}
+
+pub struct InnerCache {
+    pub last_deleted_msg: MessageId,
+    pub msg_user_cache: HashMap<MessageId, UserId>,
 }
 
 pub struct Decay {
@@ -66,7 +72,6 @@ impl AntiDeleteCache {
             // time without messages deleted to decay, hardcoded currently.
             if elapsed > 5 {
                 guild.val -= 1;
-                println!("Guild heat is now: {}", guild.val);
             }
 
             if guild.val == 0 {

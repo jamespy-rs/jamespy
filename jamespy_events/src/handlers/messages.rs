@@ -8,7 +8,7 @@ use crate::{Data, Error};
 
 use ::serenity::all::{CreateEmbed, CreateMessage, GetMessages};
 use chrono::DateTime;
-use jamespy_data::structs::Decay;
+use jamespy_data::structs::{Decay, InnerCache};
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
     MessageUpdateEvent, UserId,
@@ -176,8 +176,14 @@ async fn fetch(
     guild_id: &GuildId,
     deleted_message_id: &MessageId,
     data: &Arc<Data>,
+    fetch_newer: bool,
 ) {
-    let builder = GetMessages::new().before(*deleted_message_id).limit(100);
+    let builder = if fetch_newer {
+        GetMessages::new().after(*deleted_message_id).limit(100)
+    } else {
+        GetMessages::new().before(*deleted_message_id).limit(100)
+    };
+
     println!("Fetching from http.");
     let Ok(msgs) = channel_id.messages(&ctx, builder).await else {
         return;
@@ -185,14 +191,21 @@ async fn fetch(
 
     if let Some(mut value) = data.anti_delete_cache.map.get_mut(guild_id) {
         for msg in msgs {
-            value.insert(msg.id, msg.author.id);
+            value.msg_user_cache.insert(msg.id, msg.author.id);
         }
     } else {
         let mut map = HashMap::new();
         for msg in msgs {
             map.insert(msg.id, msg.author.id);
         }
-        data.anti_delete_cache.map.insert(*guild_id, map);
+
+        data.anti_delete_cache.map.insert(
+            *guild_id,
+            InnerCache {
+                last_deleted_msg: *deleted_message_id,
+                msg_user_cache: map,
+            },
+        );
     }
 }
 
@@ -203,7 +216,6 @@ async fn anti_delete(
     guild_id: &GuildId,
     deleted_message_id: &MessageId,
 ) -> Option<UserId> {
-    println!("checking: {guild_id}, {channel_id}, {deleted_message_id}");
     // increase value.
     {
         let Some(mut value) = data.anti_delete_cache.val.get_mut(guild_id) else {
@@ -220,7 +232,6 @@ async fn anti_delete(
 
         if value.val > 0 && value.val < 5 {
             value.val += 1;
-            println!("Guild heat is now: {}", value.val);
 
             // low heat = no check.
             if value.val < 3 {
@@ -229,22 +240,28 @@ async fn anti_delete(
         }
     }
 
-    {
-        let Some(value) = data.anti_delete_cache.map.get(guild_id) else {
-            fetch(ctx, channel_id, guild_id, deleted_message_id, data).await;
+    let last_deleted = {
+        let Some(mut value) = data.anti_delete_cache.map.get_mut(guild_id) else {
+            fetch(ctx, channel_id, guild_id, deleted_message_id, data, false).await;
             return None;
         };
 
-        for (m, u) in value.value() {
+        let last_deleted = value.last_deleted_msg;
+        value.last_deleted_msg = *deleted_message_id;
+
+        for (m, u) in &value.value().msg_user_cache {
             if m == deleted_message_id {
-                println!("Found.");
                 return Some(*u);
             }
         }
-    }
+        last_deleted
+    };
 
-    // here!
-    fetch(ctx, channel_id, guild_id, deleted_message_id, data).await;
+    if last_deleted < *deleted_message_id {
+        fetch(ctx, channel_id, guild_id, deleted_message_id, data, true).await;
+    } else {
+        fetch(ctx, channel_id, guild_id, deleted_message_id, data, false).await;
+    }
 
     None
 }
