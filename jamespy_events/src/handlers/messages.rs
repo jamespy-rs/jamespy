@@ -273,22 +273,6 @@ pub async fn message_delete(
     guild_id: &Option<GuildId>,
     data: Arc<Data>,
 ) -> Result<(), Error> {
-    if let Some(guild_id) = guild_id {
-        if let Some(user) = anti_delete(ctx, &data, channel_id, guild_id, deleted_message_id).await
-        {
-            if guild_id.get() == 98226572468690944 {
-                let embed = CreateEmbed::new()
-                    .title("Message deleted.")
-                    .description(format!("Triggered on {user}"));
-
-                let builder = CreateMessage::new().embed(embed);
-                let _ = ChannelId::new(158484765136125952)
-                    .send_message(&ctx.http, builder)
-                    .await;
-            };
-        }
-    }
-
     let db_pool = &data.db;
 
     let guild_name = get_guild_name_override(ctx, &data, *guild_id);
@@ -341,6 +325,26 @@ pub async fn message_delete(
             "\x1B[91m\x1B[2mA message (ID:{deleted_message_id}) was deleted but was not in \
              cache\x1B[0m"
         );
+
+        if let Some(guild_id) = guild_id {
+            if let Some(user) =
+                anti_delete(ctx, &data, channel_id, guild_id, deleted_message_id).await
+            {
+                if guild_id.get() == 98226572468690944 {
+                    let embed = CreateEmbed::new()
+                        .title("Possible mass deletion?")
+                        .description(format!("Triggered on <@{user}>"))
+                        .footer(CreateEmbedFooter::new(
+                            "This doesn't check my own database or oinks database.",
+                        ));
+
+                    let builder = CreateMessage::new().embed(embed);
+                    let _ = ChannelId::new(1284217769423798282)
+                        .send_message(&ctx.http, builder)
+                        .await;
+                };
+            }
+        }
     }
     Ok(())
 }
