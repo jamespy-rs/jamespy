@@ -71,6 +71,11 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         embeds.as_deref().unwrap_or("")
     );
 
+    //#[cfg(not(debug_assertions))]
+    let _ =
+        crate::image_moderation::check(&data.ocr_engine, &msg.author, &ctx.http, &msg.attachments)
+            .await;
+
     let timestamp = DateTime::from_timestamp(msg.timestamp.timestamp(), 0)
         .unwrap()
         .naive_utc();

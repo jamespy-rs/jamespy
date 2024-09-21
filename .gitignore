@@ -8,6 +8,7 @@
 
 /target
 /config/attachments
+/text_models
 
 
 config/config.json

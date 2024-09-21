@@ -19,3 +19,4 @@ parking_lot = { workspace = true }
 dashmap = { workspace = true}
 
 tracing = "0.1.40"
+ocrs.workspace = true

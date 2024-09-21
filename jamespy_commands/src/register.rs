@@ -127,13 +127,12 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
                 .content("Processing... Please wait."),
         )
         .await?; // remove buttons after button press and edit message
-    let pressed_button_id = match &interaction {
-        Some(m) => &m.data.custom_id,
-        None => {
-            ctx.say(":warning: You didn't interact in time - please run the command again.")
-                .await?;
-            return Ok(());
-        }
+    let pressed_button_id = if let Some(m) = &interaction {
+        &m.data.custom_id
+    } else {
+        ctx.say(":warning: You didn't interact in time - please run the command again.")
+            .await?;
+        return Ok(());
     };
 
     // I'm aware this checks for the spy guild stuff,

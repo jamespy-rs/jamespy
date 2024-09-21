@@ -1,4 +1,5 @@
 use dashmap::{DashMap, DashSet};
+use ocrs::OcrEngine;
 use parking_lot::{Mutex, RwLock};
 use serenity::all::MessageId;
 use std::{collections::HashMap, time::Instant};
@@ -39,7 +40,10 @@ pub struct Data {
     pub names: Mutex<Names>,
     /// osu!game handling for showing this in general. Hardcoded as usual.
     pub join_announce: AtomicBool,
+    /// Experimental anti mass message deletion tracking.
     pub anti_delete_cache: AntiDeleteCache,
+    /// OCR engine.
+    pub ocr_engine: OcrEngine,
 }
 
 #[derive(Default)]
