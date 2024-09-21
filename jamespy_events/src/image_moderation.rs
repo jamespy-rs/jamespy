@@ -38,9 +38,11 @@ pub async fn check(
     };
 
     let bytes = first.download().await?;
-    let img = image::load_from_memory_with_format(&bytes, ImageFormat::Png)
-        .unwrap()
-        .into_rgb8();
+
+    let Ok(image) = image::load_from_memory(&bytes) else {
+        return Ok(());
+    };
+    let img = image.into_rgb8();
 
     let img_source = ImageSource::from_bytes(img.as_raw(), img.dimensions())?;
     let ocr_input = engine.prepare_input(img_source)?;

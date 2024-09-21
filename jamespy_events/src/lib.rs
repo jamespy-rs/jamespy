@@ -19,7 +19,7 @@ use poise::serenity_prelude::{self as serenity, FullEvent};
 pub mod attachments;
 pub mod helper;
 // it is way too slow to use otherwise.
-//#[cfg(not(debug_assertions))]
+#[cfg(not(debug_assertions))]
 pub mod image_moderation;
 pub mod tasks;
 
