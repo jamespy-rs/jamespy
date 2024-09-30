@@ -1,5 +1,4 @@
 use crate::Error;
-use image::ImageFormat;
 use ocrs::{ImageSource, OcrEngine, TextItem};
 /* use serenity::all::{
     Attachment, ChannelId, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter, CreateMessage, Http,
