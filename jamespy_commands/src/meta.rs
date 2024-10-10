@@ -1,9 +1,10 @@
+use std::collections::HashSet;
 use std::time::Instant;
 
 use ::serenity::all::{
-    ChannelId, ChannelType, GuildChannel, PermissionOverwriteType, RoleId, UserId,
+    ChannelId, ChannelType, GuildChannel, Mentionable, PermissionOverwriteType, RoleId, UserId,
 };
-use poise::serenity_prelude as serenity;
+use poise::{serenity_prelude as serenity, CreateReply};
 use sysinfo::{Pid, System};
 
 use std::fmt::Write;
@@ -333,8 +334,61 @@ pub async fn find_overwrite(
     Ok(())
 }
 
+use serenity::futures::StreamExt;
+use serenity::model::channel::MessagesIter;
+
+/// Find permission overwrites for specific users.
+#[poise::command(
+    slash_command,
+    hide_in_help,
+    guild_only,
+    required_permissions = "MANAGE_MESSAGES"
+)]
+pub async fn scawy(
+    ctx: Context<'_>,
+    #[channel_types("PublicThread", "PrivateThread")] channel: GuildChannel,
+) -> Result<(), Error> {
+    if channel.kind != ChannelType::PublicThread && channel.kind != ChannelType::PrivateThread {
+        ctx.say("Die.").await?;
+        return Ok(());
+    }
+
+    ctx.defer().await?;
+    let mut users = HashSet::new();
+    let mut messages = MessagesIter::stream(ctx.http(), channel.id).boxed();
+    while let Some(message_result) = messages.next().await {
+        match message_result {
+            Ok(message) => {
+                println!("Message.");
+                if !message.author.bot() {
+                    users.insert(message.author.id);
+                }
+            }
+            Err(error) => println!("wtf: {error}"),
+        }
+    }
+
+    let mut string = String::from("Feel free to paste this whereever: ");
+    for user in users {
+        write!(string, "{}", user.mention()).unwrap();
+    }
+    let mentions = serenity::CreateAllowedMentions::new()
+        .all_users(false)
+        .everyone(false)
+        .all_roles(false);
+
+    ctx.send(
+        poise::CreateReply::new()
+            .content(string)
+            .allowed_mentions(mentions),
+    )
+    .await?;
+
+    Ok(())
+}
+
 #[must_use]
-pub fn commands() -> [crate::Command; 8] {
+pub fn commands() -> [crate::Command; 9] {
     [
         uptime(),
         source(),
@@ -344,5 +398,6 @@ pub fn commands() -> [crate::Command; 8] {
         stats(),
         overwrite(),
         find_overwrite(),
+        scawy(),
     ]
 }

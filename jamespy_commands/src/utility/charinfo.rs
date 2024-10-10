@@ -19,8 +19,8 @@ pub async fn charinfo(
 ) -> Result<(), Error> {
     let mut result = String::new();
     for c in string.chars() {
+        let digit = c as u32;
         if let Some(name) = unicode_names2::name(c) {
-            let digit = c as u32;
             writeln!(
                 result,
                 "[`\\U{digit:08x}`](http://www.fileformat.info/info/unicode/char/{digit:08x}): \
@@ -28,7 +28,12 @@ pub async fn charinfo(
             )
             .unwrap();
         } else {
-            writeln!(result, "Name not found.").unwrap();
+            writeln!(
+                result,
+                "[`\\U{digit:08x}`](http://www.fileformat.info/info/unicode/char/{digit:08x}): \
+                 Name not found. — {c}"
+            )
+            .unwrap();
         }
     }
 
