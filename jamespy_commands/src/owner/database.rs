@@ -15,9 +15,12 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
     let db_pool = &ctx.data().db;
 
     let messages_tables = [
-        ("msgs", "message_id"),
-        ("msgs_edits", "message_id"),
-        ("msgs_deletions", "message_id"),
+        ("messages", "message_id"),
+        ("message_edits", "message_id"),
+        ("message_deletion", "message_id"),
+        ("msgs_old", "message_id"),
+        ("msgs_edits_old", "message_id"),
+        ("msgs_deletions_old", "message_id"),
     ];
     let names_tables = [
         ("usernames", "user_id"),

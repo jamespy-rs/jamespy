@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
+use std::ops::Deref;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -7,24 +8,59 @@ use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
 use crate::{Data, Error};
 
 use ::serenity::all::{CreateEmbed, CreateMessage, GetMessages};
-use chrono::DateTime;
+use chrono::Utc;
 use jamespy_data::structs::{Decay, InnerCache};
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
     MessageUpdateEvent, UserId,
 };
 use small_fixed_array::FixedString;
-use sqlx::query;
+use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo};
+use sqlx::{query, Encode, Postgres, Transaction, Type};
+
+use small_fixed_array::ValidLength;
+
+// Foreign trait foreign type stuff.
+pub struct FuckRustRules<'a, LenT: ValidLength>(&'a FixedString<LenT>);
+
+impl<LenT: ValidLength> Deref for FuckRustRules<'_, LenT> {
+    type Target = FixedString<LenT>;
+
+    fn deref(&self) -> &Self::Target {
+        self.0
+    }
+}
+
+impl<LenT: ValidLength> Type<Postgres> for FuckRustRules<'_, LenT> {
+    fn type_info() -> PgTypeInfo {
+        <&str as Type<Postgres>>::type_info()
+    }
+
+    fn compatible(ty: &PgTypeInfo) -> bool {
+        <&str as Type<Postgres>>::compatible(ty)
+    }
+}
+
+impl<LenT: ValidLength> Encode<'_, Postgres> for FuckRustRules<'_, LenT> {
+    fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> sqlx::encode::IsNull {
+        <&str as Encode<Postgres>>::encode(self.as_str(), buf)
+    }
+}
 
 pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) -> Result<(), Error> {
     let (flagged_words, patterns) = {
         let config = &data.config.read().events;
 
-        if should_skip_msg(&config.no_log_users, &config.no_log_channels, msg) {
+        if should_skip_msg(
+            config.no_log_users.as_ref(),
+            config.no_log_channels.as_ref(),
+            msg,
+        ) {
             return Ok(());
         }
 
-        let flagged_words = get_blacklisted_words(msg, &config.badlist, &config.fixlist);
+        let flagged_words =
+            get_blacklisted_words(msg, config.badlist.as_ref(), config.fixlist.as_ref());
 
         (flagged_words, config.regex.clone())
     };
@@ -76,25 +112,88 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         crate::image_moderation::check(&data.ocr_engine, &msg.author, &ctx.http, &msg.attachments)
             .await;
 
-    let timestamp = DateTime::from_timestamp(msg.timestamp.timestamp(), 0)
-        .unwrap()
-        .naive_utc();
+    insert_message(data.db.begin().await?, msg).await?;
 
-    let _ = query!(
-        "INSERT INTO msgs (guild_id, channel_id, message_id, user_id, content, attachments, \
-         embeds, timestamp)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-        guild_id.map(|g| i64::from(g)),
-        msg.channel_id.get() as i64,
-        msg.id.get() as i64,
-        msg.author.id.get() as i64,
-        msg.content.to_string(),
-        attachments,
-        embeds,
-        timestamp
+    Ok(())
+}
+
+async fn insert_message(
+    mut transaction: Transaction<'_, Postgres>,
+    message: &Message,
+) -> Result<(), Error> {
+    let guild_id = message.guild_id.map(|g| g.get() as i64);
+    let channel_id = message.channel_id.get() as i64;
+    let user_id = message.author.id.get() as i64;
+    let message_id = message.id.get() as i64;
+
+    query!(
+        "INSERT INTO channels (channel_id, guild_id)
+         VALUES ($1, $2)
+         ON CONFLICT (channel_id) DO NOTHING",
+        channel_id,
+        guild_id
     )
-    .execute(&data.db)
-    .await;
+    .execute(&mut *transaction)
+    .await?;
+
+    if let Some(guild_id) = guild_id {
+        query!(
+            "INSERT INTO guilds (guild_id)
+             VALUES ($1)
+             ON CONFLICT (guild_id) DO NOTHING",
+            guild_id
+        )
+        .execute(&mut *transaction)
+        .await?;
+    }
+
+    query!(
+        "INSERT INTO users (user_id)
+         VALUES ($1)
+         ON CONFLICT (user_id) DO NOTHING",
+        user_id
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    query!(
+        "INSERT INTO messages (message_id, guild_id, channel_id, user_id, content, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6)",
+        message_id,
+        guild_id,
+        channel_id,
+        user_id,
+        &FuckRustRules(&message.content),
+        message.id.created_at().unix_timestamp()
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    query!(
+        "INSERT INTO embeds (message_id, embed_data)
+         VALUES ($1, $2)
+         ON CONFLICT (message_id) DO NOTHING",
+        message_id,
+        serde_json::to_value(message.embeds.clone())?
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    for attachment in &message.attachments {
+        query!(
+            "INSERT INTO attachments (attachment_id, message_id, file_name, file_size, file_url)
+             VALUES ($1, $2, $3, $4, $5)",
+            attachment.id.get() as i64,
+            message_id,
+            &FuckRustRules(&attachment.filename),
+            attachment.size as i32,
+            &FuckRustRules(&attachment.url)
+        )
+        .execute(&mut *transaction)
+        .await?;
+    }
+
+    transaction.commit().await?;
 
     Ok(())
 }
@@ -141,27 +240,7 @@ pub async fn message_edit(
                     embeds.as_deref().unwrap_or("")
                 );
 
-                let timestamp =
-                    DateTime::from_timestamp(new_message.edited_timestamp.unwrap().timestamp(), 0)
-                        .unwrap()
-                        .naive_utc();
-
-                let _ = query!(
-                    "INSERT INTO msgs_edits (guild_id, channel_id, message_id, user_id, \
-                     old_content, new_content, attachments, embeds, timestamp)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-                    guild_id.map(|g| i64::from(g)),
-                    new_message.channel_id.get() as i64,
-                    new_message.id.get() as i64,
-                    new_message.author.id.get() as i64,
-                    old_message.content.to_string(),
-                    new_message.content.to_string(),
-                    attachments,
-                    embeds,
-                    timestamp
-                )
-                .execute(db_pool)
-                .await;
+                let _ = insert_edit(db_pool.begin().await?, new_message).await;
             }
         }
         (None, None) => {
@@ -172,6 +251,67 @@ pub async fn message_edit(
         }
         _ => {}
     }
+    Ok(())
+}
+
+async fn insert_edit(
+    mut transaction: Transaction<'_, Postgres>,
+    message: &Message,
+) -> Result<(), Error> {
+    let guild_id = message.guild_id.map(|g| g.get() as i64);
+    let channel_id = message.channel_id.get() as i64;
+    let user_id = message.author.id.get() as i64;
+    let message_id = message.id.get() as i64;
+
+    query!(
+        "INSERT INTO channels (channel_id, guild_id)
+         VALUES ($1, $2)
+         ON CONFLICT (channel_id) DO NOTHING",
+        channel_id,
+        guild_id
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    if let Some(guild_id) = guild_id {
+        query!(
+            "INSERT INTO guilds (guild_id)
+             VALUES ($1)
+             ON CONFLICT (guild_id) DO NOTHING",
+            guild_id
+        )
+        .execute(&mut *transaction)
+        .await?;
+    }
+
+    query!(
+        "INSERT INTO users (user_id)
+         VALUES ($1)
+         ON CONFLICT (user_id) DO NOTHING",
+        user_id
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    let timestamp = message
+        .edited_timestamp
+        .map_or_else(|| Utc::now().timestamp(), |t| t.unix_timestamp());
+
+    query!(
+        "INSERT INTO message_edits (message_id, channel_id, guild_id, user_id, content, \
+         edited_at) VALUES ($1, $2, $3, $4, $5, $6)",
+        message_id,
+        channel_id,
+        guild_id,
+        user_id,
+        &FuckRustRules(&message.content),
+        timestamp
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    transaction.commit().await?;
+
     Ok(())
 }
 
@@ -307,23 +447,8 @@ pub async fn message_delete(
             embeds_fmt.as_deref().unwrap_or("")
         );
 
-        let timestamp = chrono::Utc::now().naive_utc();
+        let _ = insert_deletion(db_pool.begin().await?, &message).await;
 
-        let _ = query!(
-            "INSERT INTO msgs_deletions (guild_id, channel_id, message_id, user_id, content, \
-             attachments, embeds, timestamp)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-            guild_id.map(|g| i64::from(g)),
-            message.channel_id.get() as i64,
-            message.id.get() as i64,
-            message.author.id.get() as i64,
-            message.content.to_string(),
-            attachments_fmt,
-            embeds_fmt,
-            timestamp
-        )
-        .execute(db_pool)
-        .await;
         crate::attachments::download_attachments(ctx, message, &data).await?;
     } else {
         println!(
@@ -354,9 +479,68 @@ pub async fn message_delete(
     Ok(())
 }
 
+async fn insert_deletion(
+    mut transaction: Transaction<'_, Postgres>,
+    message: &Message,
+) -> Result<(), Error> {
+    let guild_id = message.guild_id.map(|g| g.get() as i64);
+    let channel_id = message.channel_id.get() as i64;
+    let user_id = message.author.id.get() as i64;
+    let message_id = message.id.get() as i64;
+
+    query!(
+        "INSERT INTO channels (channel_id, guild_id)
+         VALUES ($1, $2)
+         ON CONFLICT (channel_id) DO NOTHING",
+        channel_id,
+        guild_id
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    if let Some(guild_id) = guild_id {
+        query!(
+            "INSERT INTO guilds (guild_id)
+             VALUES ($1)
+             ON CONFLICT (guild_id) DO NOTHING",
+            guild_id
+        )
+        .execute(&mut *transaction)
+        .await?;
+    }
+
+    query!(
+        "INSERT INTO users (user_id)
+         VALUES ($1)
+         ON CONFLICT (user_id) DO NOTHING",
+        user_id
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    let timestamp = Utc::now().timestamp();
+
+    query!(
+        "INSERT INTO message_deletion (message_id, channel_id, guild_id, user_id, content, \
+         deleted_at) VALUES ($1, $2, $3, $4, $5, $6)",
+        message_id,
+        channel_id,
+        guild_id,
+        user_id,
+        &FuckRustRules(&message.content),
+        timestamp
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    transaction.commit().await?;
+
+    Ok(())
+}
+
 fn should_skip_msg(
-    no_log_users: &Option<Vec<u64>>,
-    no_log_channels: &Option<Vec<u64>>,
+    no_log_users: Option<&Vec<u64>>,
+    no_log_channels: Option<&Vec<u64>>,
     message: &Message,
 ) -> bool {
     let user_condition = no_log_users
@@ -474,8 +658,8 @@ pub fn attachments_embed_fmt(new_message: &Message) -> (Option<String>, Option<S
 
 fn get_blacklisted_words(
     new_message: &Message,
-    badlist: &Option<HashSet<String>>,
-    fixlist: &Option<HashSet<String>>,
+    badlist: Option<&HashSet<String>>,
+    fixlist: Option<&HashSet<String>>,
 ) -> Vec<FixedString<u16>> {
     let message_lowercase = new_message.content.to_lowercase();
 
