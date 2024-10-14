@@ -4,7 +4,7 @@ use std::time::Instant;
 use ::serenity::all::{
     ChannelId, ChannelType, GuildChannel, Mentionable, PermissionOverwriteType, RoleId, UserId,
 };
-use poise::{serenity_prelude as serenity, CreateReply};
+use poise::serenity_prelude as serenity;
 use sysinfo::{Pid, System};
 
 use std::fmt::Write;
@@ -337,8 +337,9 @@ pub async fn find_overwrite(
 use serenity::futures::StreamExt;
 use serenity::model::channel::MessagesIter;
 
-/// Find permission overwrites for specific users.
+/// Find users in a thread to ping.
 #[poise::command(
+    prefix_command,
     slash_command,
     hide_in_help,
     guild_only,

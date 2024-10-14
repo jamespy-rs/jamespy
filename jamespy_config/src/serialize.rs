@@ -32,6 +32,7 @@ pub mod regex_patterns {
         Ok(regex_patterns)
     }
 
+    #[allow(clippy::ref_option)]
     pub fn serialize<S: Serializer>(
         patterns: &Option<Vec<Regex>>,
         serializer: S,

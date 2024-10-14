@@ -6,6 +6,8 @@ mod error;
 use poise::serenity_prelude::{self as serenity};
 use std::{env::var, sync::Arc, time::Duration};
 
+// false positive.
+#[allow(clippy::needless_return)]
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();

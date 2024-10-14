@@ -409,11 +409,11 @@ impl Data {
         if let Some(cached) = cached {
             Some(*cached)
         } else {
-            self._get_activity_check_psql(user_id).await
+            self.get_activity_check_psql(user_id).await
         }
     }
 
-    async fn _get_activity_check_psql(&self, user_id: UserId) -> Option<DmActivity> {
+    async fn get_activity_check_psql(&self, user_id: UserId) -> Option<DmActivity> {
         let result = sqlx::query!(
             "SELECT last_announced, until, count FROM dm_activity WHERE user_id = $1",
             i64::from(user_id)
