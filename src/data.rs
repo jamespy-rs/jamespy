@@ -1,10 +1,9 @@
-use dashmap::{DashMap, DashSet};
+use dashmap::DashMap;
 use jamespy_data::structs::{AntiDeleteCache, Data, Names};
 
 use ocrs::{OcrEngine, OcrEngineParams};
 use parking_lot::{Mutex, RwLock};
 use rten::Model;
-use serenity::all::GuildId;
 use std::{
     path::PathBuf,
     sync::{atomic::AtomicBool, Arc},
@@ -14,11 +13,6 @@ pub async fn setup() -> Arc<Data> {
     let db_pool = jamespy_data::database::init_data().await;
 
     let config = jamespy_config::JamespyConfig::load_config();
-    let mod_mode = DashSet::new();
-
-    #[allow(clippy::unreadable_literal)]
-    // modmode osugame by default.
-    mod_mode.insert(GuildId::new(98226572468690944));
 
     Arc::new(Data {
         has_started: AtomicBool::new(false),
