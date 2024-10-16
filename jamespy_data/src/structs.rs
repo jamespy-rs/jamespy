@@ -29,8 +29,6 @@ pub struct Data {
     pub dm_activity: DashMap<UserId, DmActivity>,
     /// Runtime caches for user/global/nicks, used to reduce DB load.
     pub names: Mutex<Names>,
-    /// osu!game handling for showing this in general. Hardcoded as usual.
-    pub join_announce: AtomicBool,
     /// Experimental anti mass message deletion tracking.
     pub anti_delete_cache: AntiDeleteCache,
     /// OCR engine.

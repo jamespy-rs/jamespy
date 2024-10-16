@@ -1,7 +1,5 @@
-use std::sync::{atomic::Ordering, Arc};
-
-use ::serenity::all::CreateAllowedMentions;
 use sqlx::query;
+use std::sync::Arc;
 
 use crate::{
     helper::{get_channel_name, get_guild_name_override, get_user},
@@ -37,29 +35,6 @@ pub async fn guild_member_addition(
     let db_pool = &data.db;
     let guild_id = new_member.guild_id;
     let joined_user_id = new_member.user.id;
-
-    if data.join_announce.load(Ordering::SeqCst) && guild_id == GuildId::new(98226572468690944) {
-        let member_count = {
-            let guild = ctx.cache.guild(guild_id);
-            guild.map(|g| g.member_count)
-        };
-
-        if let Some(member_count) = member_count {
-            let mentions = CreateAllowedMentions::new()
-                .all_roles(false)
-                .all_users(false)
-                .everyone(false);
-            let builder = serenity::CreateMessage::new()
-                .allowed_mentions(mentions)
-                .content(format!(
-                    "<@{}> joined! We are now at **{}** members.",
-                    new_member.user.id, member_count
-                ));
-            let _ = ChannelId::new(98226572468690944)
-                .send_message(&ctx.http, builder)
-                .await;
-        }
-    }
 
     let guild_name = get_guild_name_override(ctx, &data, Some(guild_id));
 
@@ -125,29 +100,6 @@ pub async fn guild_member_removal(
 ) -> Result<(), Error> {
     let db_pool = &data.db;
     let guild_name = get_guild_name_override(ctx, &data, Some(*guild_id));
-
-    if data.join_announce.load(Ordering::SeqCst) && *guild_id == GuildId::new(98226572468690944) {
-        let member_count = {
-            let guild = ctx.cache.guild(*guild_id);
-            guild.map(|g| g.member_count)
-        };
-
-        if let Some(member_count) = member_count {
-            let mentions = CreateAllowedMentions::new()
-                .all_roles(false)
-                .all_users(false)
-                .everyone(false);
-            let builder = serenity::CreateMessage::new()
-                .allowed_mentions(mentions)
-                .content(format!(
-                    "**{}** left! We are now at **{}** members.",
-                    user.name, member_count
-                ));
-            let _ = ChannelId::new(98226572468690944)
-                .send_message(&ctx.http, builder)
-                .await;
-        }
-    }
 
     println!(
         "\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m",

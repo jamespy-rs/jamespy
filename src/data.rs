@@ -28,7 +28,6 @@ pub async fn setup() -> Arc<Data> {
         config: RwLock::new(config),
         dm_activity: DashMap::new(),
         names: Mutex::new(Names::new()),
-        join_announce: AtomicBool::new(false),
         anti_delete_cache: AntiDeleteCache::default(),
         ocr_engine: prep_engine(),
     })

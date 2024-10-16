@@ -1,6 +1,3 @@
-use crate::owner::owner;
-use std::sync::atomic::Ordering;
-
 use serenity::all::{EditMember, GuildMemberFlags};
 
 use crate::{Context, Error};
@@ -67,34 +64,7 @@ pub async fn unverify_all(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-#[poise::command(
-    rename = "join-announce",
-    prefix_command,
-    hide_in_help,
-    check = "owner",
-    category = "Owner - Commands",
-    guild_only
-)]
-pub async fn join_announce(ctx: Context<'_>, val: Option<bool>) -> Result<(), Error> {
-    let Some(val) = val else {
-        ctx.say(format!(
-            "The current value for announcing joins is: {}",
-            ctx.data().join_announce.load(Ordering::SeqCst)
-        ))
-        .await?;
-        return Ok(());
-    };
-
-    if ctx.data().join_announce.swap(val, Ordering::SeqCst) == val {
-        ctx.say("Its already set this way.").await?;
-    } else {
-        ctx.say("Set state.").await?;
-    }
-
-    Ok(())
-}
-
 #[must_use]
-pub fn commands() -> [crate::Command; 2] {
-    [unverify_all(), join_announce()]
+pub fn commands() -> [crate::Command; 1] {
+    [unverify_all()]
 }
