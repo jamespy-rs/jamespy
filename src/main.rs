@@ -40,7 +40,7 @@ async fn main() {
         | serenity::GatewayIntents::GUILD_PRESENCES;
 
     let mut settings = serenity::Settings::default();
-    settings.max_messages = 350;
+    settings.max_messages = 1000;
 
     let data = data::setup().await;
 

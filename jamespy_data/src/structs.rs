@@ -192,17 +192,19 @@ impl Data {
 
         match (update_user, update_display) {
             (true, true) => {
-                self.insert_user_db(user.id, user.tag()).await;
-                self.insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string()))
+                let _ = self.insert_user_db(user.id, user.tag()).await;
+                let _ = self
+                    .insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string()))
                     .await;
                 return;
             }
             (true, false) => {
-                self.insert_user_db(user.id, user.tag()).await;
+                let _ = self.insert_user_db(user.id, user.tag()).await;
                 return;
             }
             (false, true) => {
-                self.insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string()))
+                let _ = self
+                    .insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string()))
                     .await;
                 return;
             }
@@ -212,26 +214,28 @@ impl Data {
         if check_db {
             if let Some(db_name) = self.get_latest_username_psql(user.id).await {
                 if !db_name.eq(&user.tag()) {
-                    self.insert_user_db(user.id, user.tag()).await;
+                    let _ = self.insert_user_db(user.id, user.tag()).await;
                 }
             } else {
-                self.insert_user_db(user.id, user.tag()).await;
+                let _ = self.insert_user_db(user.id, user.tag()).await;
             }
 
             if let Some(db_name) = self.get_latest_global_name_psql(user.id).await {
                 // never insert if no name.
                 if let Some(user_global_name) = &user.global_name {
                     if !db_name.eq(user_global_name) {
-                        self.insert_display_db(
-                            user.id,
-                            user.global_name.clone().map(|s| s.to_string()),
-                        )
-                        .await;
+                        let _ = self
+                            .insert_display_db(
+                                user.id,
+                                user.global_name.clone().map(|s| s.to_string()),
+                            )
+                            .await;
                     }
                 }
             } else {
                 // optional values are handled internally on this function.
-                self.insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string()))
+                let _ = self
+                    .insert_display_db(user.id, user.global_name.clone().map(|s| s.to_string()))
                     .await;
             }
 
@@ -281,7 +285,7 @@ impl Data {
         }
 
         if update_user {
-            self.insert_nick_db(guild_id, user_id, nick).await;
+            let _ = self.insert_nick_db(guild_id, user_id, nick).await;
             return;
         }
 
@@ -291,12 +295,12 @@ impl Data {
                 if let Some(nick) = nick.clone() {
                     if !db_name.eq(&nick) {
                         // optional stuff is handled internally.
-                        self.insert_nick_db(guild_id, user_id, Some(nick)).await;
+                        let _ = self.insert_nick_db(guild_id, user_id, Some(nick)).await;
                     }
                 }
             } else {
                 // optional values are handled internally on this function.
-                self.insert_nick_db(guild_id, user_id, nick.clone()).await;
+                let _ = self.insert_nick_db(guild_id, user_id, nick.clone()).await;
             }
 
             let names = &mut self.names.lock();
@@ -310,42 +314,95 @@ impl Data {
         }
     }
 
-    async fn insert_user_db(&self, user_id: UserId, name: String) {
+    async fn insert_user_db(&self, user_id: UserId, name: String) -> Result<(), Error> {
         let timestamp: NaiveDateTime = Utc::now().naive_utc();
+        let mut transaction = self.db.begin().await?;
 
-        let _ = query!(
+        query!(
+            "INSERT INTO users (user_id)
+            VALUES ($1)
+            ON CONFLICT (user_id) DO NOTHING",
+            user_id.get() as i64
+        )
+        .execute(&mut *transaction)
+        .await?;
+
+        query!(
             "INSERT INTO usernames (user_id, username, timestamp) VALUES ($1, $2, $3)",
             i64::from(user_id),
             name,
             timestamp
         )
-        .execute(&self.db)
-        .await;
+        .execute(&mut *transaction)
+        .await?;
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 
-    async fn insert_display_db(&self, user_id: UserId, name: Option<String>) {
+    async fn insert_display_db(&self, user_id: UserId, name: Option<String>) -> Result<(), Error> {
         let Some(name) = name else {
-            return;
+            return Ok(());
         };
 
         let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
 
-        let _ = query!(
+        let mut transaction = self.db.begin().await?;
+
+        query!(
+            "INSERT INTO users (user_id)
+            VALUES ($1)
+            ON CONFLICT (user_id) DO NOTHING",
+            user_id.get() as i64
+        )
+        .execute(&mut *transaction)
+        .await?;
+
+        query!(
             "INSERT INTO global_names (user_id, global_name, timestamp) VALUES ($1, $2, $3)",
             i64::from(user_id),
             name,
             timestamp
         )
-        .execute(&self.db)
-        .await;
+        .execute(&mut *transaction)
+        .await?;
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 
-    async fn insert_nick_db(&self, guild_id: GuildId, user_id: UserId, name: Option<String>) {
+    async fn insert_nick_db(
+        &self,
+        guild_id: GuildId,
+        user_id: UserId,
+        name: Option<String>,
+    ) -> Result<(), Error> {
         let Some(name) = name else {
-            return;
+            return Ok(());
         };
 
         let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
+        let mut transaction = self.db.begin().await?;
+
+        query!(
+            "INSERT INTO users (user_id)
+            VALUES ($1)
+            ON CONFLICT (user_id) DO NOTHING",
+            user_id.get() as i64
+        )
+        .execute(&mut *transaction)
+        .await?;
+
+        query!(
+            "INSERT INTO guilds (guild_id)
+            VALUES ($1)
+            ON CONFLICT (guild_id) DO NOTHING",
+            guild_id.get() as i64,
+        )
+        .execute(&mut *transaction)
+        .await?;
 
         let _ = query!(
             "INSERT INTO nicknames (guild_id, user_id, nickname, timestamp) VALUES ($1, $2, $3, \
@@ -355,8 +412,12 @@ impl Data {
             name,
             timestamp
         )
-        .execute(&self.db)
+        .execute(&mut *transaction)
         .await;
+
+        transaction.commit().await?;
+
+        Ok(())
     }
 
     async fn get_latest_username_psql(&self, user_id: UserId) -> Option<String> {

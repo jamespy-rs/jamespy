@@ -169,15 +169,17 @@ async fn insert_message(
     .execute(&mut *transaction)
     .await?;
 
-    query!(
-        "INSERT INTO embeds (message_id, embed_data)
-         VALUES ($1, $2)
-         ON CONFLICT (message_id) DO NOTHING",
-        message_id,
-        serde_json::to_value(message.embeds.clone())?
-    )
-    .execute(&mut *transaction)
-    .await?;
+    if !message.embeds.is_empty() {
+        query!(
+            "INSERT INTO embeds (message_id, embed_data)
+             VALUES ($1, $2)
+             ON CONFLICT (message_id) DO NOTHING",
+            message_id,
+            serde_json::to_value(message.embeds.clone())?
+        )
+        .execute(&mut *transaction)
+        .await?;
+    }
 
     for attachment in &message.attachments {
         query!(

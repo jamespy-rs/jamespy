@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO embeds (message_id, embed_data)\n             VALUES ($1, $2)\n             ON CONFLICT (message_id) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Json"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "787871b928a6106f6cc01b5c6c7e09ee00a421f016b59f2b44b98b41e48ce0cc"
+}
