@@ -23,12 +23,10 @@ pub async fn setup() -> Arc<Data> {
     Arc::new(Data {
         has_started: AtomicBool::new(false),
         db: db_pool,
-        songbird: songbird::Songbird::serenity(),
         time_started: std::time::Instant::now(),
         reqwest: reqwest::Client::new(),
         config: RwLock::new(config),
         dm_activity: DashMap::new(),
-        mod_mode,
         names: Mutex::new(Names::new()),
         join_announce: AtomicBool::new(false),
         anti_delete_cache: AntiDeleteCache::default(),

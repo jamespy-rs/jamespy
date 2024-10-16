@@ -1,8 +1,8 @@
 use std::time::Duration;
 
+use crate::{Context, Error};
 use jamespy_data::lob::*;
-
-use crate::{Context, Error, InvocationData};
+use jamespy_data::structs::InvocationData;
 use poise::serenity_prelude::{self as serenity, UserId};
 
 /// i lob

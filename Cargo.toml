@@ -14,13 +14,11 @@ tokio = { workspace = true }
 poise = { workspace = true }
 serenity = { workspace = true }
 reqwest = { workspace = true }
-songbird = { workspace = true }
 parking_lot = { workspace = true }
 dashmap = { workspace = true }
 
 tracing-subscriber = "0.3.18"
 
-symphonia = { features = ["aac", "mp3", "isomp4", "alac"], version = "0.5.2" }
 tokio-tungstenite = { version = "0.21", features = ["rustls-tls-webpki-roots"], optional = true  }
 ocrs.workspace = true
 rten.workspace = true
@@ -56,11 +54,6 @@ branch = "next"
 git = "https://github.com/jamesbt365/poise"
 features = ["cache", "unstable"]
 branch = "serenity-next-merged"
-
-[workspace.dependencies.songbird]
-git = "https://github.com/serenity-rs/songbird"
-features = ["builtin-queue"]
-branch = "serenity-next"
 
 # patch for developing locally.
 #[patch."https://github.com/serenity-rs/serenity".serenity]

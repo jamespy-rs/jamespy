@@ -14,7 +14,7 @@
     clippy::unused_async, // fix.
 )]
 
-use jamespy_data::structs::{Command, Context, Data, Error, InvocationData};
+use jamespy_data::structs::{Command, Context, Data, Error};
 
 pub mod lob;
 pub mod meta;

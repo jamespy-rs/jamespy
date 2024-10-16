@@ -14,7 +14,6 @@ serenity = { workspace = true }
 poise = { workspace = true }
 sqlx = { workspace = true }
 reqwest = { workspace = true }
-songbird = { workspace = true }
 chrono = { workspace = true }
 unicode_names2 = { workspace = true }
 

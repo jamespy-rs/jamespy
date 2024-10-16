@@ -46,7 +46,6 @@ async fn main() {
 
     let mut client = serenity::Client::builder(&token, intents)
         .framework(framework)
-        .voice_manager::<songbird::Songbird>(data.songbird.clone())
         .data(data)
         .cache_settings(settings)
         .await

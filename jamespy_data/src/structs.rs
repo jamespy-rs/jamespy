@@ -1,4 +1,4 @@
-use dashmap::{DashMap, DashSet};
+use dashmap::DashMap;
 use ocrs::OcrEngine;
 use parking_lot::{Mutex, RwLock};
 use serenity::all::MessageId;
@@ -8,10 +8,7 @@ use chrono::{NaiveDateTime, Utc};
 use poise::serenity_prelude::{GuildId, User, UserId};
 use sqlx::query;
 
-use std::{
-    collections::VecDeque,
-    sync::{atomic::AtomicBool, Arc},
-};
+use std::{collections::VecDeque, sync::atomic::AtomicBool};
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -24,14 +21,10 @@ pub struct Data {
     pub time_started: std::time::Instant,
     /// Bot database.
     pub db: sqlx::PgPool,
-    /// Voice manager.
-    pub songbird: Arc<songbird::Songbird>,
-    /// Http client for handling songbird & other commands.
+    /// Http client.
     pub reqwest: reqwest::Client,
     /// Bot/Server Configuration
     pub config: RwLock<jamespy_config::JamespyConfig>,
-    /// Temporarily stops the usage of lobs in vc while the bot is "working".
-    pub mod_mode: DashSet<GuildId>,
     /// Runtime caches for dm activity.
     pub dm_activity: DashMap<UserId, DmActivity>,
     /// Runtime caches for user/global/nicks, used to reduce DB load.
