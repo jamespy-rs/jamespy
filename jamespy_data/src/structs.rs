@@ -24,8 +24,6 @@ pub struct Data {
     pub time_started: std::time::Instant,
     /// Bot database.
     pub db: sqlx::PgPool,
-    /// Redis database that really doesn't need to used.
-    pub redis: crate::database::RedisPool,
     /// Voice manager.
     pub songbird: Arc<songbird::Songbird>,
     /// Http client for handling songbird & other commands.

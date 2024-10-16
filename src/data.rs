@@ -12,7 +12,6 @@ use std::{
 
 pub async fn setup() -> Arc<Data> {
     let db_pool = jamespy_data::database::init_data().await;
-    let redis_pool = jamespy_data::database::init_redis_pool().await;
 
     let config = jamespy_config::JamespyConfig::load_config();
     let mod_mode = DashSet::new();
@@ -24,7 +23,6 @@ pub async fn setup() -> Arc<Data> {
     Arc::new(Data {
         has_started: AtomicBool::new(false),
         db: db_pool,
-        redis: redis_pool,
         songbird: songbird::Songbird::serenity(),
         time_started: std::time::Instant::now(),
         reqwest: reqwest::Client::new(),

@@ -13,7 +13,6 @@ serenity = { workspace = true }
 poise = { workspace = true }
 sqlx = { workspace = true }
 tokio = { workspace = true }
-bb8-redis = { workspace = true }
 small-fixed-array = { workspace = true }
 
 

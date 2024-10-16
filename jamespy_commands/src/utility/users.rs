@@ -1,74 +1,9 @@
 use crate::{Context, Error};
 use poise::serenity_prelude::{
-    self as serenity, ActivityType, Colour, GuildMemberFlags, OnlineStatus, User, UserId,
+    self as serenity, ActivityType, GuildMemberFlags, OnlineStatus, User,
 };
-use redis::AsyncCommands;
 use std::collections::HashMap;
 use std::fmt::Write;
-
-#[poise::command(
-    rename = "last-reactions",
-    aliases("lastreactions", "last_reactions"),
-    slash_command,
-    prefix_command,
-    category = "Utility",
-    required_permissions = "MANAGE_MESSAGES",
-    default_member_permissions = "MANAGE_MESSAGES",
-    guild_only,
-    user_cooldown = 3
-)]
-pub async fn last_reactions(ctx: Context<'_>) -> Result<(), Error> {
-    let redis_pool = &ctx.data().redis;
-    let mut redis_conn = redis_pool.get().await?;
-    let reaction_key = format!("reactions:{}", ctx.guild_id().unwrap());
-
-    let reactions: Vec<String> = redis_conn.lrange(reaction_key, 0, 24).await?;
-
-    let mut formatted: Vec<String> = vec![];
-    for reaction in reactions {
-        let components: Vec<&str> = reaction
-            .trim_matches(|c| c == '[' || c == ']' || c == '"')
-            .split(',')
-            .map(|component| component.trim_matches(|c| c == '"'))
-            .collect();
-
-        if components.len() == 4 {
-            let (emoji, user_id, reaction_id, state) = (
-                components[0],
-                components[1].parse::<u64>().unwrap(),
-                components[2].parse::<u64>().unwrap(),
-                components[3].parse::<u32>().unwrap(),
-            );
-
-            // TODO: try and move this to my guild cache function.
-            // its not nearly as bad because temp_cache is enabled.
-            // rather drop redis and cache this manually anyway.
-            let username = UserId::new(user_id)
-                .to_user(ctx)
-                .await
-                .map_or_else(|_| "Unknown User".to_string(), |user| user.tag());
-            formatted.push(format!(
-                "**{}** {} {} Message ID: {}",
-                username,
-                if state == 1 { "added" } else { "removed" },
-                emoji,
-                reaction_id
-            ));
-        }
-    }
-
-    ctx.send(
-        poise::CreateReply::default().embed(
-            serenity::CreateEmbed::default()
-                .title("Last reaction events")
-                .description(formatted.join("\n"))
-                .color(Colour::from_rgb(0, 255, 0)),
-        ),
-    )
-    .await?;
-
-    Ok(())
-}
 
 #[poise::command(
     slash_command,
@@ -396,9 +331,8 @@ pub async fn get_member(ctx: Context<'_>, member: serenity::Member) -> Result<()
 }
 
 #[must_use]
-pub fn commands() -> [crate::Command; 8] {
+pub fn commands() -> [crate::Command; 7] {
     [
-        last_reactions(),
         statuses(),
         playing(),
         dm_activity_check(),

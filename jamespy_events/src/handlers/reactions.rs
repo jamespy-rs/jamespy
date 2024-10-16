@@ -3,7 +3,6 @@ use std::sync::Arc;
 use crate::helper::{get_channel_name, get_guild_name_override, get_user};
 use crate::{Data, Error};
 
-use bb8_redis::redis::AsyncCommands;
 use poise::serenity_prelude::{self as serenity, Reaction};
 
 pub async fn reaction_add(
@@ -35,26 +34,11 @@ pub async fn reaction_add(
 
     let channel_name = get_channel_name(ctx, guild_id, add_reaction.channel_id).await;
 
-    let redis_pool = &data.redis;
-    let mut redis_conn = redis_pool.get().await?;
-
     println!(
         "\x1B[95m[{}] [#{}] {} added a reaction: {}\x1B[0m",
         guild_name, channel_name, user_name, add_reaction.emoji
     );
 
-    let reaction_key = format!("reactions:{}", guild_id.unwrap_or_default());
-    let reaction_info = (
-        add_reaction.emoji.to_string(),
-        user_id,
-        add_reaction.message_id.get(),
-        1,
-    );
-
-    let reaction_info_json = serde_json::to_string(&reaction_info)?;
-
-    let _: () = redis_conn.lpush(&reaction_key, reaction_info_json).await?;
-    let _: () = redis_conn.ltrim(&reaction_key, 0, 249).await?;
     Ok(())
 }
 
@@ -83,25 +67,10 @@ pub async fn reaction_remove(
     let guild_name = get_guild_name_override(ctx, &data, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, removed_reaction.channel_id).await;
 
-    let redis_pool = &data.redis;
-    let mut redis_conn = redis_pool.get().await?;
-
     println!(
         "\x1B[95m[{}] [#{}] {} removed a reaction: {}\x1B[0m",
         guild_name, channel_name, user_name, removed_reaction.emoji
     );
 
-    let reaction_key = format!("reactions:{}", guild_id.unwrap_or_default());
-    let reaction_info = (
-        removed_reaction.emoji.to_string(),
-        user_id,
-        removed_reaction.message_id.get(),
-        0,
-    );
-
-    let reaction_info_json = serde_json::to_string(&reaction_info)?;
-
-    let _: () = redis_conn.lpush(&reaction_key, reaction_info_json).await?;
-    let _: () = redis_conn.ltrim(&reaction_key, 0, 249).await?;
     Ok(())
 }
