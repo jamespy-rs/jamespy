@@ -116,7 +116,34 @@ async fn insert_emote_usage(
 
     let Some(name) = name else { return Ok(()) };
 
-    // Insert or ignore the emote
+    query!(
+        "INSERT INTO guilds (guild_id)
+             VALUES ($1)
+             ON CONFLICT (guild_id) DO NOTHING",
+        guild_id.get() as i64
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    query!(
+        "INSERT INTO channels (channel_id, guild_id)
+         VALUES ($1, $2)
+         ON CONFLICT (channel_id) DO NOTHING",
+        reaction.channel_id.get() as i64,
+        guild_id.get() as i64,
+    )
+    .execute(&mut *transaction)
+    .await?;
+
+    query!(
+        "INSERT INTO users (user_id)
+         VALUES ($1)
+         ON CONFLICT (user_id) DO NOTHING",
+        user_id.get() as i64
+    )
+    .execute(&mut *transaction)
+    .await?;
+
     query!(
         "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT (discord_id) DO \
          NOTHING",
@@ -126,7 +153,6 @@ async fn insert_emote_usage(
     .execute(&mut *transaction)
     .await?;
 
-    // Insert the emote usage
     query!(
         "INSERT INTO emote_usage (message_id, emote_id, user_id, channel_id, guild_id,
          used_at, usage_type) VALUES ($1, $2, $3, $4, $5, $6, $7)",

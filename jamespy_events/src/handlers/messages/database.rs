@@ -12,7 +12,7 @@ use poise::serenity_prelude::Message;
 
 use small_fixed_array::ValidLength;
 
-static EMOJI_REGEX: LazyLock<Regex> =
+pub static EMOJI_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"<(a)?:([a-zA-Z0-9_]{2,32}):(\d{1,20})>").unwrap());
 
 // Foreign trait foreign type stuff.

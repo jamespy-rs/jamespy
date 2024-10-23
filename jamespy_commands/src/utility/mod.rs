@@ -1,4 +1,5 @@
 pub mod charinfo;
+pub mod expressions;
 pub mod guild;
 pub mod join_tracks;
 pub mod random;
@@ -13,6 +14,7 @@ pub fn commands() -> Vec<crate::Command> {
             .chain(users::commands())
             .chain(guild::commands())
             .chain(charinfo::commands())
+            .chain(expressions::commands())
             .collect()
     }
 }
