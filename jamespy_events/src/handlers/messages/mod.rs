@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 mod database;
+pub use database::FuckRustRules;
 
 use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
 use crate::{Data, Error};

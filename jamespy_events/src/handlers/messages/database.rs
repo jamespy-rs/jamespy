@@ -16,7 +16,7 @@ static EMOJI_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"<(a)?:([a-zA-Z0-9_]{2,32}):(\d{1,20})>").unwrap());
 
 // Foreign trait foreign type stuff.
-pub struct FuckRustRules<'a, LenT: ValidLength>(&'a FixedString<LenT>);
+pub struct FuckRustRules<'a, LenT: ValidLength>(pub &'a FixedString<LenT>);
 
 impl<LenT: ValidLength> std::ops::Deref for FuckRustRules<'_, LenT> {
     type Target = FixedString<LenT>;
@@ -160,7 +160,7 @@ pub(super) async fn insert_message(
         .execute(&mut *transaction)
         .await?;
 
-        let ting = query!(
+        query!(
             "INSERT INTO emote_usage (message_id, emote_id, user_id, channel_id, guild_id,
              used_at, usage_type) VALUES ($1, $2, $3, $4, $5, $6, $7)",
             message_id,
@@ -172,9 +172,7 @@ pub(super) async fn insert_message(
             EmoteUsageType::Message as _,
         )
         .execute(&mut *transaction)
-        .await;
-
-        println!("{ting:?}");
+        .await?;
     }
 
     transaction.commit().await?;
