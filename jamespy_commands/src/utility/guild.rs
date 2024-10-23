@@ -20,6 +20,7 @@ pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     let mut pages = vec![];
+    let emoji_regex = regex::Regex::new(r"[\p{Emoji}]+").unwrap();
     for sticker in stickers {
         let mut embed =
             serenity::CreateEmbed::new().title(format!("{} (ID:{})", sticker.name, sticker.id));
@@ -39,8 +40,6 @@ pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
                 id.to_string()
             }
         } else {
-            let emoji_regex = regex::Regex::new(r"[\p{Emoji}]+").unwrap();
-
             // technically this isn't flawless given discord lets you put random text
             // if you just use the api directly.
             // at least that is what i think.

@@ -17,3 +17,11 @@ pub async fn init_data() -> PgPool {
 
     database
 }
+
+/// Custom type.
+#[derive(Debug, Clone, sqlx::Type)]
+pub enum EmoteUsageType {
+    Message,
+    ReactionAdd,
+    ReactionRemove,
+}
