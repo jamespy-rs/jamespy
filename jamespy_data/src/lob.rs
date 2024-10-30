@@ -118,7 +118,8 @@ pub async fn trontin(ctx: Context<'_>) -> Result<bool, Error> {
         291089948709486593,
         718513035555242086,
         326444255361105920,
-    ]; // me, trontin, ruben, cv, link
+        274967232596148224,
+    ]; // me, trontin, ruben, cv, link, phoenix
     let user_id = ctx.author().id.get();
     if allowed_users.contains(&user_id) {
         return Ok(true);
