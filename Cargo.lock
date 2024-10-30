@@ -1302,7 +1302,6 @@ dependencies = [
  "serenity",
  "sqlx",
  "tokio",
- "tokio-tungstenite",
  "tracing-subscriber",
 ]
 

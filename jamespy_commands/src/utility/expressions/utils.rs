@@ -1,98 +1,14 @@
-use crate::{Context, Error};
-use std::fmt;
+use aformat::{aformat, ToArrayString};
 use std::fmt::Write;
 
-use aformat::{aformat, ToArrayString};
-
-use jamespy_events::handlers::messages::EMOJI_REGEX;
+use crate::{Context, Error};
 use poise::{CreateReply, PrefixContext};
 use serenity::all::{
     ComponentInteractionCollector, CreateActionRow, CreateButton, CreateEmbed, CreateEmbedFooter,
     CreateInteractionResponse, CreateInteractionResponseMessage, EmojiId, Permissions,
 };
-use sqlx::query_as;
 
-enum Expression<'a> {
-    Emote((u64, String)),
-    Id(u64),
-    Name(&'a str),
-}
-
-impl fmt::Display for Expression<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Expression::Id(id) => write!(f, "{id}"),
-            Expression::Name(name) => write!(f, "{name}"),
-            Expression::Emote((_, name)) => write!(f, "{name}"),
-        }
-    }
-}
-
-struct ExpressionCounts {
-    user_id: i64,
-    reaction_count: Option<i64>,
-}
-
-#[poise::command(
-    slash_command,
-    prefix_command,
-    rename = "who-reacted",
-    category = "Utility",
-    guild_only
-)]
-pub async fn who_reacted(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
-    let expression = if let Some(capture) = EMOJI_REGEX.captures(&emoji) {
-        let Ok(id) = capture[3].parse::<u64>() else {
-            ctx.say("Failed to handle emoji.").await?;
-            return Ok(());
-        };
-
-        Expression::Emote((id, capture[2].to_string()))
-    } else if let Ok(emoji_id) = emoji.parse::<u64>() {
-        Expression::Id(emoji_id)
-    } else {
-        Expression::Name(&emoji)
-    };
-
-    let in_guild = check_in_guild(ctx, &expression).await?;
-    if !in_guild {
-        ctx.say("You are not authorised to check for expressions outside of the guild.")
-            .await?;
-        return Ok(());
-    };
-
-    match expression {
-        Expression::Id(id) | Expression::Emote((id, _)) => {
-            // TODO: stop duplicating the below path.
-            let results = query_as!(
-                ExpressionCounts,
-                "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
-                 emotes e ON eu.emote_id = e.discord_id WHERE eu.usage_type = 'ReactionAdd' AND \
-                 eu.emote_id = $1 GROUP BY eu.user_id ORDER BY reaction_count DESC",
-                id as i64
-            )
-            .fetch_all(&ctx.data().db)
-            .await?;
-
-            display_expressions(ctx, &results, &expression, in_guild).await?;
-        }
-        Expression::Name(string) => {
-            let results = query_as!(
-                ExpressionCounts,
-                "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
-                 emotes e ON eu.emote_id = e.discord_id WHERE eu.usage_type = 'ReactionAdd' AND \
-                 e.emote_name = $1 GROUP BY eu.user_id ORDER BY reaction_count DESC",
-                string
-            )
-            .fetch_all(&ctx.data().db)
-            .await?;
-
-            display_expressions(ctx, &results, &expression, in_guild).await?;
-        }
-    }
-
-    Ok(())
-}
+use super::{Expression, ExpressionCounts};
 
 const RECORDS_PER_PAGE: usize = 20;
 
@@ -129,7 +45,7 @@ fn generate_embed<'a>(
     embed
 }
 
-async fn display_expressions(
+pub(super) async fn display_expressions(
     ctx: Context<'_>,
     records: &[ExpressionCounts],
     expression: &Expression<'_>,
@@ -236,7 +152,10 @@ async fn display_expressions(
     Ok(())
 }
 
-async fn check_in_guild(ctx: Context<'_>, expression: &Expression<'_>) -> Result<bool, Error> {
+pub(super) async fn check_in_guild(
+    ctx: Context<'_>,
+    expression: &Expression<'_>,
+) -> Result<bool, Error> {
     let permissions = match ctx {
         poise::Context::Application(ctx) => ctx
             .interaction
@@ -287,9 +206,4 @@ async fn prefix_member_perms(
 
     // https://github.com/serenity-rs/serenity/pull/3001
     Ok(guild.member_permissions(&member))
-}
-
-#[must_use]
-pub fn commands() -> [crate::Command; 1] {
-    [who_reacted()]
 }

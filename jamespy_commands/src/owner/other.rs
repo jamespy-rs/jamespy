@@ -226,8 +226,47 @@ async fn fw_commands(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+#[poise::command(prefix_command, owners_only, hide_in_help, guild_only)]
+async fn sudo(
+    ctx: poise::PrefixContext<'_, crate::Data, Error>,
+    user: serenity::User,
+    #[rest] rest: String,
+) -> Result<(), Error> {
+    let mut msg = ctx.msg.clone();
+    // set member, if available.
+    if let Some(guild_id) = ctx.guild_id() {
+        if let Ok(member) = guild_id.member(ctx.http(), user.id).await {
+            msg.member = Some(std::boxed::Box::new(member.into()));
+        } else {
+            msg.member = None;
+        }
+    };
+
+    // set user.
+    msg.author = user;
+
+    // There is about 1000 ways to do this that are better but...
+    // I don't care!
+    let content = format!("-{rest}");
+    msg.content = small_fixed_array::FixedString::from_string_trunc(content);
+
+    if let Err(err) = poise::dispatch_message(
+        ctx.framework,
+        &msg,
+        poise::MessageDispatchTrigger::MessageCreate,
+        &tokio::sync::Mutex::new(std::boxed::Box::new(()) as _),
+        &mut Vec::new(),
+    )
+    .await
+    {
+        err.handle(ctx.framework.options).await;
+    }
+
+    Ok(())
+}
+
 #[must_use]
-pub fn commands() -> [crate::Command; 7] {
+pub fn commands() -> [crate::Command; 8] {
     let say = poise::Command {
         slash_action: say_slash().slash_action,
         parameters: say_slash().parameters,
@@ -242,5 +281,6 @@ pub fn commands() -> [crate::Command; 7] {
         malloc_trim(),
         chunk_guild_members(),
         fw_commands(),
+        sudo(),
     ]
 }
