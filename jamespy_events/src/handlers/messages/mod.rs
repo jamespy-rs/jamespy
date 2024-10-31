@@ -470,6 +470,10 @@ pub fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
     // TODO: possibly try and optimise this.
     for role_id in &member.roles {
         if let Some(role) = guild.roles.get(role_id) {
+            if role.colour.0 == 000000 {
+                continue;
+            }
+
             // Skip this role if this role in iteration has:
             // - a position less than the recorded highest
             // - a position equal to the recorded, but a higher ID
