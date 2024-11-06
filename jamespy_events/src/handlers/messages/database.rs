@@ -120,59 +120,61 @@ pub(super) async fn insert_message(
         .await?;
     }
 
-    for sticker in &message.sticker_items {
-        let sticker_id = sticker.id.get() as i64;
-        query!(
-            "INSERT INTO stickers (sticker_id, sticker_name) VALUES ($1, $2) ON CONFLICT \
-             (sticker_id) DO NOTHING",
-            sticker_id,
-            &FuckRustRules(&sticker.name)
-        )
-        .execute(&mut *transaction)
-        .await?;
+    if guild_id.is_some() {
+        for sticker in &message.sticker_items {
+            let sticker_id = sticker.id.get() as i64;
+            query!(
+                "INSERT INTO stickers (sticker_id, sticker_name) VALUES ($1, $2) ON CONFLICT \
+                 (sticker_id) DO NOTHING",
+                sticker_id,
+                &FuckRustRules(&sticker.name)
+            )
+            .execute(&mut *transaction)
+            .await?;
 
-        query!(
-            "INSERT INTO sticker_usage (message_id, user_id, channel_id, guild_id, sticker_id) \
-             VALUES ($1, $2, $3, $4, $5)",
-            message_id,
-            user_id,
-            channel_id,
-            guild_id,
-            sticker_id
-        )
-        .execute(&mut *transaction)
-        .await?;
-    }
+            query!(
+                "INSERT INTO sticker_usage (message_id, user_id, channel_id, guild_id, \
+                 sticker_id) VALUES ($1, $2, $3, $4, $5)",
+                message_id,
+                user_id,
+                channel_id,
+                guild_id,
+                sticker_id
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
 
-    for captures in EMOJI_REGEX.captures_iter(&message.content) {
-        let Ok(id) = &captures[3].parse::<u64>() else {
-            println!("Failed to parse id for custom emote: {}", &captures[3]);
-            continue;
-        };
-        // &captures[2] is name.
-        // &captures[3] is id.
-        query!(
-            "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT (discord_id) \
-             DO NOTHING",
-            &captures[2],
-            *id as i64
-        )
-        .execute(&mut *transaction)
-        .await?;
+        for captures in EMOJI_REGEX.captures_iter(&message.content) {
+            let Ok(id) = &captures[3].parse::<u64>() else {
+                println!("Failed to parse id for custom emote: {}", &captures[3]);
+                continue;
+            };
+            // &captures[2] is name.
+            // &captures[3] is id.
+            query!(
+                "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT \
+                 (discord_id) DO NOTHING",
+                &captures[2],
+                *id as i64
+            )
+            .execute(&mut *transaction)
+            .await?;
 
-        query!(
-            "INSERT INTO emote_usage (message_id, emote_id, user_id, channel_id, guild_id,
-             used_at, usage_type) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-            message_id,
-            *id as i64,
-            user_id,
-            channel_id,
-            guild_id,
-            message.id.created_at().unix_timestamp(),
-            EmoteUsageType::Message as _,
-        )
-        .execute(&mut *transaction)
-        .await?;
+            query!(
+                "INSERT INTO emote_usage (message_id, emote_id, user_id, channel_id, guild_id,
+                 used_at, usage_type) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                message_id,
+                *id as i64,
+                user_id,
+                channel_id,
+                guild_id,
+                message.id.created_at().unix_timestamp(),
+                EmoteUsageType::Message as _,
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
     }
 
     transaction.commit().await?;
