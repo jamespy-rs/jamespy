@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO emotes (emote_name, discord_id)\n                 VALUES ($1, NULL)\n                 ON CONFLICT (emote_name) WHERE discord_id IS NULL\n                 DO UPDATE SET discord_id = emotes.discord_id\n                 RETURNING id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "607b459b6c7e449b296bfc60a3012d20cd8660332a863b8c4fa91009f7887915"
+}

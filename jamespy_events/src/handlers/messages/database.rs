@@ -15,6 +15,9 @@ use small_fixed_array::ValidLength;
 pub static EMOJI_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"<(a)?:([a-zA-Z0-9_]{2,32}):(\d{1,20})>").unwrap());
 
+pub static STANDARD_EMOJI_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"\p{Emoji_Presentation}").unwrap());
+
 // Foreign trait foreign type stuff.
 pub struct FuckRustRules<'a, LenT: ValidLength>(pub &'a FixedString<LenT>);
 
@@ -152,20 +155,52 @@ pub(super) async fn insert_message(
             };
             // &captures[2] is name.
             // &captures[3] is id.
-            query!(
+            let id = query!(
                 "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT \
-                 (discord_id) DO NOTHING",
+                 (emote_name, discord_id) DO NOTHING RETURNING id",
                 &captures[2],
                 *id as i64
             )
-            .execute(&mut *transaction)
+            .fetch_one(&mut *transaction)
             .await?;
 
             query!(
                 "INSERT INTO emote_usage (message_id, emote_id, user_id, channel_id, guild_id,
                  used_at, usage_type) VALUES ($1, $2, $3, $4, $5, $6, $7)",
                 message_id,
-                *id as i64,
+                i64::from(id.id),
+                user_id,
+                channel_id,
+                guild_id,
+                message.id.created_at().unix_timestamp(),
+                EmoteUsageType::Message as _,
+            )
+            .execute(&mut *transaction)
+            .await?;
+        }
+
+        for captures in STANDARD_EMOJI_REGEX.captures_iter(&message.content) {
+            let Some(capture) = &captures.get(0) else {
+                continue;
+            };
+
+            // This is so fucking dumb.
+            let id = query!(
+                "INSERT INTO emotes (emote_name, discord_id)
+                 VALUES ($1, NULL)
+                 ON CONFLICT (emote_name) WHERE discord_id IS NULL
+                 DO UPDATE SET discord_id = emotes.discord_id
+                 RETURNING id",
+                capture.as_str()
+            )
+            .fetch_one(&mut *transaction)
+            .await?;
+
+            query!(
+                "INSERT INTO emote_usage (message_id, emote_id, user_id, channel_id, guild_id,
+                 used_at, usage_type) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                message_id,
+                i64::from(id.id),
                 user_id,
                 channel_id,
                 guild_id,

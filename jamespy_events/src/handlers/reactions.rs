@@ -105,16 +105,19 @@ async fn insert_emote_usage(
     reaction: &Reaction,
     usage_type: EmoteUsageType,
 ) -> Result<(), Error> {
-    let serenity::ReactionType::Custom {
-        animated: _,
-        id,
-        name,
-    } = &reaction.emoji
-    else {
-        return Ok(());
-    };
+    let (name, id) = match &reaction.emoji {
+        serenity::ReactionType::Custom {
+            animated: _,
+            id,
+            name,
+        } => {
+            let Some(name) = name else { return Ok(()) };
 
-    let Some(name) = name else { return Ok(()) };
+            (name, Some(id.get() as i64))
+        }
+        serenity::ReactionType::Unicode(string) => (string, None),
+        _ => return Ok(()),
+    };
 
     query!(
         "INSERT INTO guilds (guild_id)
@@ -148,16 +151,15 @@ async fn insert_emote_usage(
         "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT (discord_id) DO \
          NOTHING",
         &FuckRustRules(name),
-        id.get() as i64
+        id
     )
     .execute(&mut *transaction)
     .await?;
 
     query!(
-        "INSERT INTO emote_usage (message_id, emote_id, user_id, channel_id, guild_id,
-         used_at, usage_type) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        "INSERT INTO emote_usage (message_id, user_id, channel_id, guild_id,
+    used_at, usage_type) VALUES ($1, $2, $3, $4, $5, $6)",
         reaction.message_id.get() as i64,
-        id.get() as i64,
         user_id.get() as i64,
         reaction.channel_id.get() as i64,
         guild_id.get() as i64,

@@ -1,4 +1,4 @@
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::{postgres::PgPoolOptions, Executor, PgPool};
 use std::env;
 
 pub async fn init_data() -> PgPool {
@@ -9,6 +9,11 @@ pub async fn init_data() -> PgPool {
         .connect(&database_url)
         .await
         .expect("Failed to connect to database!");
+
+    database
+        .execute("SET client_encoding TO 'UTF8'")
+        .await
+        .unwrap();
 
     sqlx::migrate!("../migrations")
         .run(&database)

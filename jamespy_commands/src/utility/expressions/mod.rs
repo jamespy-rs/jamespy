@@ -2,13 +2,14 @@ use crate::{Context, Error};
 use std::fmt;
 mod utils;
 
-use jamespy_events::handlers::messages::EMOJI_REGEX;
+use jamespy_events::handlers::messages::{EMOJI_REGEX, STANDARD_EMOJI_REGEX};
 use sqlx::query_as;
 
 use utils::{check_in_guild, display_expressions};
 
 pub enum Expression<'a> {
     Emote((u64, String)),
+    Standard(&'a str),
     Id(u64),
     Name(&'a str),
 }
@@ -17,7 +18,7 @@ impl fmt::Display for Expression<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Expression::Id(id) => write!(f, "{id}"),
-            Expression::Name(name) => write!(f, "{name}"),
+            Expression::Name(name) | Expression::Standard(name) => write!(f, "{name}"),
             Expression::Emote((_, name)) => write!(f, "{name}"),
         }
     }
@@ -45,6 +46,8 @@ pub async fn who_reacted(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
         Expression::Emote((id, capture[2].to_string()))
     } else if let Ok(emoji_id) = emoji.parse::<u64>() {
         Expression::Id(emoji_id)
+    } else if STANDARD_EMOJI_REGEX.captures(&emoji).is_some() {
+        Expression::Standard(&emoji)
     } else {
         Expression::Name(&emoji)
     };
@@ -61,8 +64,8 @@ pub async fn who_reacted(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
             let results = query_as!(
                 ExpressionCounts,
                 "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
-                 emotes e ON eu.emote_id = e.discord_id WHERE eu.usage_type = 'ReactionAdd' AND \
-                 eu.emote_id = $1 GROUP BY eu.user_id ORDER BY reaction_count DESC",
+                 emotes e ON eu.emote_id = e.id WHERE eu.usage_type = 'ReactionAdd' AND \
+                 e.discord_id = $1 GROUP BY eu.user_id ORDER BY reaction_count DESC",
                 id as i64
             )
             .fetch_all(&ctx.data().db)
@@ -74,7 +77,7 @@ pub async fn who_reacted(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
             let results = query_as!(
                 ExpressionCounts,
                 "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
-                 emotes e ON eu.emote_id = e.discord_id WHERE eu.usage_type = 'ReactionAdd' AND \
+                 emotes e ON eu.emote_id = e.id WHERE eu.usage_type = 'ReactionAdd' AND \
                  e.emote_name = $1 GROUP BY eu.user_id ORDER BY reaction_count DESC",
                 string
             )
@@ -82,6 +85,20 @@ pub async fn who_reacted(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
             .await?;
 
             display_expressions(ctx, &results, &expression, in_guild).await?;
+        }
+        Expression::Standard(string) => {
+            let results = query_as!(
+                ExpressionCounts,
+                "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
+                 emotes e ON eu.emote_id = e.id WHERE eu.usage_type = 'ReactionAdd' AND \
+                 e.emote_name = $1 AND e.discord_id IS NULL GROUP BY eu.user_id ORDER BY \
+                 reaction_count DESC",
+                string
+            )
+            .fetch_all(&ctx.data().db)
+            .await?;
+
+            display_expressions(ctx, &results, &expression, true).await?;
         }
     }
 

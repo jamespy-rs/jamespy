@@ -71,6 +71,7 @@ pub(super) async fn display_expressions(
                 Expression::Name(string) => {
                     guild.emojis.iter().find(|e| e.name.as_str() == *string)
                 }
+                Expression::Standard(_) => None,
             };
 
             emote.map_or_else(|| expression.to_string(), ToString::to_string)
@@ -156,6 +157,10 @@ pub(super) async fn check_in_guild(
     ctx: Context<'_>,
     expression: &Expression<'_>,
 ) -> Result<bool, Error> {
+    if let Expression::Standard(_) = expression {
+        return Ok(true);
+    }
+
     let permissions = match ctx {
         poise::Context::Application(ctx) => ctx
             .interaction
@@ -180,6 +185,8 @@ pub(super) async fn check_in_guild(
             guild.emojis.contains_key(&EmojiId::new(*id))
         }
         Expression::Name(string) => guild.emojis.iter().any(|e| e.name.as_str() == *string),
+        // This is handled at the start of this check.
+        Expression::Standard(_) => unreachable!(),
     };
 
     Ok(present)
