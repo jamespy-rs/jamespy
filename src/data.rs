@@ -10,13 +10,14 @@ use std::{
 };
 
 pub async fn setup() -> Arc<Data> {
-    let db_pool = jamespy_data::database::init_data().await;
+    let (handler, pool) = jamespy_data::database::init_data().await;
 
     let config = jamespy_config::JamespyConfig::load_config();
 
     Arc::new(Data {
         has_started: AtomicBool::new(false),
-        db: db_pool,
+        database: handler,
+        db: pool,
         time_started: std::time::Instant::now(),
         reqwest: reqwest::Client::new(),
         config: RwLock::new(config),

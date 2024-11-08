@@ -7,7 +7,7 @@ use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo};
 use sqlx::{query, Encode, Postgres, Transaction, Type};
 
 use crate::Error;
-use jamespy_data::database::EmoteUsageType;
+use jamespy_data::database::{Database, EmoteUsageType};
 use poise::serenity_prelude::Message;
 
 use small_fixed_array::ValidLength;
@@ -217,44 +217,12 @@ pub(super) async fn insert_message(
     Ok(())
 }
 
-pub(super) async fn insert_edit(
-    mut transaction: Transaction<'_, Postgres>,
-    message: &Message,
-) -> Result<(), Error> {
-    let guild_id = message.guild_id.map(|g| g.get() as i64);
-    let channel_id = message.channel_id.get() as i64;
-    let user_id = message.author.id.get() as i64;
-    let message_id = message.id.get() as i64;
-
-    query!(
-        "INSERT INTO channels (channel_id, guild_id)
-         VALUES ($1, $2)
-         ON CONFLICT (channel_id) DO NOTHING",
-        channel_id,
-        guild_id
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    if let Some(guild_id) = guild_id {
-        query!(
-            "INSERT INTO guilds (guild_id)
-             VALUES ($1)
-             ON CONFLICT (guild_id) DO NOTHING",
-            guild_id
-        )
-        .execute(&mut *transaction)
+pub(super) async fn insert_edit(database: &Database, message: &Message) -> Result<(), Error> {
+    database
+        .insert_channel(message.channel_id, message.guild_id)
         .await?;
-    }
 
-    query!(
-        "INSERT INTO users (user_id)
-         VALUES ($1)
-         ON CONFLICT (user_id) DO NOTHING",
-        user_id
-    )
-    .execute(&mut *transaction)
-    .await?;
+    database.insert_user(message.author.id).await?;
 
     let timestamp = message
         .edited_timestamp
@@ -263,76 +231,39 @@ pub(super) async fn insert_edit(
     query!(
         "INSERT INTO message_edits (message_id, channel_id, guild_id, user_id, content, \
          edited_at) VALUES ($1, $2, $3, $4, $5, $6)",
-        message_id,
-        channel_id,
-        guild_id,
-        user_id,
+        message.id.get() as i64,
+        message.channel_id.get() as i64,
+        message.guild_id.map(|g| g.get() as i64),
+        message.author.id.get() as i64,
         &FuckRustRules(&message.content),
         timestamp
     )
-    .execute(&mut *transaction)
+    .execute(&database.db)
     .await?;
-
-    transaction.commit().await?;
 
     Ok(())
 }
 
-pub(super) async fn insert_deletion(
-    mut transaction: Transaction<'_, Postgres>,
-    message: &Message,
-) -> Result<(), Error> {
-    let guild_id = message.guild_id.map(|g| g.get() as i64);
-    let channel_id = message.channel_id.get() as i64;
-    let user_id = message.author.id.get() as i64;
-    let message_id = message.id.get() as i64;
-
-    query!(
-        "INSERT INTO channels (channel_id, guild_id)
-         VALUES ($1, $2)
-         ON CONFLICT (channel_id) DO NOTHING",
-        channel_id,
-        guild_id
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    if let Some(guild_id) = guild_id {
-        query!(
-            "INSERT INTO guilds (guild_id)
-             VALUES ($1)
-             ON CONFLICT (guild_id) DO NOTHING",
-            guild_id
-        )
-        .execute(&mut *transaction)
+pub(super) async fn insert_deletion(database: &Database, message: &Message) -> Result<(), Error> {
+    database
+        .insert_channel(message.channel_id, message.guild_id)
         .await?;
-    }
-
-    query!(
-        "INSERT INTO users (user_id)
-         VALUES ($1)
-         ON CONFLICT (user_id) DO NOTHING",
-        user_id
-    )
-    .execute(&mut *transaction)
-    .await?;
+    database.insert_user(message.author.id).await?;
 
     let timestamp = Utc::now().timestamp();
 
     query!(
         "INSERT INTO message_deletion (message_id, channel_id, guild_id, user_id, content, \
          deleted_at) VALUES ($1, $2, $3, $4, $5, $6)",
-        message_id,
-        channel_id,
-        guild_id,
-        user_id,
+        message.id.get() as i64,
+        message.channel_id.get() as i64,
+        message.guild_id.map(|g| g.get() as i64),
+        message.author.id.get() as i64,
         &FuckRustRules(&message.content),
         timestamp
     )
-    .execute(&mut *transaction)
+    .execute(&database.db)
     .await?;
-
-    transaction.commit().await?;
 
     Ok(())
 }

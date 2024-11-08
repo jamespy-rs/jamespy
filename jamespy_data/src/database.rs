@@ -1,7 +1,11 @@
-use sqlx::{postgres::PgPoolOptions, Executor, PgPool};
+use sqlx::{postgres::PgPoolOptions, query, Executor, PgPool};
 use std::env;
 
-pub async fn init_data() -> PgPool {
+use crate::structs::Error;
+
+use poise::serenity_prelude as serenity;
+
+pub async fn init_data() -> (Database, PgPool) {
     let database_url =
         env::var("DATABASE_URL").expect("No database url found in environment variables!");
 
@@ -20,7 +24,12 @@ pub async fn init_data() -> PgPool {
         .await
         .expect("Unable to apply migrations!");
 
-    database
+    (
+        Database {
+            db: database.clone(),
+        },
+        database,
+    )
 }
 
 /// Custom type.
@@ -29,4 +38,58 @@ pub enum EmoteUsageType {
     Message,
     ReactionAdd,
     ReactionRemove,
+}
+
+pub struct Database {
+    pub db: PgPool,
+}
+
+impl Database {
+    pub async fn insert_user(&self, user_id: serenity::UserId) -> Result<(), Error> {
+        query!(
+            "INSERT INTO users (user_id)
+            VALUES ($1)
+            ON CONFLICT (user_id) DO NOTHING",
+            user_id.get() as i64
+        )
+        .execute(&self.db)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn insert_channel(
+        &self,
+        channel_id: serenity::ChannelId,
+        guild_id: Option<serenity::GuildId>,
+    ) -> Result<(), Error> {
+        if let Some(guild_id) = guild_id {
+            self.insert_guild(guild_id).await?;
+        }
+
+        query!(
+            "INSERT INTO channels (channel_id, guild_id)
+             VALUES ($1, $2)
+             ON CONFLICT (channel_id) DO NOTHING",
+            channel_id.get() as i64,
+            guild_id.map(|g| g.get() as i64),
+        )
+        .execute(&self.db)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn insert_guild(&self, guild_id: serenity::GuildId) -> Result<(), Error> {
+        query!(
+            "INSERT INTO guilds (guild_id)
+             VALUES ($1)
+             ON CONFLICT (guild_id) DO NOTHING",
+            guild_id.get() as i64
+        )
+        .execute(&self.db)
+        .await?;
+
+        Ok(())
+    }
 }

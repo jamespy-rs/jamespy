@@ -6,9 +6,9 @@ use crate::{Data, Error};
 
 use ::serenity::all::{GuildId, UserId};
 use chrono::Utc;
-use sqlx::{query, Postgres, Transaction};
+use sqlx::query;
 
-use jamespy_data::database::EmoteUsageType;
+use jamespy_data::database::{Database, EmoteUsageType};
 
 use poise::serenity_prelude::{self as serenity, Reaction};
 
@@ -46,13 +46,7 @@ pub async fn reaction_add(
         guild_name, channel_name, user_name, add_reaction.emoji
     );
 
-    insert_addition(
-        data.db.begin().await?,
-        guild_id.unwrap(),
-        user_id,
-        add_reaction,
-    )
-    .await?;
+    insert_addition(&data.database, guild_id.unwrap(), user_id, add_reaction).await?;
 
     Ok(())
 }
@@ -87,19 +81,13 @@ pub async fn reaction_remove(
         guild_name, channel_name, user_name, removed_reaction.emoji
     );
 
-    insert_removal(
-        data.db.begin().await?,
-        guild_id.unwrap(),
-        user_id,
-        removed_reaction,
-    )
-    .await?;
+    insert_removal(&data.database, guild_id.unwrap(), user_id, removed_reaction).await?;
 
     Ok(())
 }
 
 async fn insert_emote_usage(
-    mut transaction: Transaction<'_, Postgres>,
+    database: &Database,
     guild_id: GuildId,
     user_id: UserId,
     reaction: &Reaction,
@@ -119,33 +107,10 @@ async fn insert_emote_usage(
         _ => return Ok(()),
     };
 
-    query!(
-        "INSERT INTO guilds (guild_id)
-             VALUES ($1)
-             ON CONFLICT (guild_id) DO NOTHING",
-        guild_id.get() as i64
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    query!(
-        "INSERT INTO channels (channel_id, guild_id)
-         VALUES ($1, $2)
-         ON CONFLICT (channel_id) DO NOTHING",
-        reaction.channel_id.get() as i64,
-        guild_id.get() as i64,
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    query!(
-        "INSERT INTO users (user_id)
-         VALUES ($1)
-         ON CONFLICT (user_id) DO NOTHING",
-        user_id.get() as i64
-    )
-    .execute(&mut *transaction)
-    .await?;
+    database
+        .insert_channel(reaction.channel_id, Some(guild_id))
+        .await?;
+    database.insert_user(user_id).await?;
 
     query!(
         "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT (discord_id) DO \
@@ -153,7 +118,7 @@ async fn insert_emote_usage(
         &FuckRustRules(name),
         id
     )
-    .execute(&mut *transaction)
+    .execute(&database.db)
     .await?;
 
     query!(
@@ -166,22 +131,20 @@ async fn insert_emote_usage(
         Utc::now().timestamp(),
         usage_type as _,
     )
-    .execute(&mut *transaction)
+    .execute(&database.db)
     .await?;
-
-    transaction.commit().await?;
 
     Ok(())
 }
 
 async fn insert_addition(
-    transaction: Transaction<'_, Postgres>,
+    database: &Database,
     guild_id: GuildId,
     user_id: UserId,
     reaction: &Reaction,
 ) -> Result<(), Error> {
     insert_emote_usage(
-        transaction,
+        database,
         guild_id,
         user_id,
         reaction,
@@ -192,13 +155,13 @@ async fn insert_addition(
 }
 
 async fn insert_removal(
-    transaction: Transaction<'_, Postgres>,
+    database: &Database,
     guild_id: GuildId,
     user_id: UserId,
     reaction: &Reaction,
 ) -> Result<(), Error> {
     insert_emote_usage(
-        transaction,
+        database,
         guild_id,
         user_id,
         reaction,

@@ -95,8 +95,6 @@ pub async fn message_edit(
     event: &MessageUpdateEvent,
     data: Arc<Data>,
 ) -> Result<(), Error> {
-    let db_pool = &data.db;
-
     let guild_id = event.guild_id;
     let guild_name = get_guild_name_override(ctx, &data, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, event.channel_id).await;
@@ -130,7 +128,7 @@ pub async fn message_edit(
                     embeds.as_deref().unwrap_or("")
                 );
 
-                let _ = insert_edit(db_pool.begin().await?, new_message).await;
+                let _ = insert_edit(&data.database, new_message).await;
             }
         }
         (None, None) => {
@@ -247,8 +245,6 @@ pub async fn message_delete(
     guild_id: &Option<GuildId>,
     data: Arc<Data>,
 ) -> Result<(), Error> {
-    let db_pool = &data.db;
-
     let guild_name = get_guild_name_override(ctx, &data, *guild_id);
 
     let channel_name = get_channel_name(ctx, *guild_id, *channel_id).await;
@@ -276,7 +272,7 @@ pub async fn message_delete(
             embeds_fmt.as_deref().unwrap_or("")
         );
 
-        let _ = insert_deletion(db_pool.begin().await?, &message).await;
+        let _ = insert_deletion(&data.database, &message).await;
 
         crate::attachments::download_attachments(ctx, message, &data).await?;
     } else {

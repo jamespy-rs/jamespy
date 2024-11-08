@@ -19,6 +19,8 @@ pub struct Data {
     pub has_started: AtomicBool,
     /// Time the bot started.
     pub time_started: std::time::Instant,
+    /// Wrapper for the bots database with helper functions.
+    pub database: crate::database::Database,
     /// Bot database.
     pub db: sqlx::PgPool,
     /// Http client.
@@ -305,16 +307,8 @@ impl Data {
 
     async fn insert_user_db(&self, user_id: UserId, name: String) -> Result<(), Error> {
         let timestamp: NaiveDateTime = Utc::now().naive_utc();
-        let mut transaction = self.db.begin().await?;
 
-        query!(
-            "INSERT INTO users (user_id)
-            VALUES ($1)
-            ON CONFLICT (user_id) DO NOTHING",
-            user_id.get() as i64
-        )
-        .execute(&mut *transaction)
-        .await?;
+        self.database.insert_user(user_id).await?;
 
         query!(
             "INSERT INTO usernames (user_id, username, timestamp) VALUES ($1, $2, $3)",
@@ -322,10 +316,8 @@ impl Data {
             name,
             timestamp
         )
-        .execute(&mut *transaction)
+        .execute(&self.db)
         .await?;
-
-        transaction.commit().await?;
 
         Ok(())
     }
@@ -337,16 +329,7 @@ impl Data {
 
         let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
 
-        let mut transaction = self.db.begin().await?;
-
-        query!(
-            "INSERT INTO users (user_id)
-            VALUES ($1)
-            ON CONFLICT (user_id) DO NOTHING",
-            user_id.get() as i64
-        )
-        .execute(&mut *transaction)
-        .await?;
+        self.database.insert_user(user_id).await?;
 
         query!(
             "INSERT INTO global_names (user_id, global_name, timestamp) VALUES ($1, $2, $3)",
@@ -354,10 +337,8 @@ impl Data {
             name,
             timestamp
         )
-        .execute(&mut *transaction)
+        .execute(&self.db)
         .await?;
-
-        transaction.commit().await?;
 
         Ok(())
     }
@@ -373,25 +354,9 @@ impl Data {
         };
 
         let timestamp: NaiveDateTime = chrono::Utc::now().naive_utc();
-        let mut transaction = self.db.begin().await?;
 
-        query!(
-            "INSERT INTO users (user_id)
-            VALUES ($1)
-            ON CONFLICT (user_id) DO NOTHING",
-            user_id.get() as i64
-        )
-        .execute(&mut *transaction)
-        .await?;
-
-        query!(
-            "INSERT INTO guilds (guild_id)
-            VALUES ($1)
-            ON CONFLICT (guild_id) DO NOTHING",
-            guild_id.get() as i64,
-        )
-        .execute(&mut *transaction)
-        .await?;
+        self.database.insert_user(user_id).await?;
+        self.database.insert_guild(guild_id).await?;
 
         let _ = query!(
             "INSERT INTO nicknames (guild_id, user_id, nickname, timestamp) VALUES ($1, $2, $3, \
@@ -401,10 +366,8 @@ impl Data {
             name,
             timestamp
         )
-        .execute(&mut *transaction)
+        .execute(&self.db)
         .await;
-
-        transaction.commit().await?;
 
         Ok(())
     }
