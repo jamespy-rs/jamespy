@@ -83,7 +83,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         crate::image_moderation::check(&data.ocr_engine, &msg.author, &ctx.http, &msg.attachments)
             .await;
 
-    insert_message(data.db.begin().await?, msg).await?;
+    insert_message(&data.database, msg).await?;
 
     Ok(())
 }
