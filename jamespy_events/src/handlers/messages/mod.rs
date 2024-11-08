@@ -1,51 +1,22 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
-use std::ops::Deref;
 use std::sync::Arc;
 use std::time::Instant;
+
+mod database;
+pub use database::{FuckRustRules, EMOJI_REGEX, STANDARD_EMOJI_REGEX};
 
 use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
 use crate::{Data, Error};
 
 use ::serenity::all::{CreateEmbed, CreateMessage, GetMessages};
-use chrono::Utc;
+use database::{insert_deletion, insert_edit, insert_message};
 use jamespy_data::structs::{Decay, InnerCache};
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
     MessageUpdateEvent, UserId,
 };
 use small_fixed_array::FixedString;
-use sqlx::postgres::{PgArgumentBuffer, PgTypeInfo};
-use sqlx::{query, Encode, Postgres, Transaction, Type};
-
-use small_fixed_array::ValidLength;
-
-// Foreign trait foreign type stuff.
-pub struct FuckRustRules<'a, LenT: ValidLength>(&'a FixedString<LenT>);
-
-impl<LenT: ValidLength> Deref for FuckRustRules<'_, LenT> {
-    type Target = FixedString<LenT>;
-
-    fn deref(&self) -> &Self::Target {
-        self.0
-    }
-}
-
-impl<LenT: ValidLength> Type<Postgres> for FuckRustRules<'_, LenT> {
-    fn type_info() -> PgTypeInfo {
-        <&str as Type<Postgres>>::type_info()
-    }
-
-    fn compatible(ty: &PgTypeInfo) -> bool {
-        <&str as Type<Postgres>>::compatible(ty)
-    }
-}
-
-impl<LenT: ValidLength> Encode<'_, Postgres> for FuckRustRules<'_, LenT> {
-    fn encode_by_ref(&self, buf: &mut PgArgumentBuffer) -> sqlx::encode::IsNull {
-        <&str as Encode<Postgres>>::encode(self.as_str(), buf)
-    }
-}
 
 pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) -> Result<(), Error> {
     let (flagged_words, patterns) = {
@@ -112,90 +83,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         crate::image_moderation::check(&data.ocr_engine, &msg.author, &ctx.http, &msg.attachments)
             .await;
 
-    insert_message(data.db.begin().await?, msg).await?;
-
-    Ok(())
-}
-
-async fn insert_message(
-    mut transaction: Transaction<'_, Postgres>,
-    message: &Message,
-) -> Result<(), Error> {
-    let guild_id = message.guild_id.map(|g| g.get() as i64);
-    let channel_id = message.channel_id.get() as i64;
-    let user_id = message.author.id.get() as i64;
-    let message_id = message.id.get() as i64;
-
-    query!(
-        "INSERT INTO channels (channel_id, guild_id)
-         VALUES ($1, $2)
-         ON CONFLICT (channel_id) DO NOTHING",
-        channel_id,
-        guild_id
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    if let Some(guild_id) = guild_id {
-        query!(
-            "INSERT INTO guilds (guild_id)
-             VALUES ($1)
-             ON CONFLICT (guild_id) DO NOTHING",
-            guild_id
-        )
-        .execute(&mut *transaction)
-        .await?;
-    }
-
-    query!(
-        "INSERT INTO users (user_id)
-         VALUES ($1)
-         ON CONFLICT (user_id) DO NOTHING",
-        user_id
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    query!(
-        "INSERT INTO messages (message_id, guild_id, channel_id, user_id, content, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6)",
-        message_id,
-        guild_id,
-        channel_id,
-        user_id,
-        &FuckRustRules(&message.content),
-        message.id.created_at().unix_timestamp()
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    if !message.embeds.is_empty() {
-        query!(
-            "INSERT INTO embeds (message_id, embed_data)
-             VALUES ($1, $2)
-             ON CONFLICT (message_id) DO NOTHING",
-            message_id,
-            serde_json::to_value(message.embeds.clone())?
-        )
-        .execute(&mut *transaction)
-        .await?;
-    }
-
-    for attachment in &message.attachments {
-        query!(
-            "INSERT INTO attachments (attachment_id, message_id, file_name, file_size, file_url)
-             VALUES ($1, $2, $3, $4, $5)",
-            attachment.id.get() as i64,
-            message_id,
-            &FuckRustRules(&attachment.filename),
-            attachment.size as i32,
-            &FuckRustRules(&attachment.url)
-        )
-        .execute(&mut *transaction)
-        .await?;
-    }
-
-    transaction.commit().await?;
+    insert_message(&data.database, msg).await?;
 
     Ok(())
 }
@@ -207,8 +95,6 @@ pub async fn message_edit(
     event: &MessageUpdateEvent,
     data: Arc<Data>,
 ) -> Result<(), Error> {
-    let db_pool = &data.db;
-
     let guild_id = event.guild_id;
     let guild_name = get_guild_name_override(ctx, &data, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, event.channel_id).await;
@@ -242,7 +128,7 @@ pub async fn message_edit(
                     embeds.as_deref().unwrap_or("")
                 );
 
-                let _ = insert_edit(db_pool.begin().await?, new_message).await;
+                let _ = insert_edit(&data.database, new_message).await;
             }
         }
         (None, None) => {
@@ -253,67 +139,6 @@ pub async fn message_edit(
         }
         _ => {}
     }
-    Ok(())
-}
-
-async fn insert_edit(
-    mut transaction: Transaction<'_, Postgres>,
-    message: &Message,
-) -> Result<(), Error> {
-    let guild_id = message.guild_id.map(|g| g.get() as i64);
-    let channel_id = message.channel_id.get() as i64;
-    let user_id = message.author.id.get() as i64;
-    let message_id = message.id.get() as i64;
-
-    query!(
-        "INSERT INTO channels (channel_id, guild_id)
-         VALUES ($1, $2)
-         ON CONFLICT (channel_id) DO NOTHING",
-        channel_id,
-        guild_id
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    if let Some(guild_id) = guild_id {
-        query!(
-            "INSERT INTO guilds (guild_id)
-             VALUES ($1)
-             ON CONFLICT (guild_id) DO NOTHING",
-            guild_id
-        )
-        .execute(&mut *transaction)
-        .await?;
-    }
-
-    query!(
-        "INSERT INTO users (user_id)
-         VALUES ($1)
-         ON CONFLICT (user_id) DO NOTHING",
-        user_id
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    let timestamp = message
-        .edited_timestamp
-        .map_or_else(|| Utc::now().timestamp(), |t| t.unix_timestamp());
-
-    query!(
-        "INSERT INTO message_edits (message_id, channel_id, guild_id, user_id, content, \
-         edited_at) VALUES ($1, $2, $3, $4, $5, $6)",
-        message_id,
-        channel_id,
-        guild_id,
-        user_id,
-        &FuckRustRules(&message.content),
-        timestamp
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    transaction.commit().await?;
-
     Ok(())
 }
 
@@ -420,8 +245,6 @@ pub async fn message_delete(
     guild_id: &Option<GuildId>,
     data: Arc<Data>,
 ) -> Result<(), Error> {
-    let db_pool = &data.db;
-
     let guild_name = get_guild_name_override(ctx, &data, *guild_id);
 
     let channel_name = get_channel_name(ctx, *guild_id, *channel_id).await;
@@ -449,7 +272,7 @@ pub async fn message_delete(
             embeds_fmt.as_deref().unwrap_or("")
         );
 
-        let _ = insert_deletion(db_pool.begin().await?, &message).await;
+        let _ = insert_deletion(&data.database, &message).await;
 
         crate::attachments::download_attachments(ctx, message, &data).await?;
     } else {
@@ -478,65 +301,6 @@ pub async fn message_delete(
             }
         }
     }
-    Ok(())
-}
-
-async fn insert_deletion(
-    mut transaction: Transaction<'_, Postgres>,
-    message: &Message,
-) -> Result<(), Error> {
-    let guild_id = message.guild_id.map(|g| g.get() as i64);
-    let channel_id = message.channel_id.get() as i64;
-    let user_id = message.author.id.get() as i64;
-    let message_id = message.id.get() as i64;
-
-    query!(
-        "INSERT INTO channels (channel_id, guild_id)
-         VALUES ($1, $2)
-         ON CONFLICT (channel_id) DO NOTHING",
-        channel_id,
-        guild_id
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    if let Some(guild_id) = guild_id {
-        query!(
-            "INSERT INTO guilds (guild_id)
-             VALUES ($1)
-             ON CONFLICT (guild_id) DO NOTHING",
-            guild_id
-        )
-        .execute(&mut *transaction)
-        .await?;
-    }
-
-    query!(
-        "INSERT INTO users (user_id)
-         VALUES ($1)
-         ON CONFLICT (user_id) DO NOTHING",
-        user_id
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    let timestamp = Utc::now().timestamp();
-
-    query!(
-        "INSERT INTO message_deletion (message_id, channel_id, guild_id, user_id, content, \
-         deleted_at) VALUES ($1, $2, $3, $4, $5, $6)",
-        message_id,
-        channel_id,
-        guild_id,
-        user_id,
-        &FuckRustRules(&message.content),
-        timestamp
-    )
-    .execute(&mut *transaction)
-    .await?;
-
-    transaction.commit().await?;
-
     Ok(())
 }
 
@@ -702,6 +466,10 @@ pub fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
     // TODO: possibly try and optimise this.
     for role_id in &member.roles {
         if let Some(role) = guild.roles.get(role_id) {
+            if role.colour.0 == 000000 {
+                continue;
+            }
+
             // Skip this role if this role in iteration has:
             // - a position less than the recorded highest
             // - a position equal to the recorded, but a higher ID

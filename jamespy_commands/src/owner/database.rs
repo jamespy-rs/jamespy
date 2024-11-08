@@ -24,17 +24,30 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
         ("global_names", "user_id"),
         ("nicknames", "user_id"),
     ];
+
+    let expressions = [
+        ("stickers", "sticker_id"),
+        ("sticker_usage", "id"),
+        ("emotes", "id"),
+        ("emote_usage", "id"),
+    ];
     let misc_tables = [("join_tracks", "user_id"), ("dm_activity", "user_id")];
 
     let mut embed = serenity::CreateEmbed::default().title("Database Stats");
 
-    let messages_info = query_table_info(db_pool, &messages_tables).await?;
+    let (Ok(messages_info), Ok(names_info), Ok(expressions_info), Ok(misc_info)) = tokio::join!(
+        query_table_info(db_pool, &messages_tables),
+        query_table_info(db_pool, &names_tables),
+        query_table_info(db_pool, &expressions),
+        query_table_info(db_pool, &misc_tables),
+    ) else {
+        ctx.say("Failed to query information.").await?;
+        return Ok(());
+    };
+
     embed = embed.field("Messages", messages_info, true);
-
-    let names_info = query_table_info(db_pool, &names_tables).await?;
     embed = embed.field("Names", names_info, true);
-
-    let misc_info = query_table_info(db_pool, &misc_tables).await?;
+    embed = embed.field("Names", expressions_info, true);
     embed = embed.field("Miscellaneous", misc_info, true);
 
     let db_size_query = "SELECT pg_database_size(current_database())";

@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN emotes e ON eu.emote_id = e.id WHERE eu.usage_type = 'ReactionAdd' AND e.discord_id = $1 GROUP BY eu.user_id ORDER BY reaction_count DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "reaction_count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "4b28486eaa04b7355ea7989c219143dea7420f6f4e03b80a8b4480af81af75a3"
+}
