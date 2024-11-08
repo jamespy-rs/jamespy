@@ -131,7 +131,9 @@ pub(super) async fn insert_message(database: &Database, message: &Message) -> Re
             // &captures[3] is id.
             let id = query!(
                 "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT \
-                 (emote_name, discord_id) DO NOTHING RETURNING id",
+                 (emote_name, discord_id) DO UPDATE SET emote_name = EXCLUDED.emote_name \
+                 RETURNING id;
+",
                 &captures[2],
                 *id as i64
             )

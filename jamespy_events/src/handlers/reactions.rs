@@ -113,22 +113,35 @@ async fn insert_emote_usage(
     database.insert_user(user_id).await?;
 
     // This is so fucking dumb.
-    let id = query!(
-        "INSERT INTO emotes (emote_name, discord_id)
-                 VALUES ($1, $2)
-                 ON CONFLICT (emote_name) WHERE discord_id IS NULL
-                 DO UPDATE SET discord_id = emotes.discord_id
-                 RETURNING id",
-        &FuckRustRules(name),
-        id
-    )
-    .fetch_one(&database.db)
-    .await?;
+
+    let id = if let Some(id) = id {
+        let id = query!(
+            "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT (discord_id) \
+             DO UPDATE SET emote_name = EXCLUDED.emote_name RETURNING id",
+            &FuckRustRules(name),
+            id
+        )
+        .fetch_one(&database.db)
+        .await?;
+        id.id
+    } else {
+        let id = query!(
+            "INSERT INTO emotes (emote_name)
+                     VALUES ($1)
+                     ON CONFLICT (emote_name) WHERE discord_id IS NULL
+                     DO UPDATE SET discord_id = emotes.discord_id
+                     RETURNING id",
+            &FuckRustRules(name),
+        )
+        .fetch_one(&database.db)
+        .await?;
+        id.id
+    };
 
     query!(
         "INSERT INTO emote_usage (emote_id, message_id, user_id, channel_id, guild_id,
     used_at, usage_type) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-        i64::from(id.id),
+        i64::from(id),
         reaction.message_id.get() as i64,
         user_id.get() as i64,
         reaction.channel_id.get() as i64,
