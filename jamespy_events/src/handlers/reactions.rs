@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use crate::helper::{get_channel_name, get_guild_name_override, get_user};
-use crate::messages::FuckRustRules;
 use crate::{Data, Error};
 
 use ::serenity::all::{GuildId, UserId};
@@ -118,7 +117,7 @@ async fn insert_emote_usage(
         let id = query!(
             "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT (discord_id) \
              DO UPDATE SET emote_name = EXCLUDED.emote_name RETURNING id",
-            &FuckRustRules(name),
+            &name.as_str(),
             id
         )
         .fetch_one(&database.db)
@@ -131,7 +130,7 @@ async fn insert_emote_usage(
                      ON CONFLICT (emote_name) WHERE discord_id IS NULL
                      DO UPDATE SET discord_id = emotes.discord_id
                      RETURNING id",
-            &FuckRustRules(name),
+            &name.as_str(),
         )
         .fetch_one(&database.db)
         .await?;

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT (emote_name, discord_id) DO NOTHING RETURNING id",
+  "query": "INSERT INTO emotes (emote_name, discord_id) VALUES ($1, $2) ON CONFLICT (emote_name, discord_id) DO UPDATE SET emote_name = EXCLUDED.emote_name RETURNING id",
   "describe": {
     "columns": [
       {
@@ -19,5 +19,5 @@
       false
     ]
   },
-  "hash": "5e4744085d2db2554bc0f15c7010f69a2390d59e4a19d7cf2e216685ecb88517"
+  "hash": "62a697ef7df7cfd5f900de66143c14496d959d52b465ba244050d4e2c2511254"
 }
