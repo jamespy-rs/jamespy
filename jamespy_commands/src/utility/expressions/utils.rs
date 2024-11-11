@@ -192,7 +192,10 @@ pub(super) async fn check_in_guild(
         Expression::Id(id) | Expression::Emote((id, _)) => {
             guild.emojis.contains_key(&EmojiId::new(*id))
         }
-        Expression::Name(string) => guild.emojis.iter().any(|e| e.name.as_str() == *string),
+        Expression::Name(string) => guild
+            .emojis
+            .iter()
+            .any(|e| e.name.as_str().eq_ignore_ascii_case(string)),
         // This is handled at the start of this check.
         Expression::Standard(_) => unreachable!(),
     };
