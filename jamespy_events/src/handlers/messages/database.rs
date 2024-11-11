@@ -154,6 +154,8 @@ pub(super) async fn insert_message(database: &Database, message: &Message) -> Re
             .execute(&mut *transaction)
             .await?;
         }
+
+        transaction.commit().await?;
     }
 
     Ok(())

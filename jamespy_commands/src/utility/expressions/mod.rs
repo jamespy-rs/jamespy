@@ -24,90 +24,233 @@ impl fmt::Display for Expression<'_> {
     }
 }
 
+#[derive(Debug)]
 struct ExpressionCounts {
     user_id: i64,
     reaction_count: Option<i64>,
 }
 
+/// Display the usage of emoji's in reactions or messages.
 #[poise::command(
     slash_command,
     prefix_command,
-    rename = "who-reacted",
+    rename = "emoji-usage",
     category = "Utility",
-    guild_only
+    guild_only,
+    subcommands("reactions", "messages", "all"),
+    subcommand_required
 )]
-pub async fn who_reacted(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
-    let expression = if let Some(capture) = EMOJI_REGEX.captures(&emoji) {
+pub async fn emoji_usage(_: Context<'_>) -> Result<(), Error> {
+    Ok(())
+}
+
+pub fn string_to_expression(emoji: &str) -> Option<Expression<'_>> {
+    let expression = if let Some(capture) = EMOJI_REGEX.captures(emoji) {
         let Ok(id) = capture[3].parse::<u64>() else {
-            ctx.say("Failed to handle emoji.").await?;
-            return Ok(());
+            return None;
         };
 
         Expression::Emote((id, capture[2].to_string()))
     } else if let Ok(emoji_id) = emoji.parse::<u64>() {
         Expression::Id(emoji_id)
-    } else if STANDARD_EMOJI_REGEX.captures(&emoji).is_some() {
-        Expression::Standard(&emoji)
+    } else if STANDARD_EMOJI_REGEX.captures(emoji).is_some() {
+        Expression::Standard(emoji)
     } else {
-        Expression::Name(&emoji)
+        Expression::Name(emoji)
     };
 
-    let in_guild = check_in_guild(ctx, &expression).await?;
-    if !in_guild {
-        ctx.say("You are not authorised to check for expressions outside of the guild.")
+    Some(expression)
+}
+
+/// Display usage of a reaction.
+#[poise::command(slash_command, prefix_command, category = "Utility", guild_only)]
+pub async fn reactions(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
+    let Some(expression) = string_to_expression(&emoji) else {
+        ctx.say("I could not parse an expression from this string.")
             .await?;
         return Ok(());
     };
 
-    match expression {
+    let in_guild = check_in_guild(ctx, &expression).await?;
+    if !in_guild {
+        ctx.say("You require Manage Messages to be able to check expressions outside the guild.")
+            .await?;
+        return Ok(());
+    };
+
+    let guild_id = ctx.guild_id().unwrap().get() as i64;
+    let results = match expression {
         Expression::Id(id) | Expression::Emote((id, _)) => {
-            let results = query_as!(
+            query_as!(
                 ExpressionCounts,
                 "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
                  emotes e ON eu.emote_id = e.id WHERE eu.usage_type = 'ReactionAdd' AND \
-                 e.discord_id = $1 GROUP BY eu.user_id ORDER BY reaction_count DESC",
-                id as i64
+                 e.discord_id = $1 AND eu.guild_id = $2 GROUP BY eu.user_id ORDER BY \
+                 reaction_count DESC",
+                id as i64,
+                guild_id
             )
             .fetch_all(&ctx.data().db)
-            .await?;
-
-            display_expressions(ctx, &results, &expression, in_guild).await?;
+            .await?
         }
         Expression::Name(string) => {
-            let results = query_as!(
+            query_as!(
                 ExpressionCounts,
                 "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
                  emotes e ON eu.emote_id = e.id WHERE eu.usage_type = 'ReactionAdd' AND \
-                 e.emote_name = $1 GROUP BY eu.user_id ORDER BY reaction_count DESC",
-                string
+                 e.emote_name = $1 AND eu.guild_id = $2 GROUP BY eu.user_id ORDER BY \
+                 reaction_count DESC",
+                string,
+                guild_id
             )
             .fetch_all(&ctx.data().db)
-            .await?;
-
-            display_expressions(ctx, &results, &expression, in_guild).await?;
+            .await?
         }
         Expression::Standard(string) => {
-            let results = query_as!(
+            query_as!(
                 ExpressionCounts,
                 "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
                  emotes e ON eu.emote_id = e.id WHERE eu.usage_type = 'ReactionAdd' AND \
-                 e.emote_name = $1 AND e.discord_id IS NULL GROUP BY eu.user_id ORDER BY \
-                 reaction_count DESC",
-                string
+                 e.emote_name = $1 AND eu.guild_id = $2 AND e.discord_id IS NULL GROUP BY \
+                 eu.user_id ORDER BY reaction_count DESC",
+                string,
+                guild_id
             )
             .fetch_all(&ctx.data().db)
-            .await?;
-
-            display_expressions(ctx, &results, &expression, true).await?;
+            .await?
         }
-    }
+    };
+
+    display_expressions(ctx, &results, &expression, in_guild, Some(false)).await?;
 
     Ok(())
 }
 
-// /emote-usage reactions [emote]
-// /emote-usage messages [emote]
-// /emote-usage all [emote]
+/// Display usage of emoji's through messages.
+#[poise::command(slash_command, prefix_command, category = "Utility", guild_only)]
+pub async fn messages(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
+    let Some(expression) = string_to_expression(&emoji) else {
+        ctx.say("I could not parse an expression from this string.")
+            .await?;
+        return Ok(());
+    };
+
+    let in_guild = check_in_guild(ctx, &expression).await?;
+    if !in_guild {
+        ctx.say("You require Manage Messages to be able to check expressions outside the guild.")
+            .await?;
+        return Ok(());
+    };
+
+    let guild_id = ctx.guild_id().unwrap().get() as i64;
+    let results = match expression {
+        Expression::Id(id) | Expression::Emote((id, _)) => {
+            query_as!(
+                ExpressionCounts,
+                "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
+                 emotes e ON eu.emote_id = e.id WHERE eu.usage_type = 'Message' AND e.discord_id \
+                 = $1 AND eu.guild_id = $2 GROUP BY eu.user_id ORDER BY reaction_count DESC",
+                id as i64,
+                guild_id,
+            )
+            .fetch_all(&ctx.data().db)
+            .await?
+        }
+        Expression::Name(string) => {
+            query_as!(
+                ExpressionCounts,
+                "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
+                 emotes e ON eu.emote_id = e.id WHERE eu.usage_type = 'Message' AND e.emote_name \
+                 = $1 AND eu.guild_id = $2 GROUP BY eu.user_id ORDER BY reaction_count DESC",
+                string,
+                guild_id
+            )
+            .fetch_all(&ctx.data().db)
+            .await?
+        }
+        Expression::Standard(string) => {
+            query_as!(
+                ExpressionCounts,
+                "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
+                 emotes e ON eu.emote_id = e.id WHERE eu.usage_type = 'Message' AND e.emote_name \
+                 = $1 AND eu.guild_id = $2 AND e.discord_id IS NULL GROUP BY eu.user_id ORDER BY \
+                 reaction_count DESC",
+                string,
+                guild_id,
+            )
+            .fetch_all(&ctx.data().db)
+            .await?
+        }
+    };
+
+    display_expressions(ctx, &results, &expression, in_guild, Some(true)).await?;
+
+    Ok(())
+}
+
+/// Display usage of emojis everywhere.
+#[poise::command(slash_command, prefix_command, category = "Utility", guild_only)]
+pub async fn all(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
+    let Some(expression) = string_to_expression(&emoji) else {
+        ctx.say("I could not parse an expression from this string.")
+            .await?;
+        return Ok(());
+    };
+
+    let in_guild = check_in_guild(ctx, &expression).await?;
+    if !in_guild {
+        ctx.say("You require Manage Messages to be able to check expressions outside the guild.")
+            .await?;
+        return Ok(());
+    };
+
+    let guild_id = ctx.guild_id().unwrap().get() as i64;
+    let results = match expression {
+        Expression::Id(id) | Expression::Emote((id, _)) => {
+            query_as!(
+                ExpressionCounts,
+                "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
+                 emotes e ON eu.emote_id = e.id WHERE (eu.usage_type = 'Message' OR eu.usage_type \
+                 = 'ReactionAdd') AND e.discord_id = $1 AND eu.guild_id = $2 GROUP BY  eu.user_id \
+                 ORDER BY  reaction_count DESC",
+                id as i64,
+                guild_id
+            )
+            .fetch_all(&ctx.data().db)
+            .await?
+        }
+        Expression::Name(string) => {
+            query_as!(
+                ExpressionCounts,
+                "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
+                 emotes e ON eu.emote_id = e.id WHERE (eu.usage_type = 'Message' OR eu.usage_type \
+                 = 'ReactionAdd') AND e.emote_name = $1 AND eu.guild_id = $2 GROUP BY eu.user_id \
+                 ORDER BY reaction_count DESC",
+                string,
+                guild_id
+            )
+            .fetch_all(&ctx.data().db)
+            .await?
+        }
+        Expression::Standard(string) => {
+            query_as!(
+                ExpressionCounts,
+                "SELECT eu.user_id, COUNT(eu.id) AS reaction_count FROM emote_usage eu JOIN \
+                 emotes e ON eu.emote_id = e.id WHERE (eu.usage_type = 'Message' OR eu.usage_type \
+                 = 'ReactionAdd') AND e.emote_name = $1 AND eu.guild_id = $2 AND e.discord_id IS \
+                 NULL GROUP BY eu.user_id ORDER BY reaction_count DESC",
+                string,
+                guild_id
+            )
+            .fetch_all(&ctx.data().db)
+            .await?
+        }
+    };
+
+    display_expressions(ctx, &results, &expression, in_guild, None).await?;
+
+    Ok(())
+}
 
 // /emote-leaderboard reactions [duration]
 // /emote-leaderboard messages [duration]
@@ -118,5 +261,5 @@ pub async fn who_reacted(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
 
 #[must_use]
 pub fn commands() -> [crate::Command; 1] {
-    [who_reacted()]
+    [emoji_usage()]
 }

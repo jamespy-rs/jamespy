@@ -12,7 +12,6 @@ use super::{Expression, ExpressionCounts};
 
 const RECORDS_PER_PAGE: usize = 20;
 
-// does this panic lol?
 fn get_paginated_records(records: &[ExpressionCounts], current_page: usize) -> &[ExpressionCounts] {
     let start_index = current_page * RECORDS_PER_PAGE;
     let end_index = start_index + RECORDS_PER_PAGE;
@@ -38,7 +37,7 @@ fn generate_embed<'a>(
     let mut embed = CreateEmbed::new().title(title).description(string);
 
     if let Some((current_page, max_pages)) = page_info {
-        let footer = CreateEmbedFooter::new(format!("Page {}/{}", current_page + 1, max_pages + 1));
+        let footer = CreateEmbedFooter::new(format!("Page {}/{}", current_page + 1, max_pages));
         embed = embed.footer(footer);
     };
 
@@ -47,19 +46,23 @@ fn generate_embed<'a>(
 
 pub(super) async fn display_expressions(
     ctx: Context<'_>,
-    records: &[ExpressionCounts],
+    all_records: &[ExpressionCounts],
     expression: &Expression<'_>,
     in_guild: bool,
+    // None is no suffix
+    // false is reactions
+    // true is messages
+    message: Option<bool>,
 ) -> Result<(), Error> {
-    if records.is_empty() {
+    if all_records.is_empty() {
         ctx.say("No expressions").await?;
         return Ok(());
     };
 
-    let paginate = records.len() > 20;
-    let total_pages = records.len() / RECORDS_PER_PAGE;
+    let paginate = all_records.len() > RECORDS_PER_PAGE;
+    let total_pages = all_records.len().div_ceil(RECORDS_PER_PAGE);
     let mut page = 0_usize;
-    let records = get_paginated_records(records, page);
+    let records = get_paginated_records(all_records, page);
 
     // I will go back on this at a later date.
     let name = if in_guild {
@@ -82,7 +85,11 @@ pub(super) async fn display_expressions(
         expression.to_string()
     };
 
-    let title = format!("Top {name} Reactors");
+    let title = match message {
+        Some(true) => format!("Top {name} users in messages"),
+        Some(false) => format!("Top {name} Reactors"),
+        None => format!("Top {name} Users"),
+    };
 
     let page_info = if paginate {
         Some((page, total_pages))
@@ -132,7 +139,7 @@ pub(super) async fn display_expressions(
             continue;
         }
 
-        let records = get_paginated_records(records, page);
+        let records = get_paginated_records(all_records, page);
         let embed = generate_embed(&title, records, Some((page, total_pages)));
 
         let _ = press
@@ -145,10 +152,11 @@ pub(super) async fn display_expressions(
             .await;
     }
 
-    let records = get_paginated_records(records, page);
+    let records = get_paginated_records(all_records, page);
     let embed = generate_embed(&title, records, Some((page, total_pages)));
 
-    msg.edit(ctx, CreateReply::new().embed(embed)).await?;
+    msg.edit(ctx, CreateReply::new().embed(embed).components(vec![]))
+        .await?;
 
     Ok(())
 }
