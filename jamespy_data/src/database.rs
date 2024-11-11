@@ -1,4 +1,7 @@
-use sqlx::{postgres::PgPoolOptions, query, Executor, PgPool};
+use sqlx::{
+    postgres::{PgHasArrayType, PgPoolOptions, PgTypeInfo},
+    query, Executor, PgPool,
+};
 use std::env;
 
 use crate::structs::Error;
@@ -34,16 +37,16 @@ pub async fn init_data() -> (Database, PgPool) {
 
 /// Custom type.
 #[derive(Debug, Clone, sqlx::Type)]
-#[sqlx(type_name = "emoteusagetype", rename_all = "lowercase")]
+#[sqlx(type_name = "emoteusagetype")]
 pub enum EmoteUsageType {
     Message,
     ReactionAdd,
     ReactionRemove,
 }
 
-impl sqlx::postgres::PgHasArrayType for EmoteUsageType {
-    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-        <&[EmoteUsageType] as sqlx::Type<sqlx::Postgres>>::type_info()
+impl PgHasArrayType for EmoteUsageType {
+    fn array_type_info() -> PgTypeInfo {
+        PgTypeInfo::with_name("emoteusagetype[]")
     }
 }
 
