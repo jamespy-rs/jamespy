@@ -39,6 +39,8 @@ struct ExpressionCounts {
     rename = "emoji-usage",
     category = "Utility",
     guild_only,
+    install_context = "Guild",
+    interaction_context = "Guild",
     subcommands("reactions", "messages", "all"),
     subcommand_required
 )]
