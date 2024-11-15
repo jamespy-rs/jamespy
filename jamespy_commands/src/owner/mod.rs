@@ -32,25 +32,13 @@ pub fn commands() -> Vec<crate::Command> {
 /// This executes after `command_check` is executed, so this works.
 pub async fn owner(ctx: Context<'_>) -> Result<bool, Error> {
     let user_id = &ctx.author().id;
-
     // Owners will always be able to execute.
     if ctx.framework().options.owners.contains(user_id) {
         return Ok(true);
     };
 
-    if let Some(checks) = &ctx.data().config.read().command_checks {
-        if checks.owners_all.contains(user_id) {
-            return Ok(true);
-        }
-
-        let cmd_name = &ctx.command().name;
-        if let Some(cmd_override) = checks.owners_single.get(cmd_name) {
-            return Ok(cmd_override
-                .iter()
-                .find(|&user| user == user_id)
-                .is_some_and(|_| true));
-        }
-    };
-
-    Ok(false)
+    Ok(ctx
+        .data()
+        .database
+        .check_owner(ctx.author().id, &ctx.command().name))
 }

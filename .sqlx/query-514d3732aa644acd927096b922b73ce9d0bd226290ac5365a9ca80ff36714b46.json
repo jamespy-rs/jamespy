@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM owner_access WHERE user_id = $1 AND command_name = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "514d3732aa644acd927096b922b73ce9d0bd226290ac5365a9ca80ff36714b46"
+}

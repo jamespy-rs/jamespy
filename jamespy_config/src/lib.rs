@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
-use poise::serenity_prelude::{ChannelId, GuildId, UserId};
+use poise::serenity_prelude::{ChannelId, GuildId};
 
 mod serialize;
 use serialize::{read_words_from_file, regex_patterns};
@@ -14,38 +14,12 @@ use serialize::{read_words_from_file, regex_patterns};
 pub struct JamespyConfig {
     // configuration for the event handler.
     pub events: Events,
-    // Extra checks for commands to execute.
-    pub banned_users: Option<HashSet<UserId>>,
-    pub command_checks: Option<Checks>,
     // Tracking for osu!game, harshly hardcoded.
     pub vcstatus: VCStatus,
     // Having a dedicated guild for managing the deployment of jamespy.
     pub spy_guild: Option<SpyGuild>,
     // Control for saving attachments from deleted messages.
     pub attachment_store: Option<Attachments>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Checks {
-    // Users under this will have access to all owner commands.
-    pub owners_all: HashSet<UserId>,
-    pub owners_single: HashMap<String, HashSet<UserId>>,
-}
-
-impl Checks {
-    #[must_use]
-    pub fn new() -> Self {
-        Checks {
-            owners_all: HashSet::new(),
-            owners_single: HashMap::new(),
-        }
-    }
-}
-
-impl Default for Checks {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl JamespyConfig {
@@ -68,8 +42,6 @@ impl JamespyConfig {
                 soft_limit: Some(9000),
                 hard_limit: Some(10000),
             }),
-            command_checks: None,
-            banned_users: None,
         }
     }
 

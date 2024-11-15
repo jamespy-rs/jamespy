@@ -1,7 +1,5 @@
 use crate::{Command, Data};
-use jamespy_config::Checks;
 
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use poise::serenity_prelude::User;
@@ -14,34 +12,26 @@ pub enum CommandRestrictErr {
     NotOwnerCommand,
 }
 
-pub fn handle_allow_cmd(
+pub async fn handle_allow_cmd(
     commands: &[Command],
     data: &Arc<Data>,
     cmd_name: String,
     user: &User,
 ) -> Result<String, CommandRestrictErr> {
-    let mut config = data.config.write();
-
     // Check if the command or its aliases match a real command.
     let command_name = get_cmd_name(commands, &cmd_name)?;
 
-    if let Some(checks) = &mut config.command_checks {
-        let set = checks.owners_single.entry(cmd_name.clone()).or_default();
-        let inserted = set.insert(user.id);
+    // TODO: handle errors better.
+    let existed = data
+        .database
+        .set_owner(user.id, Some(&command_name))
+        .await
+        .map_err(|_| CommandRestrictErr::AlreadyExists)?;
 
-        if !inserted {
-            return Err(CommandRestrictErr::AlreadyExists);
-        };
-    } else {
-        // Set checks to the new setup.
-        let mut checks = Checks::new();
-        let mut set = HashSet::new();
-        set.insert(user.id);
-        checks.owners_single.insert(cmd_name, set);
-        config.command_checks = Some(checks);
+    if existed {
+        return Err(CommandRestrictErr::AlreadyExists);
     }
 
-    config.write_config();
     Ok(command_name)
 }
 
@@ -92,32 +82,25 @@ pub fn get_cmd_name(
     Ok(command_name)
 }
 
-pub fn handle_deny_cmd(
+pub async fn handle_deny_cmd(
     commands: &[crate::Command],
     data: &Arc<Data>,
     cmd_name: &str,
     user: &User,
 ) -> Result<String, CommandRestrictErr> {
-    let mut config = data.config.write();
-
     // Check if the command or its aliases match a real command.
     let command_name = get_cmd_name(commands, cmd_name)?;
 
-    if let Some(checks) = &mut config.command_checks {
-        let map = &mut checks.owners_single;
+    // TODO: handle errors better.
+    let existed = data
+        .database
+        .remove_owner(user.id, Some(&command_name))
+        .await
+        .map_err(|_| CommandRestrictErr::DoesntExist)?;
 
-        let set = map.entry(command_name.clone()).or_default();
-        let stored = set.remove(&user.id);
-
-        if set.is_empty() {
-            map.remove(&command_name);
-        }
-
-        if !stored {
-            return Err(CommandRestrictErr::DoesntExist);
-        }
+    if !existed {
+        return Err(CommandRestrictErr::DoesntExist);
     }
 
-    config.write_config();
     Ok(command_name)
 }

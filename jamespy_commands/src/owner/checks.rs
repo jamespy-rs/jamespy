@@ -2,7 +2,6 @@ use crate::{Context, Error};
 use std::fmt::Write;
 
 use crate::utils::{get_cmd_name, handle_allow_cmd, handle_deny_cmd, CommandRestrictErr};
-use jamespy_config::Checks;
 use poise::serenity_prelude::{self as serenity, User};
 
 // This entire module needs new command/function names.
@@ -16,27 +15,12 @@ use poise::serenity_prelude::{self as serenity, User};
     owners_only
 )]
 pub async fn bot_ban(ctx: Context<'_>, user: User) -> Result<(), Error> {
-    let inserted = {
-        let data = ctx.data();
-        let mut config = data.config.write();
-
-        let inserted = if let Some(banned_users) = &mut config.banned_users {
-            banned_users.insert(user.id)
-        } else {
-            let mut banned_users = std::collections::HashSet::new();
-            banned_users.insert(user.id);
-            config.banned_users = Some(banned_users);
-            true
-        };
-
-        config.write_config();
-        inserted
-    };
+    let inserted = ctx.data().database.set_banned(user.id, true).await?;
 
     let msg = if inserted {
-        format!("{} has been banned from using jamespy.", user.tag())
-    } else {
         format!("{} is already banned from using jamespy.", user.tag())
+    } else {
+        format!("{} has been banned from using jamespy.", user.tag())
     };
 
     ctx.say(msg).await?;
@@ -53,19 +37,7 @@ pub async fn bot_ban(ctx: Context<'_>, user: User) -> Result<(), Error> {
     owners_only
 )]
 pub async fn bot_unban(ctx: Context<'_>, user: User) -> Result<(), Error> {
-    let banned = {
-        let data = ctx.data();
-        let mut config = data.config.write();
-
-        let banned = if let Some(banned_users) = &mut config.banned_users {
-            banned_users.remove(&user.id)
-        } else {
-            false
-        };
-
-        config.write_config();
-        banned
-    };
+    let banned = ctx.data().database.set_banned(user.id, false).await?;
 
     let msg = if banned {
         format!("{} has been unbanned from using jamespy.", user.tag())
@@ -93,7 +65,9 @@ pub async fn allow_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> 
         &ctx.data(),
         cmd_name,
         &user,
-    ) {
+    )
+    .await
+    {
         Ok(cmd) => format!("Successfully allowed {user} to use `{cmd}`!"),
         Err(err) => match err {
             CommandRestrictErr::CommandNotFound => "Could not find command!",
@@ -127,7 +101,9 @@ pub async fn deny_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> R
         &ctx.data(),
         &cmd_name,
         &user,
-    ) {
+    )
+    .await
+    {
         Ok(cmd) => format!("Successfully denied {user} to use `{cmd}`!"),
         Err(err) => match err {
             CommandRestrictErr::CommandNotFound => "Could not find command!",
@@ -135,10 +111,7 @@ pub async fn deny_owner_cmd(ctx: Context<'_>, user: User, cmd_name: String) -> R
                 "This command requires you to be an owner in the framework!"
             }
             CommandRestrictErr::NotOwnerCommand => "This command is not an owner command!",
-            CommandRestrictErr::DoesntExist => {
-                "Cannot remove
-            permissions they don't have!"
-            }
+            CommandRestrictErr::DoesntExist => "Cannot remove permissions they don't have!",
             _ => "", // No other errors should fire in this code.
         }
         .to_string(),
@@ -167,23 +140,19 @@ pub async fn owner_overrides(_: Context<'_>) -> Result<(), Error> {
 pub async fn user(ctx: Context<'_>, user: User) -> Result<(), Error> {
     let overrides = {
         let data = ctx.data();
-        let config = data.config.read();
+        let checks = data.database.inner_overwrites();
 
-        if let Some(checks) = &config.command_checks {
-            let mut single_overrides = Vec::new();
-            for single_check in &checks.owners_single {
-                if single_check.1.contains(&user.id) {
-                    single_overrides.push(single_check.0.clone());
-                }
+        let mut single_overrides = Vec::new();
+        for single_check in &checks.owners_single {
+            if single_check.value().contains(&user.id) {
+                single_overrides.push(single_check.key().clone());
             }
-
-            (
-                checks.owners_all.get(&user.id).copied(),
-                Some(single_overrides),
-            )
-        } else {
-            (None, None)
         }
+
+        (
+            checks.owners_all.get(&user.id).map(|entry| *entry),
+            Some(single_overrides),
+        )
     };
 
     // TODO: fix this mess, and paginate.
@@ -270,16 +239,13 @@ pub async fn cmd(ctx: Context<'_>, cmd_name: String) -> Result<(), Error> {
 
 // TODO: paginate.
 pub async fn cmd_overrides(ctx: Context<'_>, cmd_name: &str) -> Result<(), Error> {
-    let overrides = {
-        let data = ctx.data();
-        let config = data.config.read();
-
-        if let Some(checks) = &config.command_checks {
-            checks.owners_single.get(cmd_name).cloned()
-        } else {
-            None
-        }
-    };
+    let overrides = ctx
+        .data()
+        .database
+        .inner_overwrites()
+        .owners_single
+        .get(cmd_name)
+        .map(|entry| entry.value().to_owned());
 
     if let Some(over) = overrides {
         if over.is_empty() {
@@ -310,7 +276,7 @@ pub async fn cmd_overrides(ctx: Context<'_>, cmd_name: &str) -> Result<(), Error
     owners_only
 )]
 pub async fn allow_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
-    let statement = match handle_allow_owner(ctx, &user) {
+    let statement = match handle_allow_owner(ctx, &user).await {
         Ok(()) => format!("Successfully allowed {user} to use owner commands!"),
         Err(err) => match err {
             CommandRestrictErr::AlreadyExists => format!("{user} already has a bypass!"),
@@ -322,22 +288,17 @@ pub async fn allow_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
     Ok(())
 }
 
-fn handle_allow_owner(ctx: Context<'_>, user: &User) -> Result<(), CommandRestrictErr> {
-    let data = ctx.data();
-    let mut config = data.config.write();
-
-    if let Some(checks) = &mut config.command_checks {
-        let newly_added = &checks.owners_all.insert(user.id);
-        if !newly_added {
-            return Err(CommandRestrictErr::AlreadyExists);
-        }
-    } else {
-        let mut checks = Checks::new();
-        checks.owners_all.insert(user.id);
-        config.command_checks = Some(checks);
-    }
-
-    config.write_config();
+async fn handle_allow_owner(ctx: Context<'_>, user: &User) -> Result<(), CommandRestrictErr> {
+    // TODO: handle errors better
+    if ctx
+        .data()
+        .database
+        .set_owner(user.id, None)
+        .await
+        .map_err(|_| CommandRestrictErr::AlreadyExists)?
+    {
+        return Err(CommandRestrictErr::AlreadyExists);
+    };
 
     Ok(())
 }
@@ -350,7 +311,7 @@ fn handle_allow_owner(ctx: Context<'_>, user: &User) -> Result<(), CommandRestri
     owners_only
 )]
 pub async fn deny_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
-    let statement = match handle_deny_owner(ctx, &user) {
+    let statement = match handle_deny_owner(ctx, &user).await {
         Ok(()) => format!("Successfully denied {user}'s usage of owner commands!"),
         Err(err) => match err {
             CommandRestrictErr::DoesntExist => format!("{user} doesn't have a bypass!"),
@@ -362,20 +323,16 @@ pub async fn deny_owner(ctx: Context<'_>, user: User) -> Result<(), Error> {
     Ok(())
 }
 
-fn handle_deny_owner(ctx: Context<'_>, user: &User) -> Result<(), CommandRestrictErr> {
-    let data = ctx.data();
-    let mut config = data.config.write();
-
-    if let Some(checks) = &mut config.command_checks {
-        let present = &checks.owners_all.remove(&user.id);
-        if !present {
-            return Err(CommandRestrictErr::DoesntExist);
-        }
-    } else {
+async fn handle_deny_owner(ctx: Context<'_>, user: &User) -> Result<(), CommandRestrictErr> {
+    if !ctx
+        .data()
+        .database
+        .remove_owner(user.id, None)
+        .await
+        .map_err(|_| CommandRestrictErr::DoesntExist)?
+    {
         return Err(CommandRestrictErr::DoesntExist);
-    }
-
-    config.write_config();
+    };
 
     Ok(())
 }
