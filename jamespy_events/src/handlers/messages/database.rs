@@ -128,7 +128,6 @@ pub(super) async fn insert_message(database: &Database, message: &Message) -> Re
         }
 
         for emoji in get_emojis_in_msg(&message.content) {
-            println!("{emoji}");
             let id = query!(
                 "INSERT INTO emotes (emote_name, discord_id)
                  VALUES ($1, NULL)
