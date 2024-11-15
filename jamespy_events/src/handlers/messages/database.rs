@@ -3,6 +3,7 @@ use std::sync::LazyLock;
 use chrono::Utc;
 use regex::Regex;
 use sqlx::query;
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::Error;
 use jamespy_data::database::{Database, EmoteUsageType};
@@ -11,8 +12,11 @@ use poise::serenity_prelude::Message;
 pub static EMOJI_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"<(a)?:([a-zA-Z0-9_]{2,32}):(\d{1,20})>").unwrap());
 
-pub static STANDARD_EMOJI_REGEX: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\p{Emoji_Presentation}").unwrap());
+fn get_emojis_in_msg(msg: &str) -> impl Iterator<Item = &str> {
+    msg.graphemes(true)
+        .filter(|g| emojis::get(g).is_some())
+        .take(3)
+}
 
 pub(super) async fn insert_message(database: &Database, message: &Message) -> Result<(), Error> {
     let guild_id = message.guild_id.map(|g| g.get() as i64);
@@ -123,19 +127,15 @@ pub(super) async fn insert_message(database: &Database, message: &Message) -> Re
             .await?;
         }
 
-        for captures in STANDARD_EMOJI_REGEX.captures_iter(&message.content) {
-            let Some(capture) = &captures.get(0) else {
-                continue;
-            };
-
-            // This is so fucking dumb.
+        for emoji in get_emojis_in_msg(&message.content) {
+            println!("{emoji}");
             let id = query!(
                 "INSERT INTO emotes (emote_name, discord_id)
                  VALUES ($1, NULL)
                  ON CONFLICT (emote_name) WHERE discord_id IS NULL
                  DO UPDATE SET discord_id = emotes.discord_id
                  RETURNING id",
-                capture.as_str()
+                emoji
             )
             .fetch_one(&mut *transaction)
             .await?;

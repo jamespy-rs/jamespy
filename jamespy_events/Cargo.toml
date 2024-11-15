@@ -29,3 +29,5 @@ image.workspace = true
 rten.workspace = true
 ocrs.workspace = true
 strsim = "0.11.1"
+unicode-segmentation.workspace = true
+emojis.workspace = true

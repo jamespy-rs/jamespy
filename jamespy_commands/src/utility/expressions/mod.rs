@@ -4,7 +4,7 @@ mod query;
 mod utils;
 
 use jamespy_data::database::EmoteUsageType;
-use jamespy_events::handlers::messages::{EMOJI_REGEX, STANDARD_EMOJI_REGEX};
+use jamespy_events::handlers::messages::EMOJI_REGEX;
 use query::handle_expression_query;
 
 use utils::{check_in_guild, display_expressions};
@@ -57,8 +57,8 @@ pub fn string_to_expression(emoji: &str) -> Option<Expression<'_>> {
         Expression::Emote((id, capture[2].to_string()))
     } else if let Ok(emoji_id) = emoji.parse::<u64>() {
         Expression::Id(emoji_id)
-    } else if STANDARD_EMOJI_REGEX.captures(emoji).is_some() {
-        Expression::Standard(emoji)
+    } else if let Some(emoji) = emojis::get(emoji) {
+        Expression::Standard(emoji.as_str())
     } else {
         Expression::Name(emoji)
     };
