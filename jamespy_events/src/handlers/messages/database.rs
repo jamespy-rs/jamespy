@@ -95,7 +95,7 @@ pub(super) async fn insert_message(database: &Database, message: &Message) -> Re
             .await?;
         }
 
-        for captures in EMOJI_REGEX.captures_iter(&message.content) {
+        for captures in EMOJI_REGEX.captures_iter(&message.content).take(3) {
             let Ok(id) = &captures[3].parse::<u64>() else {
                 println!("Failed to parse id for custom emote: {}", &captures[3]);
                 continue;
