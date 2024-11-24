@@ -29,7 +29,7 @@ pub fn create_application_commands<U, E>(
             if command
                 .category
                 .as_deref()
-                .map_or(false, |desc| desc.to_lowercase().starts_with("owner"))
+                .is_some_and(|desc| desc.to_lowercase().starts_with("owner"))
             {
                 owner_commands.push(slash_command);
             } else {

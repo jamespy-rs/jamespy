@@ -45,7 +45,7 @@ pub fn get_cmd_name(
         if !command
             .category
             .as_deref()
-            .map_or(false, |c| c.to_lowercase().starts_with("owner"))
+            .is_some_and(|c| c.to_lowercase().starts_with("owner"))
         {
             continue;
         }
@@ -60,7 +60,7 @@ pub fn get_cmd_name(
             if !command
                 .category
                 .as_deref()
-                .map_or(false, |c| c.to_lowercase().starts_with("owner"))
+                .is_some_and(|c| c.to_lowercase().starts_with("owner"))
             {
                 return Err(CommandRestrictErr::NotOwnerCommand);
             }
