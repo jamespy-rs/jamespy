@@ -124,9 +124,6 @@ pub async fn event_handler(
         FullEvent::Ready { data_about_bot } => {
             misc::ready(ctx, data_about_bot, data).await?;
         }
-        FullEvent::CacheReady { guilds } => {
-            misc::cache_ready(ctx, guilds, data).await?;
-        }
         FullEvent::GuildMembersChunk { chunk } => {
             println!(
                 "Chunk recieved containing {} members: {}/{}",

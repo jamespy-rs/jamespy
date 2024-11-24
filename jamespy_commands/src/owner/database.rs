@@ -31,7 +31,7 @@ pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
         ("emotes", "id"),
         ("emote_usage", "id"),
     ];
-    let misc_tables = [("join_tracks", "user_id"), ("dm_activity", "user_id")];
+    let misc_tables = [("dm_activity", "user_id")];
 
     let mut embed = serenity::CreateEmbed::default().title("Database Stats");
 

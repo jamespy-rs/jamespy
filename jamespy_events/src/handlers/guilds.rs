@@ -1,4 +1,3 @@
-use sqlx::query;
 use std::sync::Arc;
 
 use crate::{
@@ -7,7 +6,7 @@ use crate::{
 };
 use poise::serenity_prelude::{
     self as serenity, AuditLogEntry, AutoModAction, ChannelId, CreateEmbedAuthor, Guild, GuildId,
-    Member, User, UserId,
+    Member, User,
 };
 use serenity::model::guild::audit_log::Action;
 
@@ -32,7 +31,6 @@ pub async fn guild_member_addition(
     data: Arc<Data>,
     new_member: &Member,
 ) -> Result<(), Error> {
-    let db_pool = &data.db;
     let guild_id = new_member.guild_id;
     let joined_user_id = new_member.user.id;
 
@@ -44,51 +42,6 @@ pub async fn guild_member_addition(
         new_member.user.tag(),
         joined_user_id
     );
-
-    // Check join tracks
-    let result = query!(
-        "SELECT * FROM join_tracks WHERE user_id = $1 AND guild_id = $2",
-        i64::from(joined_user_id),
-        i64::from(new_member.guild_id)
-    )
-    .fetch_all(db_pool)
-    .await;
-    let reply_content: &str = &format!(
-        "{} (<@{}>) joined {}!",
-        new_member.user.tag(),
-        new_member.user.id,
-        guild_name
-    );
-    if let Ok(records) = result {
-        for record in records {
-            let reply_builder = serenity::CreateMessage::default().content(reply_content);
-            // record contain the user_id.
-
-            // check author is in guild still, check if author can be dmed.
-            // Remove if author can't be dmed.
-            let authorid = UserId::new(record.author_id.unwrap() as u64);
-
-            match guild_id.member(ctx, authorid).await {
-                Ok(member) => {
-                    member.user.dm(&ctx.http, reply_builder).await?;
-                    // in the future i should check for if this fails and why, and remove depending on the situation.
-                    let _ = query!(
-                        "DELETE FROM join_tracks WHERE guild_id = $1 AND author_id = $2 AND \
-                         user_id = $3",
-                        i64::from(guild_id),
-                        i64::from(authorid),
-                        i64::from(joined_user_id)
-                    )
-                    .execute(db_pool)
-                    .await;
-                }
-                Err(_err) => {
-                    // In the future the user should be removed if the user isn't valid, but checking that is a bit of a pain.
-                }
-            }
-        }
-    };
-
     Ok(())
 }
 
@@ -98,7 +51,6 @@ pub async fn guild_member_removal(
     user: &User,
     data: Arc<Data>,
 ) -> Result<(), Error> {
-    let db_pool = &data.db;
     let guild_name = get_guild_name_override(ctx, &data, Some(*guild_id));
 
     println!(
@@ -107,15 +59,6 @@ pub async fn guild_member_removal(
         user.tag(),
         user.id
     );
-
-    // Author left guild, these are no longer important.
-    let _ = query!(
-        "DELETE FROM join_tracks WHERE author_id = $1 AND guild_id = $2",
-        i64::from(user.id),
-        i64::from(*guild_id)
-    )
-    .execute(db_pool)
-    .await;
 
     Ok(())
 }
