@@ -27,8 +27,6 @@ pub struct Data {
     pub reqwest: reqwest::Client,
     /// Bot/Server Configuration
     pub config: RwLock<jamespy_config::JamespyConfig>,
-    /// Runtime caches for dm activity.
-    pub dm_activity: DashMap<UserId, DmActivity>,
     /// Runtime caches for user/global/nicks, used to reduce DB load.
     pub names: Mutex<Names>,
     /// Experimental anti mass message deletion tracking.
@@ -417,7 +415,7 @@ impl Data {
     }
 
     pub async fn get_activity_check(&self, user_id: UserId) -> Option<DmActivity> {
-        let cached = self.dm_activity.get(&user_id);
+        let cached = self.database.dm_activity.get(&user_id);
 
         if let Some(cached) = cached {
             Some(*cached)
@@ -496,11 +494,12 @@ impl Data {
     }
 
     pub fn remove_dm_activity_cache(&self, user_id: UserId) {
-        self.dm_activity.remove(&user_id);
+        self.database.dm_activity.remove(&user_id);
     }
 
     fn update_user_cache(&self, user_id: UserId, announced: i64, until: i64, count: i16) {
-        self.dm_activity
+        self.database
+            .dm_activity
             .insert(user_id, DmActivity::new(announced, Some(until), count));
     }
 

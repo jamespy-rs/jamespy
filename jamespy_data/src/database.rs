@@ -6,7 +6,7 @@ use sqlx::{
 };
 use std::{collections::HashSet, env};
 
-use crate::structs::Error;
+use crate::structs::{DmActivity, Error};
 
 use poise::serenity_prelude as serenity;
 
@@ -63,6 +63,7 @@ pub async fn init_data() -> (Database, PgPool) {
             db: database.clone(),
             owner_overwrites: checks,
             banned_users,
+            dm_activity: DashMap::new(),
         },
         database,
     )
@@ -87,6 +88,8 @@ pub struct Database {
     pub db: PgPool,
     banned_users: DashSet<UserId>,
     owner_overwrites: Checks,
+    /// Runtime caches for dm activity.
+    pub(crate) dm_activity: DashMap<UserId, DmActivity>,
 }
 
 #[derive(Clone, Debug, Default)]
