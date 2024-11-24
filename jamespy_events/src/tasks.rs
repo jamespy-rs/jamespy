@@ -39,10 +39,6 @@ pub async fn check_space(ctx: &serenity::Context, data: &Data) -> Result<(), Err
     Ok(())
 }
 
-pub fn decay_checker(data: &Data) {
-    data.anti_delete_cache.decay_proc();
-}
-
 pub async fn soft_limit_hit(
     ctx: &serenity::Context,
     folder_size: u64,

@@ -19,9 +19,8 @@ unicode_names2 = { workspace = true }
 
 small-fixed-array = { workspace = true, features = ["to-arraystring"] }
 rand = { workspace = true }
+tracing = { workspace = true }
 
-tracing-subscriber = "0.3.18"
-tracing = "0.1.40"
 libc = "0.2.152"
 sysinfo = "0.30.5"
 regex = "1.10.3"

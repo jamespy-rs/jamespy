@@ -18,8 +18,6 @@ parking_lot = { workspace = true }
 dashmap = { workspace = true }
 
 tracing-subscriber = "0.3.18"
-ocrs.workspace = true
-rten.workspace = true
 
 
 [workspace]
@@ -35,11 +33,10 @@ chrono = "0.4"
 parking_lot = "0.12.1"
 dashmap = "5.5.3"
 unicode_names2 = "1.2.2"
-ocrs = "0.8.1"
-rten = { version = "0.13.1", features = ["avx512"] }
 image = "0.25.2"
 unicode-segmentation = "1.12.0"
 emojis = "0.6.4"
+tracing = "0.1.40"
 
 [workspace.dependencies.serenity]
 git = "https://github.com/serenity-rs/serenity"

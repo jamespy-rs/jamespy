@@ -43,17 +43,6 @@ fn finalize_start(ctx: &serenity::Context, data: &Arc<Data>) {
             let _ = crate::tasks::check_space(&ctx_clone, &data_clone).await;
         }
     });
-
-    let data_clone = data.clone();
-
-    // Temporary solution, hopefully I come up with something better.
-    tokio::spawn(async move {
-        let mut interval: tokio::time::Interval = tokio::time::interval(Duration::from_secs(2));
-        loop {
-            interval.tick().await;
-            crate::tasks::decay_checker(&data_clone);
-        }
-    });
 }
 
 // TODO: Cache join tracking.
