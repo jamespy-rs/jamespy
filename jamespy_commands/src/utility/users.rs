@@ -237,7 +237,7 @@ pub async fn flag_lb(ctx: Context<'_>) -> Result<(), Error> {
     // poise will display an error if this goes wrong, though at the same time it'll show an error if nobody is on the list.
     let result =
         sqlx::query!("SELECT user_id, count FROM dm_activity ORDER BY count DESC LIMIT 20")
-            .fetch_all(&ctx.data().db)
+            .fetch_all(&ctx.data().database.db)
             .await
             .unwrap();
 

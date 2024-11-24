@@ -10,7 +10,7 @@ use crate::structs::{DmActivity, Error, Names};
 
 use poise::serenity_prelude as serenity;
 
-pub async fn init_data() -> (Database, PgPool) {
+pub async fn init_data() -> Database {
     let database_url =
         env::var("DATABASE_URL").expect("No database url found in environment variables!");
 
@@ -58,16 +58,13 @@ pub async fn init_data() -> (Database, PgPool) {
         }
     }
 
-    (
-        Database {
-            db: database.clone(),
-            owner_overwrites: checks,
-            banned_users,
-            dm_activity: DashMap::new(),
-            names: parking_lot::Mutex::new(Names::new()),
-        },
-        database,
-    )
+    Database {
+        db: database,
+        owner_overwrites: checks,
+        banned_users,
+        dm_activity: DashMap::new(),
+        names: parking_lot::Mutex::new(Names::new()),
+    }
 }
 
 /// Custom type.

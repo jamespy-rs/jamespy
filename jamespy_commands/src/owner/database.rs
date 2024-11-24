@@ -12,7 +12,7 @@ use std::fmt::Write;
     hide_in_help
 )]
 pub async fn dbstats(ctx: Context<'_>) -> Result<(), Error> {
-    let db_pool = &ctx.data().db;
+    let db_pool = &ctx.data().database.db;
 
     let messages_tables = [
         ("messages", "message_id"),
@@ -122,7 +122,7 @@ pub async fn sql(
 ) -> Result<(), Error> {
     //TODO: completely overhaul this.
     let sql_query = query;
-    let db_pool = &ctx.data().db;
+    let db_pool = &ctx.data().database.db;
 
     let now = std::time::Instant::now();
 

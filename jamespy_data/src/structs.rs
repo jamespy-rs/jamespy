@@ -18,8 +18,6 @@ pub struct Data {
     pub time_started: std::time::Instant,
     /// Wrapper for the bots database with helper functions.
     pub database: crate::database::Database,
-    /// Bot database.
-    pub db: sqlx::PgPool,
     /// Http client.
     pub reqwest: reqwest::Client,
     /// Bot/Server Configuration
@@ -262,7 +260,7 @@ impl Data {
             name,
             timestamp
         )
-        .execute(&self.db)
+        .execute(&self.database.db)
         .await?;
 
         Ok(())
@@ -283,7 +281,7 @@ impl Data {
             name,
             timestamp
         )
-        .execute(&self.db)
+        .execute(&self.database.db)
         .await?;
 
         Ok(())
@@ -312,7 +310,7 @@ impl Data {
             name,
             timestamp
         )
-        .execute(&self.db)
+        .execute(&self.database.db)
         .await;
 
         Ok(())
@@ -323,7 +321,7 @@ impl Data {
             "SELECT * FROM usernames WHERE user_id = $1 ORDER BY timestamp DESC LIMIT 1",
             i64::from(user_id)
         )
-        .fetch_one(&self.db)
+        .fetch_one(&self.database.db)
         .await;
 
         match result {
@@ -337,7 +335,7 @@ impl Data {
             "SELECT * FROM global_names WHERE user_id = $1 ORDER BY timestamp DESC LIMIT 1",
             i64::from(user_id)
         )
-        .fetch_one(&self.db)
+        .fetch_one(&self.database.db)
         .await;
 
         match result {
@@ -353,7 +351,7 @@ impl Data {
             i64::from(guild_id),
             i64::from(user_id)
         )
-        .fetch_one(&self.db)
+        .fetch_one(&self.database.db)
         .await;
 
         match result {
@@ -377,7 +375,7 @@ impl Data {
             "SELECT last_announced, until, count FROM dm_activity WHERE user_id = $1",
             i64::from(user_id)
         )
-        .fetch_one(&self.db)
+        .fetch_one(&self.database.db)
         .await;
 
         match result {
@@ -411,7 +409,7 @@ impl Data {
             count,
             i64::from(user_id)
         )
-        .execute(&self.db)
+        .execute(&self.database.db)
         .await;
 
         self.update_user_cache(user_id, announced, until, count);
@@ -435,7 +433,7 @@ impl Data {
             until,
             count.unwrap_or(0)
         )
-        .execute(&self.db)
+        .execute(&self.database.db)
         .await;
 
         self.update_user_cache(user_id, announced, until, count.unwrap_or(0));
@@ -457,7 +455,7 @@ impl Data {
             "UPDATE dm_activity SET until = NULL WHERE user_id = $1",
             i64::from(user_id)
         )
-        .execute(&self.db)
+        .execute(&self.database.db)
         .await;
     }
 }
