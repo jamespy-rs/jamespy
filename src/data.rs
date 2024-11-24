@@ -20,7 +20,6 @@ pub async fn setup() -> Arc<Data> {
         time_started: std::time::Instant::now(),
         reqwest: reqwest::Client::new(),
         config: RwLock::new(config),
-        names: Mutex::new(Names::new()),
         anti_delete_cache: AntiDeleteCache::default(),
         ocr_engine: prep_engine(),
     })

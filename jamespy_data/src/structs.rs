@@ -1,6 +1,6 @@
 use dashmap::DashMap;
 use ocrs::OcrEngine;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::RwLock;
 use serenity::all::MessageId;
 use std::{collections::HashMap, time::Instant};
 
@@ -27,8 +27,6 @@ pub struct Data {
     pub reqwest: reqwest::Client,
     /// Bot/Server Configuration
     pub config: RwLock<jamespy_config::JamespyConfig>,
-    /// Runtime caches for user/global/nicks, used to reduce DB load.
-    pub names: Mutex<Names>,
     /// Experimental anti mass message deletion tracking.
     pub anti_delete_cache: AntiDeleteCache,
     /// OCR engine.
@@ -146,7 +144,7 @@ impl Data {
         let mut check_db = false;
 
         {
-            let names = &mut self.names.lock();
+            let names = &mut self.database.names.lock();
             let usernames = &mut names.usernames;
 
             if let Some(index) = usernames.iter().position(|(id, _)| id.eq(&user.id)) {
@@ -229,7 +227,7 @@ impl Data {
             }
 
             // cache the names.
-            let usernames = &mut self.names.lock().usernames;
+            let usernames = &mut self.database.names.lock().usernames;
             usernames.push_back((
                 user.id,
                 UserNames::new(user.tag(), user.global_name.clone().map(|s| s.to_string())),
@@ -253,7 +251,7 @@ impl Data {
         let mut check_db = false;
 
         {
-            let names = &mut self.names.lock();
+            let names = &mut self.database.names.lock();
             let nicknames = names.nicknames.entry(guild_id).or_default();
 
             if let Some(index) = nicknames.iter().position(|(id, _)| id.eq(&user_id)) {
@@ -292,7 +290,7 @@ impl Data {
                 let _ = self.insert_nick_db(guild_id, user_id, nick.clone()).await;
             }
 
-            let names = &mut self.names.lock();
+            let names = &mut self.database.names.lock();
             let nicknames = names.nicknames.entry(guild_id).or_default();
 
             nicknames.push_back((user_id, nick));
