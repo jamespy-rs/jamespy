@@ -203,8 +203,6 @@ pub(super) async fn check_in_guild(
     Ok(present)
 }
 
-// Messy, I know but I also don't care. It also checks guild perms instead of channel perms here but I also don't care.
-// I'll clean this up at a later date.
 async fn prefix_member_perms(
     ctx: PrefixContext<'_, crate::Data, Error>,
 ) -> Result<Permissions, Error> {
