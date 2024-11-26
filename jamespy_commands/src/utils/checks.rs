@@ -70,7 +70,7 @@ pub fn get_cmd_name(
                 return Err(CommandRestrictErr::FrameworkOwner);
             }
 
-            command_name.clone_from(&command.name);
+            command_name.clone_from(&command.name.as_ref().to_owned());
             break;
         }
     }

@@ -1,5 +1,7 @@
 //! Utilities for registering application commands
 
+use std::borrow::Cow;
+
 use poise::serenity_prelude as serenity;
 
 // Modified version of the builtin poise function.
@@ -75,7 +77,7 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
     };
 
     let components = if spy_guild_active {
-        serenity::CreateActionRow::Buttons(vec![
+        serenity::CreateActionRow::Buttons(Cow::Owned(vec![
             serenity::CreateButton::new("register.guild")
                 .label("Register spy guild")
                 .style(serenity::ButtonStyle::Primary)
@@ -92,9 +94,9 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
                 .label("Unregister globally")
                 .style(serenity::ButtonStyle::Danger)
                 .emoji('🗑'),
-        ])
+        ]))
     } else {
-        serenity::CreateActionRow::Buttons(vec![
+        serenity::CreateActionRow::Buttons(Cow::Owned(vec![
             serenity::CreateButton::new("register.global")
                 .label("Register globally")
                 .style(serenity::ButtonStyle::Primary)
@@ -103,7 +105,7 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
                 .label("Unregister globally")
                 .style(serenity::ButtonStyle::Danger)
                 .emoji('🗑'),
-        ])
+        ]))
     };
 
     let builder = poise::CreateReply::default()
@@ -115,6 +117,7 @@ pub async fn register_application_commands_buttons<U: Send + Sync + 'static, E>(
     let interaction = reply
         .message()
         .await?
+        .id
         .await_component_interaction(ctx.serenity_context().shard.clone())
         .author_id(ctx.author().id)
         .await;

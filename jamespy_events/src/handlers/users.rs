@@ -140,7 +140,7 @@ async fn dm_activity_new(
 ) -> Result<(), Error> {
     let user_ping = format!("<@{}>", event.user.id);
     let joined_at = event.joined_at.unix_timestamp();
-    let created_at = event.user.created_at().unix_timestamp();
+    let created_at = event.user.id.created_at().unix_timestamp();
     let online_status = {
         let guild = ctx.cache.guild(event.guild_id).unwrap();
 
@@ -205,7 +205,7 @@ async fn dm_activity_updated(
 ) -> Result<(), Error> {
     let user_ping = format!("<@{}>", event.user.id);
     let joined_at = event.joined_at.unix_timestamp();
-    let created_at = event.user.created_at().unix_timestamp();
+    let created_at = event.user.id.created_at().unix_timestamp();
 
     let online_status = {
         let guild = ctx.cache.guild(event.guild_id).unwrap();

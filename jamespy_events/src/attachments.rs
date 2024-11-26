@@ -161,7 +161,9 @@ async fn announce_deleted_spy(
     // Split into multiple chunks as the limit per row is 5.
     let mut action_rows = Vec::new();
     for chunk in buttons.chunks(5) {
-        action_rows.push(serenity::CreateActionRow::Buttons(chunk.to_vec()));
+        action_rows.push(serenity::CreateActionRow::Buttons(
+            std::borrow::Cow::Borrowed(chunk),
+        ));
     }
 
     let description_fmt = if message.content.is_empty() {

@@ -46,11 +46,10 @@ default-features = false
 branch = "next"
 
 
-# User apps on serenity-next & single command manual cooldowns
 [workspace.dependencies.poise]
-git = "https://github.com/jamesbt365/poise"
-features = ["cache", "unstable"]
-branch = "serenity-next-merged"
+git = "https://github.com/serenity-rs/poise"
+features = ["cache"]
+branch = "serenity-next"
 
 # patch for developing locally.
 #[patch."https://github.com/serenity-rs/serenity".serenity]

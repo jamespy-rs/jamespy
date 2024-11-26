@@ -1,5 +1,5 @@
 use aformat::{aformat, ToArrayString};
-use std::fmt::Write;
+use std::{borrow::Cow, fmt::Write};
 
 use crate::{Context, Error};
 use poise::{CreateReply, PrefixContext};
@@ -109,10 +109,10 @@ pub(super) async fn display_expressions(
     let previous_id = aformat!("{ctx_id}previous");
     let next_id = aformat!("{ctx_id}next");
 
-    let components = [CreateActionRow::Buttons(vec![
+    let components = [CreateActionRow::Buttons(Cow::Owned(vec![
         CreateButton::new(previous_id.as_str()).emoji('◀'),
         CreateButton::new(next_id.as_str()).emoji('▶'),
-    ])];
+    ]))];
 
     let builder = builder.components(&components);
 
@@ -208,20 +208,23 @@ pub(super) async fn check_in_guild(
 async fn prefix_member_perms(
     ctx: PrefixContext<'_, crate::Data, Error>,
 ) -> Result<Permissions, Error> {
-    let Some(_) = ctx.msg.member.as_ref() else {
-        let member = ctx.author_member().await.ok_or("Failed to fetch member.")?;
-        let Some(guild) = ctx.guild() else {
-            return Err("Could not retrieve guild from cache.".into());
-        };
-
-        return Ok(guild.member_permissions(&member));
-    };
-
-    let member = ctx.author_member().await.ok_or("Failed to fetch member.")?;
     let Some(guild) = ctx.guild() else {
         return Err("Could not retrieve guild from cache.".into());
     };
 
-    // https://github.com/serenity-rs/serenity/pull/3001
-    Ok(guild.member_permissions(&member))
+    let channel_id = ctx.channel_id();
+    let channel = guild
+        .channels
+        .get(&channel_id)
+        .or_else(|| guild.threads.iter().find(|c| c.id == channel_id))
+        .expect("Channels or threads are always sent alongside the guild.");
+
+    Ok(guild.partial_member_permissions_in(
+        channel,
+        ctx.author().id,
+        ctx.msg
+            .member
+            .as_ref()
+            .expect("PartialMember is always present on a message from a guild."),
+    ))
 }

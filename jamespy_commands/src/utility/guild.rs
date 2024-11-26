@@ -78,10 +78,10 @@ pub async fn stickers(ctx: Context<'_>) -> Result<(), Error> {
         .send(
             poise::CreateReply::default()
                 .embed(pages[0].clone())
-                .components(vec![CreateActionRow::Buttons(vec![
+                .components(vec![CreateActionRow::Buttons(Cow::Owned(vec![
                     serenity::CreateButton::new(&prev_button_id).emoji('◀'),
                     serenity::CreateButton::new(&next_button_id).emoji('▶'),
-                ])]),
+                ]))]),
         )
         .await?;
 

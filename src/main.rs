@@ -4,7 +4,7 @@ mod data;
 mod error;
 
 use poise::serenity_prelude::{self as serenity};
-use std::{env::var, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 // false positive.
 #[allow(clippy::needless_return)]
@@ -33,7 +33,8 @@ async fn main() {
 
     let framework = poise::Framework::new(options);
 
-    let token = var("JAMESPY_TOKEN").expect("Missing `JAMESPY_TOKEN` env var. Aborting...");
+    let token = serenity::Token::from_env("JAMESPY_TOKEN")
+        .expect("Missing `JAMESPY_TOKEN` environment variable.");
     let intents = serenity::GatewayIntents::non_privileged()
         | serenity::GatewayIntents::MESSAGE_CONTENT
         | serenity::GatewayIntents::GUILD_MEMBERS
@@ -44,7 +45,7 @@ async fn main() {
 
     let data = data::setup().await;
 
-    let mut client = serenity::Client::builder(&token, intents)
+    let mut client = serenity::Client::builder(token, intents)
         .framework(framework)
         .data(data)
         .cache_settings(settings)

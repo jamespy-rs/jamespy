@@ -40,32 +40,6 @@ pub async fn source(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-/// Show general help or help to a specific command!
-#[poise::command(
-    prefix_command,
-    track_edits,
-    slash_command,
-    category = "Miscellaneous",
-    user_cooldown = 3
-)]
-pub async fn help(
-    ctx: Context<'_>,
-    #[description = "Specific command to show help about"]
-    #[autocomplete = "poise::builtins::autocomplete_command"]
-    command: Option<String>,
-) -> Result<(), Error> {
-    poise::builtins::help(
-        ctx,
-        command.as_deref(),
-        poise::builtins::HelpConfiguration {
-            ephemeral: true,
-            ..Default::default()
-        },
-    )
-    .await?;
-    Ok(())
-}
-
 /// pong!
 #[poise::command(
     slash_command,
@@ -389,11 +363,10 @@ pub async fn scawy(
 }
 
 #[must_use]
-pub fn commands() -> [crate::Command; 9] {
+pub fn commands() -> [crate::Command; 8] {
     [
         uptime(),
         source(),
-        help(),
         ping(),
         register(),
         stats(),
