@@ -2,6 +2,8 @@ use std::collections::HashSet;
 use std::fmt::Write;
 use std::sync::Arc;
 
+use rustrict::CensorStr;
+
 mod database;
 pub use database::EMOJI_REGEX;
 
@@ -74,11 +76,6 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         attachments.as_deref().unwrap_or(""),
         embeds.as_deref().unwrap_or("")
     );
-
-    #[cfg(not(debug_assertions))]
-    let _ =
-        crate::image_moderation::check(&data.ocr_engine, &msg.author, &ctx.http, &msg.attachments)
-            .await;
 
     insert_message(&data.database, msg).await?;
 
