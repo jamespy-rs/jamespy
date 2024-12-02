@@ -2,10 +2,13 @@ use std::collections::HashSet;
 use std::fmt::Write;
 use std::sync::Arc;
 
-use rustrict::CensorStr;
+use rustrict::{Censor, Type};
 
 mod database;
 pub use database::EMOJI_REGEX;
+
+pub static WHITESPACE: std::sync::LazyLock<regex::Regex> =
+    std::sync::LazyLock::new(|| regex::Regex::new(r"(\s*)(\S+)").unwrap());
 
 use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
 use crate::{Data, Error};
@@ -306,6 +309,52 @@ fn get_blacklisted_words(
     fixlist: Option<&HashSet<String>>,
 ) -> Vec<FixedString<u16>> {
     let message_lowercase = new_message.content.to_lowercase();
+
+    let content = &new_message.content;
+    let mut censor = Censor::from_str(content);
+    if censor.analyze() != Type::NONE {
+        // scuffed stuff.
+        censor.reset(content.chars());
+        // it doesn't return the difference, there's no other way than to do some weird comparison.
+        let censored = censor.censor();
+
+        let mut orig = content.split_whitespace();
+        let mut censored = censored.split_whitespace();
+
+        let mut changed_words = Vec::new();
+
+        loop {
+            match (orig.next(), censored.next()) {
+                (Some(w1), Some(w2)) if w1 != w2 => {
+                    changed_words.push(w1);
+                }
+                (Some(_) | None, Some(_)) => continue,
+                (Some(w1), None) => changed_words.push(w1),
+                (None, None) => break,
+            }
+        }
+
+        println!("{changed_words:?}");
+
+        let mut result = String::new();
+
+        for cap in WHITESPACE.captures_iter(content) {
+            // leading whitespace
+            let leading_whitespace = &cap[1];
+            // The word
+            let word = &cap[2];
+
+            result.push_str(leading_whitespace);
+
+            if changed_words.contains(&word) {
+                write!(result, "\x1B[1m\x1B[31m{word}\x1B[0m").unwrap();
+            } else {
+                result.push_str(word);
+            }
+        }
+
+        println!("{result}");
+    }
 
     message_lowercase
         .split_whitespace()

@@ -37,6 +37,7 @@ image = "0.25.2"
 unicode-segmentation = "1.12.0"
 emojis = "0.6.4"
 tracing = "0.1.40"
+rustrict = "0.7.33"
 
 [workspace.dependencies.serenity]
 git = "https://github.com/serenity-rs/serenity"
