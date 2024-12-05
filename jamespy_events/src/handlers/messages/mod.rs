@@ -14,7 +14,7 @@ use poise::serenity_prelude::{
 };
 
 pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) -> Result<(), Error> {
-    let ((content, flagged_words), patterns) = {
+    let (content, patterns) = {
         let config = &data.config.read().events;
 
         if should_skip_msg(
@@ -25,10 +25,10 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
             return Ok(());
         }
 
-        let flagged_words =
+        let maybe_flagged =
             jamespy_filter::filter_content(&msg.content, &config.badlist, &config.fixlist);
 
-        (flagged_words, config.regex.clone())
+        (maybe_flagged, config.regex.clone())
     };
 
     let guild_id = msg.guild_id;
@@ -54,13 +54,6 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     let (attachments, embeds) = attachments_embed_fmt(msg);
 
     let author_string = author_string(ctx, msg);
-
-    if !flagged_words.is_empty() {
-        println!(
-            "Flagged for bad word(s): \x1B[1m\x1B[31m{}\x1B[0m",
-            flagged_words.join(", ")
-        );
-    }
 
     println!(
         "\x1B[90m[{guild_name}] [#{channel_name}]\x1B[0m {author_string}: \

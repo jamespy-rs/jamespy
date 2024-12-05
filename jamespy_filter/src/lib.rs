@@ -10,7 +10,7 @@ pub fn filter_content<'a>(
     content: &'a str,
     badlist: &HashSet<String>,
     fixlist: &HashSet<String>,
-) -> (Cow<'a, str>, Vec<&'a str>) {
+) -> Cow<'a, str> {
     let mut changed_words = Vec::new();
     let mut censor = Censor::from_str(content);
 
@@ -44,12 +44,9 @@ pub fn filter_content<'a>(
     }
 
     if changed_words.is_empty() {
-        (Cow::Borrowed(content), changed_words)
+        Cow::Borrowed(content)
     } else {
-        (
-            Cow::Owned(colour_string(content, &changed_words)),
-            changed_words,
-        )
+        Cow::Owned(colour_string(content, &changed_words))
     }
 }
 
