@@ -73,8 +73,8 @@ impl JamespyConfig {
         if let Ok(config_file) = config_result {
             if let Ok(mut config) = serde_json::from_str::<JamespyConfig>(&config_file) {
                 // Set value of unconfigurable properties.
-                config.events.badlist = Some(read_words_from_file("config/lists/badwords.txt"));
-                config.events.fixlist = Some(read_words_from_file("config/lists/fixwords.txt"));
+                config.events.badlist = read_words_from_file("config/lists/badwords.txt");
+                config.events.fixlist = read_words_from_file("config/lists/fixwords.txt");
 
                 config
             } else {
@@ -181,9 +181,9 @@ pub struct Events {
     #[serde(with = "regex_patterns")]
     pub regex: Option<Vec<Regex>>,
     #[serde(skip_serializing)]
-    pub badlist: Option<HashSet<String>>,
+    pub badlist: HashSet<String>,
     #[serde(skip_serializing)]
-    pub fixlist: Option<HashSet<String>>,
+    pub fixlist: HashSet<String>,
     pub guild_name_override: Option<HashMap<GuildId, String>>,
 }
 

@@ -21,7 +21,7 @@ tracing-subscriber = "0.3.18"
 
 
 [workspace]
-members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config", "jamespy_commands"]
+members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config", "jamespy_commands", "jamespy_filter"]
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "signal", "parking_lot"] }
@@ -38,6 +38,7 @@ unicode-segmentation = "1.12.0"
 emojis = "0.6.4"
 tracing = "0.1.40"
 rustrict = "0.7.33"
+regex = "1.11.1"
 
 [workspace.dependencies.serenity]
 git = "https://github.com/serenity-rs/serenity"

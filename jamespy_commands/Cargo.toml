@@ -23,7 +23,6 @@ tracing = { workspace = true }
 
 libc = "0.2.152"
 sysinfo = "0.30.5"
-regex = "1.10.3"
 url = "2.5.0"
 serde = "1.0"
 serde_json = "1.0"
@@ -31,4 +30,5 @@ aformat = "0.1.4"
 futures = "0.3.30"
 tokio.workspace = true
 emojis.workspace = true
+regex.workspace = true
 unicode-segmentation.workspace = true

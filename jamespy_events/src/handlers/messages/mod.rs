@@ -1,14 +1,8 @@
-use std::collections::HashSet;
 use std::fmt::Write;
 use std::sync::Arc;
 
-use rustrict::{Censor, Type};
-
 mod database;
 pub use database::EMOJI_REGEX;
-
-pub static WHITESPACE: std::sync::LazyLock<regex::Regex> =
-    std::sync::LazyLock::new(|| regex::Regex::new(r"(\s*)(\S+)").unwrap());
 
 use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
 use crate::{Data, Error};
@@ -18,10 +12,9 @@ use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
     MessageUpdateEvent, UserId,
 };
-use small_fixed_array::FixedString;
 
 pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) -> Result<(), Error> {
-    let (flagged_words, patterns) = {
+    let ((content, flagged_words), patterns) = {
         let config = &data.config.read().events;
 
         if should_skip_msg(
@@ -33,7 +26,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         }
 
         let flagged_words =
-            get_blacklisted_words(msg, config.badlist.as_ref(), config.fixlist.as_ref());
+            jamespy_filter::filter_content(&msg.content, &config.badlist, &config.fixlist);
 
         (flagged_words, config.regex.clone())
     };
@@ -62,20 +55,16 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
 
     let author_string = author_string(ctx, msg);
 
-    let flagged_str = if flagged_words.is_empty() {
-        ""
-    } else {
+    if !flagged_words.is_empty() {
         println!(
             "Flagged for bad word(s): \x1B[1m\x1B[31m{}\x1B[0m",
             flagged_words.join(", ")
         );
-        "\x1B[1m\x1B[31m"
-    };
+    }
 
     println!(
         "\x1B[90m[{guild_name}] [#{channel_name}]\x1B[0m {author_string}: \
-         {flagged_str}{}\x1B[0m\x1B[36m{}{}\x1B[0m",
-        msg.content,
+         {content}\x1B[0m\x1B[36m{}{}\x1B[0m",
         attachments.as_deref().unwrap_or(""),
         embeds.as_deref().unwrap_or("")
     );
@@ -301,80 +290,6 @@ pub fn attachments_embed_fmt(new_message: &Message) -> (Option<String>, Option<S
     };
 
     (attachments_fmt, embeds_fmt)
-}
-
-fn get_blacklisted_words(
-    new_message: &Message,
-    badlist: Option<&HashSet<String>>,
-    fixlist: Option<&HashSet<String>>,
-) -> Vec<FixedString<u16>> {
-    let message_lowercase = new_message.content.to_lowercase();
-
-    let content = &new_message.content;
-    let mut censor = Censor::from_str(content);
-    if censor.analyze() != Type::NONE {
-        // scuffed stuff.
-        censor.reset(content.chars());
-        // it doesn't return the difference, there's no other way than to do some weird comparison.
-        let censored = censor.censor();
-
-        let mut orig = content.split_whitespace();
-        let mut censored = censored.split_whitespace();
-
-        let mut changed_words = Vec::new();
-
-        loop {
-            match (orig.next(), censored.next()) {
-                (Some(w1), Some(w2)) if w1 != w2 => {
-                    changed_words.push(w1);
-                }
-                (Some(_) | None, Some(_)) => continue,
-                (Some(w1), None) => changed_words.push(w1),
-                (None, None) => break,
-            }
-        }
-
-        println!("{changed_words:?}");
-
-        let mut result = String::new();
-
-        for cap in WHITESPACE.captures_iter(content) {
-            // leading whitespace
-            let leading_whitespace = &cap[1];
-            // The word
-            let word = &cap[2];
-
-            result.push_str(leading_whitespace);
-
-            if changed_words.contains(&word) {
-                write!(result, "\x1B[1m\x1B[31m{word}\x1B[0m").unwrap();
-            } else {
-                result.push_str(word);
-            }
-        }
-
-        println!("{result}");
-    }
-
-    message_lowercase
-        .split_whitespace()
-        .filter_map(|word| {
-            let is_blacklisted = match (badlist, fixlist) {
-                (Some(bad_set), Some(fix_set)) => {
-                    bad_set.iter().any(|badword| word.contains(badword))
-                        && !fix_set.iter().any(|fixword| word.contains(fixword))
-                }
-                (Some(bad_set), None) => bad_set.iter().any(|badword| word.contains(badword)),
-                _ => false,
-            };
-
-            if is_blacklisted {
-                Some(FixedString::<u16>::from_str_trunc(word))
-            } else {
-                None
-            }
-        })
-        .collect()
 }
 
 #[must_use]

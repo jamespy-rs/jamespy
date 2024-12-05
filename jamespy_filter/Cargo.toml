@@ -1,0 +1,9 @@
+[package]
+name = "jamespy_filter"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+regex = "1.11.1"
+rustrict.workspace = true
+serenity.workspace = true

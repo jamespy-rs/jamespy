@@ -1554,6 +1554,7 @@ dependencies = [
  "image",
  "jamespy_config",
  "jamespy_data",
+ "jamespy_filter",
  "nonmax",
  "poise",
  "regex",
@@ -1566,6 +1567,15 @@ dependencies = [
  "tokio",
  "tokio-tungstenite 0.21.0",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "jamespy_filter"
+version = "0.1.0"
+dependencies = [
+ "regex",
+ "rustrict",
+ "serenity",
 ]
 
 [[package]]
