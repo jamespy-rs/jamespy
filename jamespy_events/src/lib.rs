@@ -32,7 +32,7 @@ pub async fn event_handler(
 
     match event {
         FullEvent::Message { new_message } => {
-            messages::message(ctx, new_message, data).await?;
+            Box::pin(messages::message(ctx, new_message, data)).await?;
         }
         FullEvent::MessageUpdate {
             old_if_available,

@@ -35,22 +35,6 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     let guild_name = get_guild_name_override(ctx, &data, guild_id);
     let channel_name = get_channel_name(ctx, guild_id, msg.channel_id).await;
 
-    // check names.
-    data.check_or_insert_user(&msg.author).await;
-
-    if let (Some(id), Some(member)) = (guild_id, msg.member.as_ref()) {
-        if let Some(nick) = member.nick.as_ref().map(std::string::ToString::to_string) {
-            data.check_or_insert_nick(id, msg.author.id, Some(nick))
-                .await;
-        }
-    }
-
-    if let Some(patterns) = patterns {
-        check_event_dm_regex(ctx, msg, &get_guild_name(ctx, guild_id), &patterns).await?;
-    };
-
-    handle_dm(ctx, msg).await?;
-
     let (attachments, embeds) = attachments_embed_fmt(msg);
 
     let author_string = author_string(ctx, msg);
@@ -62,9 +46,29 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         embeds.as_deref().unwrap_or("")
     );
 
-    insert_message(&data.database, msg).await?;
+    let guild_name = get_guild_name(ctx, guild_id);
+    let _ = tokio::join!(
+        data.check_or_insert_user(&msg.author),
+        maybe_names(&data, msg.author.id, msg.guild_id, msg.member.as_ref()),
+        check_event_dm_regex(ctx, msg, &guild_name, patterns.as_deref()),
+        handle_dm(ctx, msg),
+        insert_message(&data.database, msg),
+    );
 
     Ok(())
+}
+
+async fn maybe_names(
+    data: &Data,
+    author_id: UserId,
+    guild_id: Option<GuildId>,
+    member: Option<&std::boxed::Box<serenity::PartialMember>>,
+) {
+    if let (Some(id), Some(member)) = (guild_id, member) {
+        if let Some(nick) = member.nick.as_ref().map(std::string::ToString::to_string) {
+            data.check_or_insert_nick(id, author_id, Some(nick)).await;
+        }
+    }
 }
 
 pub async fn message_edit(
@@ -190,16 +194,17 @@ async fn check_event_dm_regex(
     ctx: &serenity::Context,
     msg: &Message,
     guild_name: &str,
-    patterns: &[regex::Regex],
-) -> Result<(), Error> {
+    patterns: Option<&[regex::Regex]>,
+) {
+    let Some(patterns) = patterns else {
+        return;
+    };
+
     if patterns.iter().any(|pattern| {
         pattern.is_match(&msg.content) && msg.author.id != 158567567487795200 && !msg.author.bot()
     }) {
-        pattern_matched(ctx, msg, guild_name).await?;
-        return Ok(());
+        let _ = pattern_matched(ctx, msg, guild_name).await;
     }
-
-    Ok(())
 }
 
 async fn pattern_matched(ctx: &serenity::Context, msg: &Message, guild: &str) -> Result<(), Error> {
