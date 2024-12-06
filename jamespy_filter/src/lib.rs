@@ -12,7 +12,10 @@ pub fn filter_content<'a>(
     fixlist: &HashSet<String>,
 ) -> Cow<'a, str> {
     let mut changed_words = Vec::new();
+    let threshold = Type::INAPPROPRIATE & !(Type::EVASIVE | Type::SPAM);
+
     let mut censor = Censor::from_str(content);
+    let censor = censor.with_censor_threshold(threshold);
 
     content.split_whitespace().for_each(|word| {
         let is_blacklisted = badlist.iter().any(|badword| word.contains(badword))
