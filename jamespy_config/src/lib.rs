@@ -10,7 +10,7 @@ use poise::serenity_prelude::{ChannelId, GuildId};
 mod serialize;
 use serialize::{read_words_from_file, regex_patterns};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Default)]
 pub struct JamespyConfig {
     // configuration for the event handler.
     pub events: Events,
@@ -23,14 +23,7 @@ impl JamespyConfig {
     pub fn new() -> Self {
         JamespyConfig {
             events: Events::default(),
-            vcstatus: VCStatus {
-                action: false,
-                post_channel: None,
-                blacklist_detection: false,
-                announce_channel: None,
-                regex: None,
-                guilds: None,
-            },
+            vcstatus: VCStatus::default(),
         }
     }
 
@@ -80,13 +73,7 @@ impl JamespyConfig {
     }
 }
 
-impl Default for JamespyConfig {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Default)]
 pub struct VCStatus {
     pub action: bool,
     pub post_channel: Option<ChannelId>,
@@ -95,42 +82,6 @@ pub struct VCStatus {
     #[serde(with = "regex_patterns")]
     pub regex: Option<Vec<Regex>>,
     pub guilds: Option<Vec<GuildId>>,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub struct Init {
-    pub enabled: bool,
-    pub guild_id: Option<GuildId>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[allow(clippy::struct_excessive_bools)]
-pub struct SelfRegex {
-    pub enabled: bool,
-    pub channel_id: Option<ChannelId>,
-    pub use_events_regex: bool,
-    #[serde(with = "regex_patterns")]
-    pub extra_regex: Option<Vec<Regex>>,
-    pub context_info: bool,
-    pub mention: bool,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct PatternAnnounce {
-    pub enabled: bool,
-    pub default_channel_id: Option<ChannelId>,
-    pub list: Vec<Pattern>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Pattern {
-    pub enabled: bool,
-    pub name: Option<String>,
-    pub ping: bool,
-    pub traverse_embeds: bool,
-    pub channel_id: ChannelId,
-    #[serde(with = "regex_patterns")]
-    pub patterns: Option<Vec<Regex>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Default)]
