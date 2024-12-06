@@ -7,11 +7,12 @@ use std::sync::{OnceLock, RwLock};
 use crate::structs::{Context, Error};
 use rand::seq::IteratorRandom;
 
+pub const LOB_PATH: &str = "config/lists/loblist.txt";
+
 fn get_loblist() -> &'static RwLock<HashSet<String>> {
     static LOBLIST: OnceLock<RwLock<HashSet<String>>> = OnceLock::new();
     LOBLIST.get_or_init(|| {
-        let data =
-            std::fs::read_to_string("config/lists/loblist.txt").unwrap_or_else(|_| String::new());
+        let data = std::fs::read_to_string(LOB_PATH).unwrap_or_else(|_| String::new());
         let words: HashSet<String> = data.lines().map(String::from).collect();
         RwLock::new(words)
     })
@@ -26,7 +27,7 @@ pub fn get_random_lob() -> Option<String> {
 }
 
 pub fn update_lob() -> Result<(usize, usize), Error> {
-    let new_lob = std::fs::read_to_string("config/lists/loblist.txt")?;
+    let new_lob = std::fs::read_to_string(LOB_PATH)?;
     let old_count;
 
     let lines: HashSet<String> = new_lob
@@ -52,14 +53,13 @@ pub fn unload_lob() -> Result<(), Error> {
 }
 
 pub fn add_lob(content: &str) -> Result<(), Error> {
-    let loblist = "config/lists/loblist.txt";
-    let mut file = OpenOptions::new().append(true).open(loblist)?;
+    let mut file = OpenOptions::new().append(true).open(LOB_PATH)?;
 
     let content = format!("\n{content}");
 
     file.write_all(content.as_bytes())?;
 
-    let file_content = std::fs::read_to_string(loblist)?;
+    let file_content = std::fs::read_to_string(LOB_PATH)?;
 
     let mut unique_lines = HashSet::new();
     let deduplicated_lines: Vec<&str> = file_content
@@ -69,17 +69,16 @@ pub fn add_lob(content: &str) -> Result<(), Error> {
 
     let updated_content = deduplicated_lines.join("\n");
 
-    std::fs::write(loblist, updated_content)?;
+    std::fs::write(LOB_PATH, updated_content)?;
 
     Ok(())
 }
 
 pub fn remove_lob(target: &str) -> Result<bool, Error> {
-    let loblist = "config/lists/loblist.txt";
     let mut lines = Vec::new();
     let mut line_removed = false;
 
-    let file = File::open(loblist)?;
+    let file = File::open(LOB_PATH)?;
     let reader = BufReader::new(file);
 
     for line in reader.lines() {
@@ -92,7 +91,7 @@ pub fn remove_lob(target: &str) -> Result<bool, Error> {
     }
 
     if line_removed {
-        let mut file = File::create(loblist)?;
+        let mut file = File::create(LOB_PATH)?;
         for line in lines {
             writeln!(file, "{line}")?;
         }
@@ -102,7 +101,7 @@ pub fn remove_lob(target: &str) -> Result<bool, Error> {
 }
 
 pub fn count_lob() -> Result<usize, Error> {
-    let file = File::open("config/lists/loblist.txt")?;
+    let file = File::open(LOB_PATH)?;
     let reader = BufReader::new(file);
 
     Ok(reader.lines().count())
