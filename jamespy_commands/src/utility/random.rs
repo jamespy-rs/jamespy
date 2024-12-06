@@ -40,12 +40,10 @@ pub async fn choose(
     let random_index = rng.next_u32() as usize % choices.len();
     let chosen_option = &choices[random_index];
 
-    let image_url = author.avatar_url().unwrap_or_default();
-
     ctx.send(
         poise::CreateReply::default().embed(
             serenity::CreateEmbed::default()
-                .author(CreateEmbedAuthor::new(author.tag()).icon_url(image_url))
+                .author(CreateEmbedAuthor::new(author.tag()).icon_url(author.face()))
                 .description(chosen_option.to_string())
                 .color(Colour::from_rgb(0, 255, 0)),
         ),

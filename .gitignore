@@ -4,6 +4,7 @@
 !.vscode/launch.json
 !.vscode/tasks.json
 .idea/
+.env
 
 
 /target

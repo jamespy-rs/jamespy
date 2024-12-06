@@ -11,6 +11,7 @@ use std::{sync::Arc, time::Duration};
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
+    dotenvy::dotenv().unwrap();
 
     let options = poise::FrameworkOptions {
         commands: jamespy_commands::commands(),
