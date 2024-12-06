@@ -16,8 +16,6 @@ pub struct JamespyConfig {
     pub events: Events,
     // Tracking for osu!game, harshly hardcoded.
     pub vcstatus: VCStatus,
-    // Having a dedicated guild for managing the deployment of jamespy.
-    pub spy_guild: Option<SpyGuild>,
 }
 
 impl JamespyConfig {
@@ -33,7 +31,6 @@ impl JamespyConfig {
                 regex: None,
                 guilds: None,
             },
-            spy_guild: None,
         }
     }
 
@@ -98,28 +95,6 @@ pub struct VCStatus {
     #[serde(with = "regex_patterns")]
     pub regex: Option<Vec<Regex>>,
     pub guilds: Option<Vec<GuildId>>,
-}
-
-// TODO: categories should probably be stored too.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct SpyGuild {
-    pub status: Init,
-    pub self_regex: Option<SelfRegex>,
-    pub patterns: Option<PatternAnnounce>,
-}
-
-impl SpyGuild {
-    #[must_use]
-    pub fn new(guild_id: GuildId) -> Self {
-        SpyGuild {
-            status: Init {
-                enabled: true,
-                guild_id: Some(guild_id),
-            },
-            self_regex: None,
-            patterns: None,
-        }
-    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]

@@ -174,7 +174,7 @@ async fn stats(ctx: Context<'_>) -> Result<(), Error> {
 async fn register(ctx: Context<'_>) -> Result<(), Error> {
     // This uses an inbuilt function because spy guild commands should only
     // be registered in the spy guild.
-    crate::register::register_application_commands_buttons(ctx, ctx.data()).await?;
+    crate::register::register_application_commands_buttons(ctx).await?;
 
     Ok(())
 }

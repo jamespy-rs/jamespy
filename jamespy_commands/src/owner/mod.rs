@@ -5,7 +5,6 @@ pub mod database;
 pub mod other;
 pub mod phil;
 pub mod presence;
-pub mod spy_guild;
 
 use crate::{Context, Error};
 
@@ -20,7 +19,6 @@ pub fn commands() -> Vec<crate::Command> {
             .chain(database::commands())
             .chain(presence::commands())
             .chain(other::commands())
-            .chain(spy_guild::commands())
             .chain(cooldowns::commands())
             .chain(phil::commands())
             .collect()
