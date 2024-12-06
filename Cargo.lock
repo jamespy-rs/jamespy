@@ -1485,6 +1485,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "jamespy_ansi"
+version = "0.1.0"
+
+[[package]]
 name = "jamespy_commands"
 version = "0.2.0"
 dependencies = [
@@ -1492,6 +1496,7 @@ dependencies = [
  "chrono",
  "emojis",
  "futures",
+ "jamespy_ansi",
  "jamespy_config",
  "jamespy_data",
  "jamespy_events",
@@ -1553,6 +1558,7 @@ dependencies = [
  "futures-channel",
  "futures-util",
  "image",
+ "jamespy_ansi",
  "jamespy_config",
  "jamespy_data",
  "jamespy_filter",
@@ -1574,6 +1580,7 @@ dependencies = [
 name = "jamespy_filter"
 version = "0.1.0"
 dependencies = [
+ "jamespy_ansi",
  "regex",
  "rustrict",
  "serenity",

@@ -1,4 +1,5 @@
 use crate::{owner::owner, Context, Error};
+use jamespy_ansi::RESET;
 use poise::serenity_prelude::{self as serenity, CreateEmbedFooter};
 use sqlx::{query, Pool, Postgres, Row};
 use std::fmt::Write;
@@ -126,7 +127,7 @@ pub async fn sql(
 
     let now = std::time::Instant::now();
 
-    println!("\x1B[31;40mWARNING: SQL COMMAND WAS TRIGGERED\x1B[0m");
+    println!("\x1B[31;40mWARNING: SQL COMMAND WAS TRIGGERED{RESET}");
 
     let result = sqlx::query(&sql_query).fetch_optional(db_pool).await;
 

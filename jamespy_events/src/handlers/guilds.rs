@@ -8,6 +8,9 @@ use poise::serenity_prelude::{
     self as serenity, AuditLogEntry, AutoModAction, ChannelId, CreateEmbedAuthor, Guild, GuildId,
     Member, User,
 };
+
+use jamespy_ansi::{RESET, YELLOW};
+
 use serenity::model::guild::audit_log::Action;
 
 pub async fn guild_create(
@@ -17,7 +20,7 @@ pub async fn guild_create(
 ) -> Result<(), Error> {
     if let Some(true) = is_new {
         println!(
-            "\x1B[33mJoined {} (ID:{})!\nNow in {} guild(s)\x1B[0m",
+            "{YELLOW}Joined {} (ID:{})!\nNow in {} guild(s){RESET}",
             guild.name,
             guild.id,
             ctx.cache.guilds().len()
@@ -37,7 +40,7 @@ pub async fn guild_member_addition(
     let guild_name = get_guild_name_override(ctx, &data, Some(guild_id));
 
     println!(
-        "\x1B[33m[{}] {} (ID:{}) has joined!\x1B[0m",
+        "{YELLOW}[{}] {} (ID:{}) has joined!{RESET}",
         guild_name,
         new_member.user.tag(),
         joined_user_id
@@ -54,7 +57,7 @@ pub async fn guild_member_removal(
     let guild_name = get_guild_name_override(ctx, &data, Some(*guild_id));
 
     println!(
-        "\x1B[33m[{}] {} (ID:{}) has left!\x1B[0m",
+        "{YELLOW}[{}] {} (ID:{}) has left!{RESET}",
         guild_name,
         user.tag(),
         user.id

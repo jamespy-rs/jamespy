@@ -4,6 +4,7 @@ use crate::{
     helper::{get_guild_name_override, get_user},
     Error,
 };
+use jamespy_ansi::{GREEN, RESET};
 use poise::serenity_prelude::{self as serenity, VoiceState};
 
 pub async fn voice_state_update(
@@ -69,8 +70,8 @@ async fn handle_switch(
     let guild_name = get_guild_name_override(ctx, &ctx.data(), new.guild_id);
 
     println!(
-        "\x1B[32m[{guild_name}] {user_name}: {old_name} (ID:{old_id}) -> {new_name} \
-         (ID:{new_id})\x1B[0m"
+        "{GREEN}[{guild_name}] {user_name}: {old_name} (ID:{old_id}) -> {new_name} \
+         (ID:{new_id}){RESET}"
     );
 
     Ok(())
@@ -101,7 +102,7 @@ async fn handle_leave(
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), new.guild_id);
 
-    println!("\x1B[32m[{guild_name}] {user_name} left {channel_name} (ID:{channel_id})\x1B[0m");
+    println!("{GREEN}[{guild_name}] {user_name} left {channel_name} (ID:{channel_id}){RESET}");
     Ok(())
 }
 async fn handle_joins(ctx: &serenity::Context, new: &VoiceState) -> Result<(), Error> {
@@ -127,6 +128,6 @@ async fn handle_joins(ctx: &serenity::Context, new: &VoiceState) -> Result<(), E
 
     let guild_name = get_guild_name_override(ctx, &ctx.data(), Some(channel.guild_id));
 
-    println!("\x1B[32m[{guild_name}] {user_name} joined {channel_name} (ID:{channel_id})\x1B[0m");
+    println!("{GREEN}[{guild_name}] {user_name} joined {channel_name} (ID:{channel_id}){RESET}");
     Ok(())
 }

@@ -9,6 +9,7 @@ edition = "2021"
 jamespy_data = { path = "../jamespy_data" }
 jamespy_events = { path = "../jamespy_events" }
 jamespy_config = { path = "../jamespy_config" }
+jamespy_ansi = { path = "../jamespy_ansi" }
 
 serenity = { workspace = true }
 poise = { workspace = true }

@@ -3,6 +3,8 @@ use std::{borrow::Cow, collections::HashSet};
 
 use rustrict::{Censor, Type};
 
+use jamespy_ansi::{BOLD, RED, RESET};
+
 pub static WHITESPACE: std::sync::LazyLock<regex::Regex> =
     std::sync::LazyLock::new(|| regex::Regex::new(r"(\s*)(\S+)").unwrap());
 
@@ -64,7 +66,7 @@ fn colour_string(content: &str, changed_words: &[&str]) -> String {
         result.push_str(leading_whitespace);
 
         if changed_words.contains(&word) {
-            write!(result, "\x1B[1m\x1B[31m{word}\x1B[0m").unwrap();
+            write!(result, "{BOLD}{RED}{word}{RESET}").unwrap();
         } else {
             result.push_str(word);
         }

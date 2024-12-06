@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use chrono::Utc;
+use jamespy_ansi::{HI_GREEN, RESET};
 use poise::serenity_prelude::{
     self as serenity, ChannelId, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter,
     GuildMemberUpdateEvent, Member,
@@ -37,7 +38,7 @@ pub async fn guild_member_update(
 
             if old_nickname != new_nickname {
                 println!(
-                    "\x1B[92m[{}] Nickname change: {}: {} -> {} (ID:{})\x1B[0m",
+                    "{HI_GREEN}[{}] Nickname change: {}: {} -> {} (ID:{}){RESET}",
                     guild_name,
                     new_member.user.tag(),
                     old_nickname,
@@ -48,7 +49,7 @@ pub async fn guild_member_update(
 
             if old_member.user.tag() != new_member.user.tag() {
                 println!(
-                    "\x1B[92mUsername change: {} -> {} (ID:{})\x1B[0m",
+                    "{HI_GREEN}Username change: {} -> {} (ID:{}){RESET}",
                     old_member.user.tag(),
                     new_member.user.tag(),
                     new_member.user.id
@@ -56,7 +57,7 @@ pub async fn guild_member_update(
             }
             if old_member.user.global_name != new_member.user.global_name {
                 println!(
-                    "\x1B[92mDisplay name change: {}: {} -> {} (ID:{})\x1B[0m",
+                    "{HI_GREEN}Display name change: {}: {} -> {} (ID:{}){RESET}",
                     old_member.user.tag(),
                     old_member
                         .user

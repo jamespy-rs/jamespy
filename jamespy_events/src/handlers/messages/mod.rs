@@ -7,6 +7,8 @@ pub use database::EMOJI_REGEX;
 use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
 use crate::{Data, Error};
 
+use jamespy_ansi::{CYAN, DIM, HI_BLACK, HI_RED, RESET};
+
 use database::{insert_deletion, insert_edit, insert_message};
 use poise::serenity_prelude::{
     self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
@@ -40,8 +42,8 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     let author_string = author_string(ctx, msg);
 
     println!(
-        "\x1B[90m[{guild_name}] [#{channel_name}]\x1B[0m {author_string}: \
-         {content}\x1B[0m\x1B[36m{}{}\x1B[0m",
+        "{HI_BLACK}[{guild_name}] [#{channel_name}]{RESET} {author_string}: \
+         {content}{RESET}{CYAN}{}{}{RESET}",
         attachments.as_deref().unwrap_or(""),
         embeds.as_deref().unwrap_or("")
     );
@@ -93,7 +95,7 @@ pub async fn message_edit(
                 let (attachments, embeds) = attachments_embed_fmt(new_message);
 
                 println!(
-                    "\x1B[36m[{}] [#{}] A message by \x1B[0m{}\x1B[36m was edited:",
+                    "{CYAN}[{}] [#{}] A message by {RESET}{}{CYAN} was edited:",
                     guild_name,
                     channel_name,
                     new_message.author.tag()
@@ -104,7 +106,7 @@ pub async fn message_edit(
                     old_message.content
                 ); // potentially check old attachments in the future.
                 println!(
-                    "AFTER: {}: {}{}{}\x1B[0m",
+                    "AFTER: {}: {}{}{}{RESET}",
                     new_message.author.tag(),
                     new_message.content,
                     attachments.as_deref().unwrap_or(""),
@@ -116,7 +118,7 @@ pub async fn message_edit(
         }
         (None, None) => {
             println!(
-                "\x1B[36mA message (ID:{}) was edited but was not in cache\x1B[0m",
+                "{CYAN}mA message (ID:{}) was edited but was not in cache{RESET}",
                 event.id
             );
         }
@@ -149,8 +151,8 @@ pub async fn message_delete(
         let (attachments_fmt, embeds_fmt) = attachments_embed_fmt(&message);
 
         println!(
-            "\x1B[91m\x1B[2m[{}] [#{}] A message from \x1B[0m{}\x1B[91m\x1B[2m was deleted: \
-             {}{}{}\x1B[0m",
+            "{HI_RED}{DIM}[{}] [#{}] A message from {RESET}{}{HI_RED}{DIM} was deleted: \
+             {}{}{}{RESET}",
             guild_name,
             channel_name,
             user_name,
@@ -162,8 +164,8 @@ pub async fn message_delete(
         let _ = insert_deletion(&data.database, &message).await;
     } else {
         println!(
-            "\x1B[91m\x1B[2mA message (ID:{deleted_message_id}) was deleted but was not in \
-             cache\x1B[0m"
+            "{HI_RED}{DIM}A message (ID:{deleted_message_id}) was deleted but was not in \
+             cache{RESET}"
         );
     }
     Ok(())
@@ -328,6 +330,5 @@ pub fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
         }
     }
 
-    let reset = "\x1B[0m";
-    format!("{prefix}{username}{reset}")
+    format!("{prefix}{username}{RESET}")
 }

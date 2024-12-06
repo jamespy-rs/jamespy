@@ -6,6 +6,7 @@ use crate::helper::{
 
 use crate::{Data, Error};
 
+use jamespy_ansi::{BLUE, HI_BLUE, RESET};
 use poise::serenity_prelude::audit_log::Action::VoiceChannelStatus;
 use poise::serenity_prelude::{
     self as serenity, ChannelFlags, ChannelId, ChannelType, CreateEmbed, ForumEmoji, GuildChannel,
@@ -25,7 +26,7 @@ pub async fn channel_create(
 
     let kind = channel_type_to_string(channel.kind);
     println!(
-        "\x1B[34m[{}] #{} ({}) was created!\x1B[0m",
+        "{BLUE}[{}] #{} ({}) was created!{RESET}",
         guild_name, channel.name, kind
     );
     Ok(())
@@ -275,7 +276,7 @@ pub async fn channel_update(
     // fix.
     diff = diff.trim_end_matches('\n').to_string();
     if !diff.is_empty() {
-        println!("\x1B[34m[{guild_name}] #{channel_name} was updated! ({kind})\x1B[0m\n{diff}");
+        println!("{BLUE}[{guild_name}] #{channel_name} was updated! ({kind}){RESET}\n{diff}");
     }
     Ok(())
 }
@@ -289,7 +290,7 @@ pub async fn channel_delete(
     let guild_name = get_guild_name_override(ctx, &data, Some(channel.guild_id));
 
     println!(
-        "\x1B[34m[{}] #{} ({}) was deleted!\x1B[0m",
+        "{BLUE}[{}] #{} ({}) was deleted!{RESET}",
         guild_name, channel.name, kind
     );
 
@@ -312,7 +313,7 @@ pub async fn thread_create(
     };
 
     println!(
-        "\x1B[94m[{}] Thread #{} ({}) was created in #{}!\x1B[0m",
+        "{HI_BLUE}[{}] Thread #{} ({}) was created in #{}!{RESET}",
         guild_name, thread.name, kind, parent_channel_name
     );
     Ok(())
@@ -389,8 +390,9 @@ pub async fn thread_update(
     diff = diff.trim_end_matches('\n').to_string();
     if !diff.is_empty() {
         println!(
-            "\x1B[94m[{}] #{} in {} was updated! ({})\x1B[0m\n{}",
-            guild_name, new.name, parent_channel_name, kind, diff
+            "{HI_BLUE}[{guild_name}] #{} in {parent_channel_name} was updated! \
+             ({kind}){RESET}\n{diff}",
+            new.name
         );
     }
 
@@ -421,11 +423,11 @@ pub async fn thread_delete(
     }
 
     if channel_name.is_empty() {
-        println!("\x1B[94m[{guild_name}] An unknown thread was deleted!\x1B[0m");
+        println!("{HI_BLUE}[{guild_name}] An unknown thread was deleted!{RESET}");
     } else {
         println!(
-            "\x1B[94m[{guild_name}] Thread #{channel_name} ({kind}) was deleted from \
-             #{parent_channel_name}!\x1B[0m"
+            "{HI_BLUE}[{guild_name}] Thread #{channel_name} ({kind}) was deleted from \
+             #{parent_channel_name}!{RESET}"
         );
     }
     Ok(())

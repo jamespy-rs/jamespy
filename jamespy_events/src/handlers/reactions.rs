@@ -9,6 +9,8 @@ use sqlx::query;
 
 use jamespy_data::database::{Database, EmoteUsageType};
 
+use jamespy_ansi::{HI_MAGENTA, RESET};
+
 use poise::serenity_prelude::{self as serenity, Reaction};
 
 pub async fn reaction_add(
@@ -41,7 +43,7 @@ pub async fn reaction_add(
     let channel_name = get_channel_name(ctx, guild_id, add_reaction.channel_id).await;
 
     println!(
-        "\x1B[95m[{}] [#{}] {} added a reaction: {}\x1B[0m",
+        "{HI_MAGENTA}[{}] [#{}] {} added a reaction: {}{RESET}",
         guild_name, channel_name, user_name, add_reaction.emoji
     );
 
@@ -76,7 +78,7 @@ pub async fn reaction_remove(
     let channel_name = get_channel_name(ctx, guild_id, removed_reaction.channel_id).await;
 
     println!(
-        "\x1B[95m[{}] [#{}] {} removed a reaction: {}\x1B[0m",
+        "{HI_MAGENTA}[{}] [#{}] {} removed a reaction: {}{RESET}",
         guild_name, channel_name, user_name, removed_reaction.emoji
     );
 

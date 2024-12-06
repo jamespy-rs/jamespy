@@ -3,6 +3,7 @@ use crate::Data;
 use std::fmt::Write;
 use std::sync::Arc;
 
+use jamespy_ansi::{HI_GREEN, RED, RESET};
 use poise::serenity_prelude::{
     self as serenity, AutoArchiveDuration, ChannelId, ChannelType, Context, ForumLayoutType,
     GuildId, PermissionOverwrite, PermissionOverwriteType, Permissions, SortOrder, User, UserId,
@@ -224,8 +225,8 @@ pub async fn get_permission_changes(
 #[must_use]
 pub fn get_permission_changes_detail(old: Permissions, new: Permissions, allow: bool) -> String {
     let mut changes_str = String::new();
-    let added_color = if allow { "\x1B[92m" } else { "\x1B[31m" };
-    let removed_color = if allow { "\x1B[31m" } else { "\x1B[92m" };
+    let added_color = if allow { HI_GREEN } else { RED };
+    let removed_color = if allow { RED } else { HI_GREEN };
 
     let added_perms: Vec<String> = {
         let mut added = Vec::new();
@@ -251,13 +252,13 @@ pub fn get_permission_changes_detail(old: Permissions, new: Permissions, allow: 
 
     if !added_perms.is_empty() {
         for perm in &added_perms {
-            writeln!(changes_str, "{added_color}+ {perm}\x1B[0m").unwrap();
+            writeln!(changes_str, "{added_color}+ {perm}{RESET}").unwrap();
         }
     }
 
     if !removed_perms.is_empty() {
         for perm in &removed_perms {
-            writeln!(changes_str, "{removed_color}- {perm}\x1B[0m").unwrap();
+            writeln!(changes_str, "{removed_color}- {perm}{RESET}").unwrap();
         }
     }
 
@@ -292,17 +293,14 @@ pub async fn overwrite_removal(
     )
     .unwrap();
 
-    let added_color = "\x1B[92m";
-    let removed_color = "\x1B[31m";
-
     let mut allowed_str = String::new();
     let mut denied_str = String::new();
     for allowed in overwrite.allow {
-        writeln!(allowed_str, "{added_color}+ {allowed}\x1B[0m").unwrap();
+        writeln!(allowed_str, "{HI_GREEN}+ {allowed}{RESET}").unwrap();
     }
 
     for denied in overwrite.deny {
-        writeln!(denied_str, "{removed_color}+ {denied}\x1B[0m").unwrap();
+        writeln!(denied_str, "{RED}+ {denied}{RESET}").unwrap();
     }
 
     if !allowed_str.is_empty() {
