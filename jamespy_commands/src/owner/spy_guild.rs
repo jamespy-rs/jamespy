@@ -49,16 +49,6 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
         .await?
         .id;
 
-    let attachment_hook_channel = guild_id
-        .create_channel(
-            ctx.http(),
-            CreateChannel::new("deleted-media")
-                .kind(ChannelType::Text)
-                .category(jamespy),
-        )
-        .await?
-        .id;
-
     // other regexes.
     let regexes = guild_id
         .create_channel(
@@ -87,11 +77,6 @@ pub async fn here(ctx: Context<'_>) -> Result<(), Error> {
         extra_regex: None,
         context_info: true,
         mention: true,
-    });
-
-    spy_conf.attachment_hook = Some(jamespy_config::AttachmentHook {
-        enabled: true,
-        channel_id: Some(attachment_hook_channel),
     });
 
     spy_conf.patterns = Some(jamespy_config::PatternAnnounce {

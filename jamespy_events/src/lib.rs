@@ -16,9 +16,7 @@
 use jamespy_data::structs::{Data, Error};
 use poise::serenity_prelude::{self as serenity, FullEvent};
 
-pub mod attachments;
 pub mod helper;
-pub mod tasks;
 
 pub mod handlers;
 use handlers::*;

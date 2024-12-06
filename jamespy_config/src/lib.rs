@@ -18,8 +18,6 @@ pub struct JamespyConfig {
     pub vcstatus: VCStatus,
     // Having a dedicated guild for managing the deployment of jamespy.
     pub spy_guild: Option<SpyGuild>,
-    // Control for saving attachments from deleted messages.
-    pub attachment_store: Option<Attachments>,
 }
 
 impl JamespyConfig {
@@ -36,12 +34,6 @@ impl JamespyConfig {
                 guilds: None,
             },
             spy_guild: None,
-            attachment_store: Some(Attachments {
-                enabled: true,
-                single_limit: Some(200),
-                soft_limit: Some(9000),
-                hard_limit: Some(10000),
-            }),
         }
     }
 
@@ -114,7 +106,6 @@ pub struct SpyGuild {
     pub status: Init,
     pub self_regex: Option<SelfRegex>,
     pub patterns: Option<PatternAnnounce>,
-    pub attachment_hook: Option<AttachmentHook>,
 }
 
 impl SpyGuild {
@@ -127,7 +118,6 @@ impl SpyGuild {
             },
             self_regex: None,
             patterns: None,
-            attachment_hook: None,
         }
     }
 }
@@ -168,12 +158,6 @@ pub struct Pattern {
     pub patterns: Option<Vec<Regex>>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct AttachmentHook {
-    pub enabled: bool,
-    pub channel_id: Option<ChannelId>,
-}
-
 #[derive(Clone, Debug, Deserialize, Serialize, Default)]
 pub struct Events {
     pub no_log_channels: Option<Vec<u64>>,
@@ -185,12 +169,4 @@ pub struct Events {
     #[serde(skip_serializing)]
     pub fixlist: HashSet<String>,
     pub guild_name_override: Option<HashMap<GuildId, String>>,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub struct Attachments {
-    pub enabled: bool,
-    pub single_limit: Option<u64>,
-    pub soft_limit: Option<u64>,
-    pub hard_limit: Option<u64>,
 }

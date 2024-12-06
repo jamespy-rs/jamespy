@@ -160,8 +160,6 @@ pub async fn message_delete(
         );
 
         let _ = insert_deletion(&data.database, &message).await;
-
-        crate::attachments::download_attachments(ctx, message, &data).await?;
     } else {
         println!(
             "\x1B[91m\x1B[2mA message (ID:{deleted_message_id}) was deleted but was not in \
@@ -303,7 +301,6 @@ pub fn author_string(ctx: &serenity::Context, msg: &Message) -> String {
 
     let mut highest: Option<&serenity::Role> = None;
 
-    // TODO: possibly try and optimise this.
     for role_id in &member.roles {
         if let Some(role) = guild.roles.get(role_id) {
             if role.colour.0 == 000000 {
