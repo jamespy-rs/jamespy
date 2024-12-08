@@ -119,7 +119,7 @@ pub async fn message_edit(
         }
         (None, None) => {
             println!(
-                "{CYAN}mA message (ID:{}) was edited but was not in cache{RESET}",
+                "{CYAN}A message (ID:{}) was edited but was not in cache{RESET}",
                 event.id
             );
         }
