@@ -90,9 +90,9 @@ pub struct Events {
     pub no_log_users: Option<Vec<u64>>,
     #[serde(with = "regex_patterns")]
     pub regex: Option<Vec<Regex>>,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     pub badlist: HashSet<String>,
-    #[serde(skip_serializing)]
+    #[serde(skip)]
     pub fixlist: HashSet<String>,
     pub guild_name_override: Option<HashMap<GuildId, String>>,
 }
