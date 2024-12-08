@@ -1,12 +1,64 @@
 use std::fmt::Write;
+use std::sync::{LazyLock, OnceLock};
 use std::{borrow::Cow, collections::HashSet};
 
-use rustrict::{Censor, Type};
+use regex::Regex;
+use rustrict::{Censor, Trie, Type};
 
 use jamespy_ansi::{BOLD, RED, RESET};
 
 pub static WHITESPACE: std::sync::LazyLock<regex::Regex> =
     std::sync::LazyLock::new(|| regex::Regex::new(r"(\s*)(\S+)").unwrap());
+
+pub static EMOJI_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"<(a)?:([a-zA-Z0-9_]{2,32}):(\d{1,20})>").unwrap());
+
+pub static MENTIONS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"<(#|@&?)([a-zA-Z0-9_]{2,32})>").unwrap());
+
+pub static LINKS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"https?://\S+|www\.\S+").unwrap());
+
+fn get_trie() -> &'static Trie {
+    static TRIE: OnceLock<Trie> = OnceLock::new();
+    TRIE.get_or_init(|| {
+        let mut trie = Trie::default();
+        // patch fix
+        trie.set("fcing", Type::SAFE);
+        trie.set("pp", Type::SAFE);
+        trie.set("ppcat", Type::SAFE);
+
+        trie
+    })
+}
+
+/// A function that cleans stuff up that rustrict isn't good with.
+// can I later just avoid allocating the String?
+fn preprocess(content: &str) -> Cow<'_, str> {
+    let mut offset = 0;
+
+    let processed = EMOJI_REGEX.replace_all(content, |caps: &regex::Captures| {
+        let processed = &caps[2];
+        offset += processed.len();
+        processed.to_string()
+    });
+
+    let processed = MENTIONS.replace_all(&processed, |caps: &regex::Captures| {
+        let mention = &caps[0];
+        offset += mention.len();
+        ""
+    });
+    let processed = LINKS.replace_all(&processed, |caps: &regex::Captures| {
+        let url = &caps[0];
+        offset += url.len();
+        ""
+    });
+
+    if processed == content {
+        Cow::Borrowed(content)
+    } else {
+        Cow::Owned(processed.into())
+    }
+}
 
 pub fn filter_content<'a>(
     content: &'a str,
@@ -14,9 +66,13 @@ pub fn filter_content<'a>(
     fixlist: &HashSet<String>,
 ) -> Cow<'a, str> {
     let mut changed_words = Vec::new();
-    let threshold = Type::INAPPROPRIATE & !(Type::EVASIVE | Type::SPAM);
+    let threshold = (Type::PROFANE | Type::OFFENSIVE)
+        & !(Type::EVASIVE | Type::SPAM)
+        & (Type::MODERATE | Type::SEVERE);
 
-    let mut censor = Censor::from_str(content);
+    let processed = preprocess(content);
+    let mut censor = Censor::from_str(&processed);
+    let censor = censor.with_trie(get_trie());
     let censor = censor.with_censor_threshold(threshold);
 
     content.split_whitespace().for_each(|word| {
@@ -28,22 +84,22 @@ pub fn filter_content<'a>(
     });
 
     if censor.analyze() != Type::NONE {
-        // scuffed stuff.
-        censor.reset(content.chars());
-        // it doesn't return the difference, there's no other way than to do some weird comparison.
+        censor.reset(processed.chars());
         let censored = censor.censor();
 
-        let mut orig = content.split_whitespace();
-        let mut censored = censored.split_whitespace();
+        let mut orig_iter = content.split_whitespace();
+        let mut mapped_iter = processed.split_whitespace();
+        let mut censored_iter = censored.split_whitespace();
 
         loop {
-            match (orig.next(), censored.next()) {
-                (Some(w1), Some(w2)) if w1 != w2 => {
+            match (orig_iter.next(), mapped_iter.next(), censored_iter.next()) {
+                (Some(w1), Some(mapped), Some(w2)) if mapped != w2 => {
                     changed_words.push(w1);
                 }
-                (Some(w1), None) => changed_words.push(w1),
-                (Some(_) | None, Some(_)) => continue,
-                (None, None) => break,
+                (Some(w1), None, _) => changed_words.push(w1),
+                (Some(_), Some(_), None) => continue,
+                (None, None, None) => break,
+                _ => continue,
             }
         }
     }
