@@ -1,6 +1,7 @@
 use std::fmt::Write;
 use std::sync::Arc;
 
+mod anti_delete;
 mod database;
 pub use database::EMOJI_REGEX;
 
@@ -11,8 +12,8 @@ use jamespy_ansi::{CYAN, DIM, HI_BLACK, HI_RED, RESET};
 
 use database::{insert_deletion, insert_edit, insert_message};
 use poise::serenity_prelude::{
-    self as serenity, ChannelId, Colour, CreateEmbedFooter, GuildId, Message, MessageId,
-    MessageUpdateEvent, UserId,
+    self as serenity, ChannelId, Colour, CreateEmbed, CreateEmbedFooter, CreateMessage, GuildId,
+    Message, MessageId, MessageUpdateEvent, UserId,
 };
 
 pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) -> Result<(), Error> {
@@ -168,6 +169,26 @@ pub async fn message_delete(
              cache{RESET}"
         );
     }
+
+    if let Some(guild_id) = guild_id {
+        if let Some(user) =
+            anti_delete::anti_delete(ctx, &data, channel_id, guild_id, deleted_message_id).await
+        {
+            if guild_id.get() == 98226572468690944 {
+                let embed = CreateEmbed::new()
+                    .title("Possible mass deletion?")
+                    .description(format!("Triggered on <@{user}>"))
+                    .footer(CreateEmbedFooter::new(
+                        "This doesn't check my own database or oinks database.",
+                    ));
+                let builder = CreateMessage::new().embed(embed);
+                let _ = ChannelId::new(1284217769423798282)
+                    .send_message(&ctx.http, builder)
+                    .await;
+            };
+        }
+    }
+
     Ok(())
 }
 

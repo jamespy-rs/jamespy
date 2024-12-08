@@ -1,8 +1,9 @@
+use dashmap::DashMap;
 use parking_lot::RwLock;
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Instant};
 
 use chrono::{NaiveDateTime, Utc};
-use poise::serenity_prelude::{GuildId, User, UserId};
+use poise::serenity_prelude::{GuildId, MessageId, User, UserId};
 use sqlx::query;
 
 use std::{collections::VecDeque, sync::atomic::AtomicBool};
@@ -22,6 +23,8 @@ pub struct Data {
     pub reqwest: reqwest::Client,
     /// Bot/Server Configuration
     pub config: RwLock<jamespy_config::JamespyConfig>,
+    /// Experimental anti mass message deletion tracking.
+    pub anti_delete_cache: AntiDeleteCache,
 }
 
 /// A struct only used to track if an error comes from a cooldown.
@@ -73,6 +76,43 @@ impl DmActivity {
             last_announced,
             until,
             count,
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct AntiDeleteCache {
+    pub val: DashMap<GuildId, Decay>,
+    // Dashmap using guild key, containing the last deleted msg and a hashmap of stored message ids.
+    pub map: DashMap<GuildId, InnerCache>,
+}
+pub struct InnerCache {
+    pub last_deleted_msg: MessageId,
+    pub msg_user_cache: HashMap<MessageId, UserId>,
+}
+pub struct Decay {
+    pub val: u16,
+    pub last_update: Instant,
+}
+
+impl AntiDeleteCache {
+    /// Check if all values should be decayed and if so, decay them.
+    pub fn decay_proc(&self) {
+        let now = Instant::now();
+        let mut to_remove = vec![];
+        for mut entry in self.val.iter_mut() {
+            let guild = entry.value_mut();
+            let elapsed = now.duration_since(guild.last_update).as_secs();
+            // time without messages deleted to decay, hardcoded currently.
+            if elapsed > 5 {
+                guild.val -= 1;
+            }
+            if guild.val == 0 {
+                to_remove.push(*entry.key());
+            }
+        }
+        for entry in to_remove {
+            self.val.remove(&entry);
         }
     }
 }

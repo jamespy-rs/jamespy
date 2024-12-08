@@ -12,5 +12,6 @@ pub async fn setup() -> Arc<Data> {
         time_started: std::time::Instant::now(),
         reqwest: reqwest::Client::new(),
         config: parking_lot::RwLock::new(config),
+        anti_delete_cache: jamespy_data::structs::AntiDeleteCache::default(),
     })
 }
