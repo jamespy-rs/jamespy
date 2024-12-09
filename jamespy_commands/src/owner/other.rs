@@ -265,8 +265,21 @@ async fn sudo(
     Ok(())
 }
 
+#[poise::command(
+    prefix_command,
+    check = "owner",
+    category = "Owner - Commands",
+    hide_in_help,
+    guild_only
+)]
+async fn analyze(ctx: Context<'_>, #[rest] msg: String) -> Result<(), Error> {
+    let kind = format!("{:?}", jamespy_filter::analyze(&msg));
+    ctx.say(kind).await?;
+    Ok(())
+}
+
 #[must_use]
-pub fn commands() -> [crate::Command; 8] {
+pub fn commands() -> [crate::Command; 9] {
     let say = poise::Command {
         slash_action: say_slash().slash_action,
         parameters: say_slash().parameters,
@@ -282,5 +295,6 @@ pub fn commands() -> [crate::Command; 8] {
         chunk_guild_members(),
         fw_commands(),
         sudo(),
+        analyze(),
     ]
 }

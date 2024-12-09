@@ -4,6 +4,8 @@ use std::sync::Arc;
 mod anti_delete;
 mod database;
 pub use database::EMOJI_REGEX;
+use invites::moderate_invites;
+mod invites;
 
 use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
 use crate::{Data, Error};
@@ -56,6 +58,7 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
         check_event_dm_regex(ctx, msg, &guild_name, patterns.as_deref()),
         handle_dm(ctx, msg),
         insert_message(&data.database, msg),
+        moderate_invites(ctx, &data, msg),
     );
 
     Ok(())

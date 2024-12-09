@@ -10,11 +10,12 @@ jamespy_data = { path = "../jamespy_data" }
 jamespy_events = { path = "../jamespy_events" }
 jamespy_config = { path = "../jamespy_config" }
 jamespy_ansi = { path = "../jamespy_ansi" }
+jamespy_filter = { path = "../jamespy_filter" }
 
 serenity = { workspace = true }
 poise = { workspace = true }
 sqlx = { workspace = true }
-reqwest = { workspace = true }
+reqwest.workspace = true
 chrono = { workspace = true }
 unicode_names2 = { workspace = true }
 
