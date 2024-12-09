@@ -35,8 +35,6 @@ pub async fn moderate_invites(
             continue;
         };
 
-        println!("here");
-
         let Some(guild) = details.guild else {
             continue;
         };
