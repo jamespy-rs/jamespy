@@ -163,7 +163,7 @@ pub(super) async fn display_expressions(
 
 pub(super) async fn check_in_guild(
     ctx: Context<'_>,
-    expression: &Expression<'_>,
+    expression: &mut Expression<'_>,
 ) -> Result<bool, Error> {
     if let Expression::Standard(_) = expression {
         return Ok(true);
@@ -192,10 +192,20 @@ pub(super) async fn check_in_guild(
         Expression::Id(id) | Expression::Emote((id, _)) => {
             guild.emojis.contains_key(&EmojiId::new(*id))
         }
-        Expression::Name(string) => guild
-            .emojis
-            .iter()
-            .any(|e| e.name.as_str().eq_ignore_ascii_case(string)),
+        Expression::Name(string) => {
+            let emoji = guild
+                .emojis
+                .iter()
+                .find(|e| e.name.as_str().eq_ignore_ascii_case(string));
+
+            if let Some(e) = emoji {
+                if e.name != *string {
+                    *expression = Expression::Emote((e.id.get(), Cow::Owned(e.name.to_string())));
+                };
+            }
+            emoji.is_some()
+        }
+
         // This is handled at the start of this check.
         Expression::Standard(_) => unreachable!(),
     };

@@ -1,5 +1,5 @@
 use crate::{Context, Error};
-use std::fmt;
+use std::{borrow::Cow, fmt};
 mod query;
 mod utils;
 
@@ -10,7 +10,7 @@ use query::handle_expression_query;
 use utils::{check_in_guild, display_expressions};
 
 pub enum Expression<'a> {
-    Emote((u64, String)),
+    Emote((u64, Cow<'a, str>)),
     Standard(&'a str),
     Id(u64),
     Name(&'a str),
@@ -54,7 +54,12 @@ pub fn string_to_expression(emoji: &str) -> Option<Expression<'_>> {
             return None;
         };
 
-        Expression::Emote((id, capture[2].to_string()))
+        let name_match = capture.get(2).unwrap();
+
+        Expression::Emote((
+            id,
+            Cow::Borrowed(&emoji[name_match.start()..name_match.end()]),
+        ))
     } else if let Ok(emoji_id) = emoji.parse::<u64>() {
         Expression::Id(emoji_id)
     } else if let Some(emoji) = emojis::get(emoji) {
@@ -93,13 +98,13 @@ async fn shared(
     types: &[EmoteUsageType],
     msg_type: Option<bool>,
 ) -> Result<(), Error> {
-    let Some(expression) = string_to_expression(&emoji) else {
+    let Some(mut expression) = string_to_expression(&emoji) else {
         ctx.say("I could not parse an expression from this string.")
             .await?;
         return Ok(());
     };
 
-    let in_guild = check_in_guild(ctx, &expression).await?;
+    let in_guild = check_in_guild(ctx, &mut expression).await?;
     if !in_guild {
         ctx.say("You require Manage Messages to be able to check expressions outside the guild.")
             .await?;
