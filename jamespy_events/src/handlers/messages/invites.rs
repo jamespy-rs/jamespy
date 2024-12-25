@@ -83,7 +83,9 @@ pub async fn moderate_invites(
             first_name = Some(name);
         };
 
-        embeds.push(embed);
+        if embeds.len() < 10 {
+            embeds.push(embed);
+        }
     }
 
     builder = builder.embeds(&embeds);
