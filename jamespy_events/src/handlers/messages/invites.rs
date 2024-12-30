@@ -10,7 +10,7 @@ use resvg::{tiny_skia::Pixmap, usvg::Tree};
 use crate::Error;
 
 pub static INVITE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"discord(?:(?:app)?\.com/invite|\.gg)/([a-z0-9-]+)").unwrap());
+    LazyLock::new(|| Regex::new(r"discord(?:(?:app)?\.com/invite|\.gg)/([a-zA-Z0-9-]+)").unwrap());
 
 pub async fn moderate_invites(
     ctx: &serenity::Context,
