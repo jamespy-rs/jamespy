@@ -8,14 +8,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 pub async fn ready(ctx: &serenity::Context, ready: &Ready, data: Arc<Data>) -> Result<(), Error> {
-    let activity_data = ActivityData {
-        name: FixedString::from_str_trunc("you inside your home."),
-        kind: ActivityType::Watching,
-        state: None,
-        url: None,
-    };
-    ctx.set_activity(Some(activity_data));
-
     let shard_count = ctx.cache.shard_count();
     let is_last_shard = (ctx.shard_id.0 + 1) == shard_count.get();
 
