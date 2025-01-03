@@ -6,7 +6,10 @@ use sqlx::{
     postgres::{PgHasArrayType, PgPoolOptions, PgTypeInfo},
     query, Executor, PgPool,
 };
-use std::{collections::HashSet, env};
+use std::{
+    collections::{HashMap, HashSet},
+    env,
+};
 
 use crate::structs::{DmActivity, Error, Names};
 
@@ -113,7 +116,8 @@ pub struct Database {
     pub db: PgPool,
     banned_users: DashSet<UserId>,
     owner_overwrites: Checks,
-    starboard: Mutex<StarboardHandler>,
+    // TODO: return privacy
+    pub starboard: Mutex<StarboardHandler>,
 
     /// Runtime caches for dm activity.
     pub(crate) dm_activity: DashMap<UserId, DmActivity>,
@@ -121,9 +125,12 @@ pub struct Database {
 }
 
 #[derive(Default)]
-struct StarboardHandler {
+pub struct StarboardHandler {
     messages: Vec<StarboardMessage>,
     being_handled: HashSet<MessageId>,
+    // message id is the appropriate in messages, the first userid is the author
+    // the collection is the reaction users.
+    pub reactions_cache: HashMap<MessageId, (UserId, Vec<UserId>)>,
 }
 
 #[derive(Clone, Debug, Default)]

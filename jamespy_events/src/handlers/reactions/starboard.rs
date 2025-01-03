@@ -3,7 +3,8 @@ use jamespy_data::database::{
     ChannelIdWrapper, MessageIdWrapper, StarboardMessage, StarboardStatus, UserIdWrapper,
 };
 use poise::serenity_prelude as serenity;
-use std::sync::Arc;
+use small_fixed_array::FixedString;
+use std::{str::FromStr, sync::Arc};
 
 use super::components::STARBOARD_CHANNEL;
 
@@ -43,9 +44,17 @@ pub(super) async fn starboard_remove_handler(
     };
 
     if let Ok(mut starboard) = data.database.get_starboard_msg(reaction.message_id).await {
-        let msg = reaction.message(ctx).await?;
+        let msg = ctx
+            .http
+            .get_message(reaction.channel_id, reaction.message_id)
+            .await?;
 
-        starboard.star_count = count(&msg);
+        if msg.author.id == reaction.user_id.unwrap() {
+            return Ok(());
+        }
+
+        starboard.star_count =
+            get_reaction_count(ctx, data, reaction, *starboard.user_id, Some(false)).await?;
 
         let message = starboard_edit_message(ctx, &starboard);
 
@@ -62,21 +71,68 @@ pub(super) async fn starboard_remove_handler(
     Ok(())
 }
 
-// maybe i should cache this better later.
-fn count(msg: &serenity::Message) -> i16 {
-    let star_count: u64 = msg
-        .reactions
-        .iter()
-        .filter(|r| {
-            if let serenity::ReactionType::Unicode(ref unicode) = r.reaction_type {
-                return unicode == "⭐";
-            }
-            false
-        })
-        .map(|r| r.count)
-        .sum();
+/// Get the reaction count from the cache or fetch it from http if its not available.
+///
+/// Returns the count, optionally incrementing or decreasing reaction value internally if cached.
+/// Panics if `Reaction` is not from the gateway.
+async fn get_reaction_count(
+    ctx: &serenity::Context,
+    data: &Arc<Data>,
+    reaction: &serenity::Reaction,
+    author_id: serenity::UserId,
+    state: Option<bool>,
+) -> Result<i16, Error> {
+    let reaction_user = reaction.user_id.unwrap();
 
-    star_count as i16
+    // If Some(true), add reaction_user, if Some(false), remove.
+    let reactions = {
+        let mut guard = data.database.starboard.lock();
+        guard
+            .reactions_cache
+            .entry(reaction.message_id)
+            .and_modify(|(_, vec)| {
+                if let Some(true) = state {
+                    if !vec.contains(&reaction_user) {
+                        vec.push(reaction_user);
+                    }
+                } else if let Some(false) = state {
+                    vec.retain(|&user_id| user_id != reaction_user);
+                }
+            });
+        guard.reactions_cache.get(&reaction.message_id).cloned()
+    };
+
+    if let Some((_, reactors)) = reactions {
+        return Ok(reactors.len() as i16);
+    }
+
+    // TODO: paginate this.
+    let users = ctx
+        .http
+        .get_reaction_users(
+            reaction.channel_id,
+            reaction.message_id,
+            &serenity::ReactionType::Unicode(FixedString::from_str("⭐").unwrap()),
+            100,
+            None,
+        )
+        .await?;
+
+    let filtered = users
+        .into_iter()
+        .filter(|user| user.id != author_id)
+        .map(|u| u.id)
+        .collect::<Vec<_>>();
+
+    let count = filtered.len();
+
+    let mut guard = data.database.starboard.lock();
+    guard
+        .reactions_cache
+        .entry(reaction.message_id)
+        .and_modify(|e| *e = (author_id, filtered));
+
+    Ok(count as i16)
 }
 
 async fn existing(
@@ -85,13 +141,12 @@ async fn existing(
     reaction: &serenity::Reaction,
     mut starboard_msg: StarboardMessage,
 ) -> Result<(), Error> {
-    let msg = ctx
-        .http
-        .get_message(reaction.channel_id, reaction.message_id)
-        .await?;
+    if *starboard_msg.user_id == reaction.user_id.unwrap() {
+        return Ok(());
+    }
 
-    starboard_msg.star_count = count(&msg);
-    println!("{}", starboard_msg.star_count);
+    starboard_msg.star_count =
+        get_reaction_count(ctx, data, reaction, *starboard_msg.user_id, Some(true)).await?;
 
     let message = starboard_edit_message(ctx, &starboard_msg);
 
@@ -112,15 +167,24 @@ async fn new(
     data: &Arc<Data>,
     reaction: &serenity::Reaction,
 ) -> Result<(), Error> {
-    let msg = reaction.message(ctx).await?;
+    let msg = ctx
+        .http
+        .get_message(reaction.channel_id, reaction.message_id)
+        .await?;
 
-    let star_count = count(&msg);
+    if msg.author.id == reaction.user_id.unwrap() {
+        return Ok(());
+    }
+
+    // Argument is none here because this is "new" and such there isn't a starboard message yet.
+    let star_count = get_reaction_count(ctx, data, reaction, msg.author.id, None).await?;
 
     if star_count < 5 {
         return Ok(());
     }
 
     let mut starboard_msg = StarboardMessage {
+        // gets corrected on insert.
         id: 0,
         user_id: UserIdWrapper(msg.author.id),
         username: msg.author.name.to_string(),
@@ -137,8 +201,9 @@ async fn new(
                     .map_or_else(|| a.url.to_string(), |a| a.0.to_string())
             })
             .collect(),
-        star_count: star_count as i16,
+        star_count,
         starboard_status: StarboardStatus::InReview,
+        // gets corrected on insert.
         starboard_message_id: MessageIdWrapper(0.into()),
         starboard_message_channel: ChannelIdWrapper(STARBOARD_QUEUE),
     };
