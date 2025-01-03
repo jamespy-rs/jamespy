@@ -3,7 +3,10 @@ use std::sync::Arc;
 use crate::helper::{get_channel_name, get_guild_name_override, get_user};
 use crate::{Data, Error};
 
+pub mod components;
 mod database;
+mod starboard;
+
 use database::*;
 
 use jamespy_ansi::{HI_MAGENTA, RESET};
@@ -44,7 +47,15 @@ pub async fn reaction_add(
         guild_name, channel_name, user_name, add_reaction.emoji
     );
 
-    insert_addition(&data.database, guild_id.unwrap(), user_id, add_reaction).await?;
+    let _ = insert_addition(&data.database, guild_id.unwrap(), user_id, add_reaction).await;
+
+    if add_reaction.guild_id == Some(98226572468690944.into()) {
+        if let serenity::ReactionType::Unicode(ref unicode) = add_reaction.emoji {
+            if unicode == "⭐" {
+                starboard::starboard_add_handler(ctx, add_reaction, &data).await?;
+            }
+        }
+    }
 
     Ok(())
 }
@@ -80,6 +91,14 @@ pub async fn reaction_remove(
     );
 
     insert_removal(&data.database, guild_id.unwrap(), user_id, removed_reaction).await?;
+
+    if removed_reaction.guild_id == Some(98226572468690944.into()) {
+        if let serenity::ReactionType::Unicode(ref unicode) = removed_reaction.emoji {
+            if unicode == "⭐" {
+                starboard::starboard_remove_handler(ctx, removed_reaction, &data).await?;
+            }
+        }
+    }
 
     Ok(())
 }

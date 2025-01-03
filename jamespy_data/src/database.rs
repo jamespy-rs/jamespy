@@ -1,4 +1,6 @@
+use ::serenity::all::{ChannelId, MessageId};
 use dashmap::{DashMap, DashSet};
+use parking_lot::Mutex;
 use serenity::all::UserId;
 use sqlx::{
     postgres::{PgHasArrayType, PgPoolOptions, PgTypeInfo},
@@ -9,6 +11,30 @@ use std::{collections::HashSet, env};
 use crate::structs::{DmActivity, Error, Names};
 
 use poise::serenity_prelude as serenity;
+
+use std::ops::Deref;
+
+macro_rules! id_wrapper {
+    ($wrapper_name:ident, $inner_name:ident) => {
+        #[derive(Clone, Copy, PartialEq, Debug)]
+        pub struct $wrapper_name(pub $inner_name);
+
+        impl Deref for $wrapper_name {
+            type Target = $inner_name;
+
+            fn deref(&self) -> &Self::Target {
+                &self.0
+            }
+        }
+
+        /// Convert from i64
+        impl From<i64> for $wrapper_name {
+            fn from(item: i64) -> Self {
+                $wrapper_name($inner_name::new(item as u64))
+            }
+        }
+    };
+}
 
 pub async fn init_data() -> Database {
     let database_url =
@@ -62,6 +88,7 @@ pub async fn init_data() -> Database {
         db: database,
         owner_overwrites: checks,
         banned_users,
+        starboard: Mutex::new(StarboardHandler::default()),
         dm_activity: DashMap::new(),
         names: parking_lot::Mutex::new(Names::new()),
     }
@@ -86,9 +113,17 @@ pub struct Database {
     pub db: PgPool,
     banned_users: DashSet<UserId>,
     owner_overwrites: Checks,
+    starboard: Mutex<StarboardHandler>,
+
     /// Runtime caches for dm activity.
     pub(crate) dm_activity: DashMap<UserId, DmActivity>,
     pub(crate) names: parking_lot::Mutex<Names>,
+}
+
+#[derive(Default)]
+struct StarboardHandler {
+    messages: Vec<StarboardMessage>,
+    being_handled: HashSet<MessageId>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -96,6 +131,40 @@ pub struct Checks {
     // Users under this will have access to all owner commands.
     pub owners_all: DashSet<UserId>,
     pub owners_single: DashMap<String, HashSet<UserId>>,
+}
+
+id_wrapper!(UserIdWrapper, UserId);
+id_wrapper!(ChannelIdWrapper, ChannelId);
+id_wrapper!(MessageIdWrapper, MessageId);
+
+#[derive(Clone, Debug)]
+pub struct StarboardMessage {
+    pub id: i32,
+    pub user_id: UserIdWrapper,
+    pub username: String,
+    pub avatar_url: Option<String>,
+    pub content: String,
+    pub channel_id: ChannelIdWrapper,
+    pub message_id: MessageIdWrapper,
+    pub attachment_urls: Vec<String>,
+    pub star_count: i16,
+    pub starboard_status: StarboardStatus,
+    pub starboard_message_id: MessageIdWrapper,
+    pub starboard_message_channel: ChannelIdWrapper,
+}
+
+#[derive(Debug, Clone, sqlx::Type, PartialEq)]
+#[sqlx(type_name = "starboard_status")]
+pub enum StarboardStatus {
+    InReview,
+    Accepted,
+    Denied,
+}
+
+impl PgHasArrayType for StarboardStatus {
+    fn array_type_info() -> PgTypeInfo {
+        PgTypeInfo::with_name("starboard_status[]")
+    }
 }
 
 impl Database {
@@ -300,6 +369,235 @@ impl Database {
         }
 
         Ok(true)
+    }
+
+    pub async fn get_starboard_msg(&self, msg_id: MessageId) -> Result<StarboardMessage, Error> {
+        if let Some(starboard) = self
+            .starboard
+            .lock()
+            .messages
+            .iter()
+            .find(|s| *s.message_id == msg_id)
+            .cloned()
+        {
+            return Ok(starboard);
+        }
+
+        let starboard = self.get_starboard_msg_(msg_id).await?;
+
+        self.starboard.lock().messages.push(starboard.clone());
+
+        Ok(starboard)
+    }
+
+    async fn get_starboard_msg_(&self, msg_id: MessageId) -> Result<StarboardMessage, sqlx::Error> {
+        sqlx::query_as!(StarboardMessage,
+        r#"
+        SELECT id, user_id, username, avatar_url, content, channel_id, message_id, attachment_urls, star_count, starboard_message_id, starboard_message_channel, starboard_status as "starboard_status: StarboardStatus"
+        FROM starboard
+        WHERE message_id = $1
+        "#, msg_id.get() as i64)
+            .fetch_one(&self.db)
+            .await
+    }
+
+    pub async fn update_star_count(&self, id: i32, count: i16) -> Result<(), sqlx::Error> {
+        {
+            let mut starboard = self.starboard.lock();
+            let entry = starboard.messages.iter_mut().find(|s| s.id == id);
+            if let Some(entry) = entry {
+                entry.star_count = count;
+            }
+        };
+
+        query!(
+            "UPDATE starboard SET star_count = $1 WHERE id = $2",
+            count,
+            id,
+        )
+        .execute(&self.db)
+        .await?;
+
+        Ok(())
+    }
+
+    /// Check if a starboard is being handled, and if its not, handle it.
+    ///
+    /// returns if its already being handled.
+    pub fn handle_starboard(&self, message_id: MessageId) -> bool {
+        !self.starboard.lock().being_handled.insert(message_id)
+    }
+
+    /// Remove the safety check for a starboard being handled.
+    pub fn stop_handle_starboard(&self, message_id: &MessageId) {
+        self.starboard.lock().being_handled.remove(message_id);
+    }
+
+    pub async fn insert_starboard_msg(
+        &self,
+        m: StarboardMessage,
+        guild_id: Option<serenity::GuildId>,
+    ) -> Result<(), sqlx::Error> {
+        let m_id = *m.message_id;
+        if self.insert_starboard_msg_(m, guild_id).await.is_err() {
+            self.stop_handle_starboard(&m_id);
+        }
+
+        Ok(())
+    }
+
+    async fn insert_starboard_msg_(
+        &self,
+        mut m: StarboardMessage,
+        guild_id: Option<serenity::GuildId>,
+    ) -> Result<(), Error> {
+        if let Some(g_id) = guild_id {
+            self.insert_guild(g_id).await?;
+        }
+
+        self.insert_channel(*m.channel_id, guild_id).await?;
+        self.insert_channel(*m.starboard_message_channel, guild_id)
+            .await?;
+        self.insert_user(*m.user_id).await?;
+
+        let val = match sqlx::query!(
+            r#"
+                INSERT INTO starboard (
+                    user_id, username, avatar_url, content, channel_id, message_id,
+                    attachment_urls, star_count, starboard_status,
+                    starboard_message_id, starboard_message_channel
+                )
+                VALUES (
+                    $1, $2, $3, $4, $5, $6,
+                    $7, $8, $9,
+                    $10, $11
+                ) RETURNING id
+                "#,
+            m.user_id.get() as i64,
+            m.username,
+            m.avatar_url,
+            m.content,
+            m.channel_id.get() as i64,
+            m.message_id.get() as i64,
+            &m.attachment_urls,
+            m.star_count,
+            m.starboard_status as _,
+            m.starboard_message_id.get() as i64,
+            m.starboard_message_channel.get() as i64,
+        )
+        .fetch_one(&self.db)
+        .await
+        {
+            Ok(result) => result,
+            Err(e) => {
+                println!("SQL query failed: {e:?}");
+                return Err(e.into());
+            }
+        };
+
+        m.id = val.id;
+
+        let mut lock = self.starboard.lock();
+        let m_id = *m.message_id;
+
+        lock.messages.push(m);
+        lock.being_handled.remove(&m_id);
+
+        Ok(())
+    }
+
+    pub async fn get_starboard_msg_by_starboard_id(
+        &self,
+        starboard_msg_id: MessageId,
+    ) -> Result<StarboardMessage, Error> {
+        if let Some(starboard) = self
+            .starboard
+            .lock()
+            .messages
+            .iter()
+            .find(|s| *s.starboard_message_id == starboard_msg_id)
+            .cloned()
+        {
+            return Ok(starboard);
+        }
+
+        let starboard = self
+            .get_starboard_msg_by_starboard_id_(starboard_msg_id)
+            .await?;
+
+        self.starboard.lock().messages.push(starboard.clone());
+
+        Ok(starboard)
+    }
+
+    async fn get_starboard_msg_by_starboard_id_(
+        &self,
+        starboard_msg_id: MessageId,
+    ) -> Result<StarboardMessage, sqlx::Error> {
+        sqlx::query_as!(StarboardMessage,
+        r#"
+        SELECT id, user_id, username, avatar_url, content, channel_id, message_id, attachment_urls, star_count, starboard_message_id, starboard_message_channel, starboard_status as "starboard_status: StarboardStatus"
+        FROM starboard
+        WHERE starboard_message_id = $1
+        "#, starboard_msg_id.get() as i64)
+            .fetch_one(&self.db)
+            .await
+    }
+
+    pub async fn approve_starboard(
+        &self,
+        starboard_message_id: MessageId,
+        new_message_id: MessageId,
+        new_channel_id: ChannelId,
+    ) -> Result<(), Error> {
+        let status = StarboardStatus::Accepted;
+
+        query!(
+            "UPDATE starboard SET starboard_status = $1, starboard_message_id = $2, \
+             starboard_message_channel = $3 WHERE starboard_message_id = $4",
+            status as _,
+            new_message_id.get() as i64,
+            new_channel_id.get() as i64,
+            starboard_message_id.get() as i64,
+        )
+        .execute(&self.db)
+        .await?;
+
+        let mut lock = self.starboard.lock();
+        let m = lock
+            .messages
+            .iter_mut()
+            .find(|m| *m.starboard_message_id == starboard_message_id);
+
+        if let Some(m) = m {
+            m.starboard_message_channel = ChannelIdWrapper(new_channel_id);
+            m.starboard_message_id = MessageIdWrapper(new_message_id);
+        }
+
+        Ok(())
+    }
+
+    pub async fn deny_starboard(&self, starboard_message_id: MessageId) -> Result<(), Error> {
+        let status = StarboardStatus::Denied;
+
+        query!(
+            "UPDATE starboard SET starboard_status = $1 WHERE starboard_message_id = $2",
+            status as _,
+            starboard_message_id.get() as i64,
+        )
+        .execute(&self.db)
+        .await?;
+
+        let mut lock = self.starboard.lock();
+        if let Some(index) = lock
+            .messages
+            .iter()
+            .position(|m| *m.starboard_message_id == starboard_message_id)
+        {
+            lock.messages.remove(index);
+        }
+
+        Ok(())
     }
 
     // temporary function to give access to the inner command overwrites while i figure something out.

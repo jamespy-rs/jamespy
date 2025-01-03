@@ -127,6 +127,11 @@ pub async fn event_handler(
                 chunk.chunk_count
             );
         }
+        FullEvent::InteractionCreate { interaction } => {
+            if let Some(component) = interaction.as_message_component() {
+                reactions::components::handle(ctx, data, component).await?;
+            }
+        }
         _ => {}
     }
     Ok(())
