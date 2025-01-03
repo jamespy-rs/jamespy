@@ -22,7 +22,7 @@ dotenvy = "0.15.7"
 
 
 [workspace]
-members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config", "jamespy_commands", "jamespy_filter", "jamespy_ansi"]
+members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config", "jamespy_commands", "jamespy_filter", "jamespy_ansi", "jamespy_starboard"]
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "signal", "parking_lot"] }

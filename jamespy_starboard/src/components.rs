@@ -9,7 +9,7 @@ use super::starboard::starboard_message;
 
 pub const STARBOARD_CHANNEL: serenity::ChannelId = serenity::ChannelId::new(1324437745854316564);
 
-pub async fn handle(
+pub async fn handle_component(
     ctx: &serenity::Context,
     data: Arc<Data>,
     interaction: &serenity::ComponentInteraction,

@@ -1630,6 +1630,7 @@ dependencies = [
  "jamespy_config",
  "jamespy_data",
  "jamespy_filter",
+ "jamespy_starboard",
  "nonmax",
  "poise",
  "regex",
@@ -1653,6 +1654,17 @@ dependencies = [
  "regex",
  "rustrict",
  "serenity",
+]
+
+[[package]]
+name = "jamespy_starboard"
+version = "0.1.0"
+dependencies = [
+ "jamespy_data",
+ "poise",
+ "regex",
+ "serenity",
+ "small-fixed-array",
 ]
 
 [[package]]

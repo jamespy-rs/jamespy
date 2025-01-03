@@ -10,6 +10,7 @@ jamespy_data = { path = "../jamespy_data" }
 jamespy_config = { path = "../jamespy_config" }
 jamespy_filter = { path = "../jamespy_filter" }
 jamespy_ansi = { path = "../jamespy_ansi" }
+jamespy_starboard = { path = "../jamespy_starboard" }
 
 serenity = { workspace = true }
 poise = { workspace = true }

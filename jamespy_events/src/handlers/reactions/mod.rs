@@ -3,9 +3,7 @@ use std::sync::Arc;
 use crate::helper::{get_channel_name, get_guild_name_override, get_user};
 use crate::{Data, Error};
 
-pub mod components;
 mod database;
-mod starboard;
 
 use database::*;
 
@@ -52,7 +50,7 @@ pub async fn reaction_add(
     if add_reaction.guild_id == Some(98226572468690944.into()) {
         if let serenity::ReactionType::Unicode(ref unicode) = add_reaction.emoji {
             if unicode == "⭐" {
-                starboard::starboard_add_handler(ctx, add_reaction, &data).await?;
+                jamespy_starboard::starboard_add_handler(ctx, add_reaction, &data).await?;
             }
         }
     }
@@ -95,7 +93,7 @@ pub async fn reaction_remove(
     if removed_reaction.guild_id == Some(98226572468690944.into()) {
         if let serenity::ReactionType::Unicode(ref unicode) = removed_reaction.emoji {
             if unicode == "⭐" {
-                starboard::starboard_remove_handler(ctx, removed_reaction, &data).await?;
+                jamespy_starboard::starboard_remove_handler(ctx, removed_reaction, &data).await?;
             }
         }
     }

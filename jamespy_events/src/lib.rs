@@ -129,7 +129,7 @@ pub async fn event_handler(
         }
         FullEvent::InteractionCreate { interaction } => {
             if let Some(component) = interaction.as_message_component() {
-                reactions::components::handle(ctx, data, component).await?;
+                jamespy_starboard::handle_component(ctx, data, component).await?;
             }
         }
         _ => {}

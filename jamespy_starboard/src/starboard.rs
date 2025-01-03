@@ -10,7 +10,7 @@ use super::components::STARBOARD_CHANNEL;
 
 const STARBOARD_QUEUE: serenity::ChannelId = serenity::ChannelId::new(1324543000600383549);
 
-pub(super) async fn starboard_add_handler(
+pub async fn starboard_add_handler(
     ctx: &serenity::Context,
     reaction: &serenity::Reaction,
     data: &Arc<Data>,
@@ -34,7 +34,7 @@ pub(super) async fn starboard_add_handler(
     Ok(())
 }
 
-pub(super) async fn starboard_remove_handler(
+pub async fn starboard_remove_handler(
     ctx: &serenity::Context,
     reaction: &serenity::Reaction,
     data: &Arc<Data>,
