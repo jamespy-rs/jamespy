@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use super::components::STARBOARD_CHANNEL;
 
-const STARBOARD_QUEUE: serenity::ChannelId = serenity::ChannelId::new(1324437869808582656);
+const STARBOARD_QUEUE: serenity::ChannelId = serenity::ChannelId::new(1324543000600383549);
 
 pub(super) async fn starboard_add_handler(
     ctx: &serenity::Context,
@@ -47,7 +47,7 @@ pub(super) async fn starboard_remove_handler(
 
         starboard.star_count = count(&msg);
 
-        let message = starboard_edit_message(&starboard);
+        let message = starboard_edit_message(ctx, &starboard);
 
         starboard
             .starboard_message_channel
@@ -93,7 +93,7 @@ async fn existing(
     starboard_msg.star_count = count(&msg);
     println!("{}", starboard_msg.star_count);
 
-    let message = starboard_edit_message(&starboard_msg);
+    let message = starboard_edit_message(ctx, &starboard_msg);
 
     starboard_msg
         .starboard_message_channel
@@ -116,7 +116,7 @@ async fn new(
 
     let star_count = count(&msg);
 
-    if star_count <= 5 {
+    if star_count < 5 {
         return Ok(());
     }
 
@@ -143,7 +143,7 @@ async fn new(
         starboard_message_channel: ChannelIdWrapper(STARBOARD_QUEUE),
     };
 
-    let message = starboard_message(&starboard_msg);
+    let message = starboard_message(ctx, &starboard_msg);
 
     let msg = STARBOARD_QUEUE.send_message(&ctx.http, message).await?;
 
@@ -161,12 +161,29 @@ async fn new(
 }
 
 macro_rules! starboard_message_macro {
-    ($msg_type:ty, $new_fn:expr, $starboard_msg:expr) => {{
+    ($ctx:expr, $msg_type:ty, $new_fn:expr, $starboard_msg:expr) => {{
+        let guild = $ctx.cache.guild(98226572468690944.into());
+
+        let name = if let Some(guild) = guild {
+            guild
+                .channels
+                .iter()
+                .find(|c| c.id == *$starboard_msg.channel_id)
+                .map(|c| c.name.to_string())
+                .unwrap_or_else(|| {
+                    guild
+                        .threads
+                        .iter()
+                        .find(|t| t.id == *$starboard_msg.channel_id)
+                        .map(|t| t.name.to_string())
+                        .unwrap_or_else(|| format!("<#{}>", *$starboard_msg.channel_id))
+                })
+        } else {
+            format!("<#{}>", *$starboard_msg.channel_id)
+        };
+
         let mut message = $new_fn()
-            .content(format!(
-                ":star: **{} |** <#{}>",
-                $starboard_msg.star_count, *$starboard_msg.channel_id
-            ))
+            .content(format!(":star: **{} |#{name}**", $starboard_msg.star_count))
             .embeds(starboard_embeds($starboard_msg));
 
         if $starboard_msg.starboard_status == StarboardStatus::InReview {
@@ -179,22 +196,36 @@ macro_rules! starboard_message_macro {
                     .style(serenity::ButtonStyle::Danger),
             ]));
             message = message.components(vec![components]);
+
+            message = message.content(format!(
+                ":star: **{} |** <#{}> \
+                 <@101090238067113984><@291089948709486593><@158567567487795200>",
+                $starboard_msg.star_count, *$starboard_msg.channel_id
+            ));
         }
 
         message
     }};
 }
 
-pub(super) fn starboard_message(starboard_msg: &StarboardMessage) -> serenity::CreateMessage<'_> {
+pub(super) fn starboard_message<'a>(
+    ctx: &'a serenity::Context,
+    starboard_msg: &'a StarboardMessage,
+) -> serenity::CreateMessage<'a> {
     starboard_message_macro!(
+        ctx,
         serenity::CreateMessage<'_>,
         serenity::CreateMessage::new,
         starboard_msg
     )
 }
 
-fn starboard_edit_message(starboard_msg: &StarboardMessage) -> serenity::EditMessage<'_> {
+fn starboard_edit_message<'a>(
+    ctx: &'a serenity::Context,
+    starboard_msg: &'a StarboardMessage,
+) -> serenity::EditMessage<'a> {
     starboard_message_macro!(
+        ctx,
         serenity::EditMessage<'_>,
         serenity::EditMessage::new,
         starboard_msg
@@ -208,7 +239,6 @@ pub static LINK_REGEX: std::sync::LazyLock<regex::Regex> =
 fn starboard_embeds(starboard_msg: &StarboardMessage) -> Vec<serenity::CreateEmbed<'_>> {
     let mut author = serenity::CreateEmbedAuthor::new(&starboard_msg.username);
     if let Some(url) = &starboard_msg.avatar_url {
-        println!("yes the doing");
         author = author.icon_url(url);
     }
 

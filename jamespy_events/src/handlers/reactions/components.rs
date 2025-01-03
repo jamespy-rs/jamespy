@@ -24,7 +24,8 @@ pub async fn handle(
                 &ctx.http,
                 serenity::CreateInteractionResponse::Message(
                     CreateInteractionResponseMessage::new()
-                        .content("You aren't Phil, Ruben or Moxy"),
+                        .content("You aren't Phil, Ruben or Moxy")
+                        .ephemeral(true),
                 ),
             )
             .await?;
@@ -52,7 +53,7 @@ pub async fn handle(
             .await?;
 
         let new_msg = STARBOARD_CHANNEL
-            .send_message(&ctx.http, starboard_message(&starboard))
+            .send_message(&ctx.http, starboard_message(ctx, &starboard))
             .await?;
 
         data.database
