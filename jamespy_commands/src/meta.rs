@@ -362,8 +362,26 @@ pub async fn scawy(
     Ok(())
 }
 
+#[poise::command(prefix_command, hide_in_help, guild_only, owners_only)]
+pub async fn dbg(ctx: Context<'_>) -> Result<(), Error> {
+    let mentions = serenity::CreateAllowedMentions::new()
+        .all_users(false)
+        .everyone(false)
+        .all_roles(false);
+
+    let string = format!("{:?}", ctx.data().database.starboard);
+
+    ctx.send(
+        poise::CreateReply::new()
+            .content(string)
+            .allowed_mentions(mentions),
+    )
+    .await?;
+    Ok(())
+}
+
 #[must_use]
-pub fn commands() -> [crate::Command; 8] {
+pub fn commands() -> [crate::Command; 9] {
     [
         uptime(),
         source(),
@@ -373,5 +391,6 @@ pub fn commands() -> [crate::Command; 8] {
         overwrite(),
         find_overwrite(),
         scawy(),
+        dbg(),
     ]
 }

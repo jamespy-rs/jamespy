@@ -124,7 +124,7 @@ pub struct Database {
     pub(crate) names: parking_lot::Mutex<Names>,
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct StarboardHandler {
     messages: Vec<StarboardMessage>,
     being_handled: HashSet<MessageId>,
@@ -446,9 +446,8 @@ impl Database {
         guild_id: Option<serenity::GuildId>,
     ) -> Result<(), sqlx::Error> {
         let m_id = *m.message_id;
-        if self.insert_starboard_msg_(m, guild_id).await.is_err() {
-            self.stop_handle_starboard(&m_id);
-        }
+        let _ = self.insert_starboard_msg_(m, guild_id).await;
+        self.stop_handle_starboard(&m_id);
 
         Ok(())
     }

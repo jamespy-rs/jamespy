@@ -25,9 +25,8 @@ pub async fn starboard_add_handler(
 
     if let Ok(starboard) = data.database.get_starboard_msg(reaction.message_id).await {
         existing(ctx, data, reaction, starboard).await?;
-    } else if !data.database.handle_starboard(reaction.message_id)
-        && new(ctx, data, reaction).await.is_err()
-    {
+    } else if !data.database.handle_starboard(reaction.message_id) {
+        let _ = new(ctx, data, reaction).await;
         data.database.stop_handle_starboard(&reaction.message_id);
     }
 
@@ -167,10 +166,7 @@ async fn new(
     data: &Arc<Data>,
     reaction: &serenity::Reaction,
 ) -> Result<(), Error> {
-    let msg = ctx
-        .http
-        .get_message(reaction.channel_id, reaction.message_id)
-        .await?;
+    let msg = reaction.message(ctx).await?;
 
     if msg.author.id == reaction.user_id.unwrap() {
         return Ok(());
@@ -248,7 +244,10 @@ macro_rules! starboard_message_macro {
         };
 
         let mut message = $new_fn()
-            .content(format!(":star: **{} |#{name}**", $starboard_msg.star_count))
+            .content(format!(
+                ":star: **{} | #{name}**",
+                $starboard_msg.star_count
+            ))
             .embeds(starboard_embeds($starboard_msg));
 
         if $starboard_msg.starboard_status == StarboardStatus::InReview {
@@ -263,8 +262,8 @@ macro_rules! starboard_message_macro {
             message = message.components(vec![components]);
 
             message = message.content(format!(
-                ":star: **{} |** <#{}> \
-                 <@101090238067113984><@291089948709486593><@158567567487795200>",
+                ":star: **{} |** <#{}> <@101090238067113984> <@291089948709486593> \
+                 <@158567567487795200>",
                 $starboard_msg.star_count, *$starboard_msg.channel_id
             ));
         }
