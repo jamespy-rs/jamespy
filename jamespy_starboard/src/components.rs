@@ -18,6 +18,13 @@ pub async fn handle_component(
         return Ok(());
     };
 
+    if !matches!(
+        interaction.data.custom_id.as_str(),
+        "starboard_accept" | "starboard_deny"
+    ) {
+        return Ok(());
+    }
+
     if !allowed_user(interaction.user.id) {
         interaction
             .create_response(

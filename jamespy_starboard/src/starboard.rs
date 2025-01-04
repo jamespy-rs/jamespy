@@ -311,7 +311,8 @@ fn starboard_embeds(starboard_msg: &StarboardMessage) -> Vec<serenity::CreateEmb
         .description(&starboard_msg.content)
         .color(serenity::Colour::BLUE)
         // deduplication of embeds.
-        .url("https://osucord.moe");
+        .url("https://osucord.moe")
+        .timestamp(starboard_msg.message_id.created_at());
 
     if !starboard_msg.attachment_urls.is_empty() {
         embed = embed.field(
