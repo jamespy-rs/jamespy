@@ -4,7 +4,7 @@ use jamespy_data::database::{
 };
 use poise::serenity_prelude as serenity;
 use small_fixed_array::FixedString;
-use std::{str::FromStr, sync::Arc};
+use std::{collections::hash_map::Entry, str::FromStr, sync::Arc};
 
 use super::components::STARBOARD_CHANNEL;
 
@@ -43,12 +43,7 @@ pub async fn starboard_remove_handler(
     };
 
     if let Ok(mut starboard) = data.database.get_starboard_msg(reaction.message_id).await {
-        let msg = ctx
-            .http
-            .get_message(reaction.channel_id, reaction.message_id)
-            .await?;
-
-        if msg.author.id == reaction.user_id.unwrap() {
+        if *starboard.user_id == reaction.user_id.unwrap() {
             return Ok(());
         }
 
@@ -65,6 +60,9 @@ pub async fn starboard_remove_handler(
         data.database
             .update_star_count(starboard.id, starboard.star_count)
             .await?;
+    } else {
+        let msg = reaction.message(ctx).await?;
+        let _ = get_reaction_count(ctx, data, reaction, msg.author.id, Some(false)).await?;
     }
 
     Ok(())
@@ -126,10 +124,14 @@ async fn get_reaction_count(
     let count = filtered.len();
 
     let mut guard = data.database.starboard.lock();
-    guard
-        .reactions_cache
-        .entry(reaction.message_id)
-        .and_modify(|e| *e = (author_id, filtered));
+    match guard.reactions_cache.entry(reaction.message_id) {
+        Entry::Occupied(mut entry) => {
+            *entry.get_mut() = (author_id, filtered);
+        }
+        Entry::Vacant(entry) => {
+            entry.insert((author_id, filtered));
+        }
+    }
 
     Ok(count as i16)
 }
@@ -172,8 +174,7 @@ async fn new(
         return Ok(());
     }
 
-    // Argument is none here because this is "new" and such there isn't a starboard message yet.
-    let star_count = get_reaction_count(ctx, data, reaction, msg.author.id, None).await?;
+    let star_count = get_reaction_count(ctx, data, reaction, msg.author.id, Some(true)).await?;
 
     if star_count < 5 {
         return Ok(());
