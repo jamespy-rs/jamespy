@@ -176,7 +176,7 @@ async fn new(
 
     let star_count = get_reaction_count(ctx, data, reaction, msg.author.id, Some(true)).await?;
 
-    if star_count < 5 {
+    if star_count < 3 {
         return Ok(());
     }
 
