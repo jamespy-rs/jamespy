@@ -1,5 +1,8 @@
 use crate::{Context, Error};
 use std::{borrow::Cow, fmt};
+mod last_reactions;
+// TODO: sorta combine with the one in utils
+mod last_reactions_paginator;
 mod query;
 mod utils;
 
@@ -74,7 +77,7 @@ pub fn string_to_expression(emoji: &str) -> Option<Expression<'_>> {
 /// Display usage of a reaction.
 #[poise::command(slash_command, prefix_command, category = "Utility", guild_only)]
 pub async fn reactions(ctx: Context<'_>, emoji: String) -> Result<(), Error> {
-    let types = [EmoteUsageType::ReactionAdd];
+    let types: [EmoteUsageType; 1] = [EmoteUsageType::ReactionAdd];
     shared(ctx, emoji, &types, Some(false)).await
 }
 
@@ -130,6 +133,6 @@ async fn shared(
 // /sticker-leaderboard [duration]
 
 #[must_use]
-pub fn commands() -> [crate::Command; 1] {
-    [emoji_usage()]
+pub fn commands() -> [crate::Command; 2] {
+    [emoji_usage(), last_reactions::last_reactions()]
 }

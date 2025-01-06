@@ -12,7 +12,7 @@ use super::{Expression, ExpressionCounts};
 
 const RECORDS_PER_PAGE: usize = 20;
 
-fn get_paginated_records(records: &[ExpressionCounts], current_page: usize) -> &[ExpressionCounts] {
+pub fn get_paginated_records<T>(records: &[T], current_page: usize) -> &[T] {
     let start_index = current_page * RECORDS_PER_PAGE;
     let end_index = start_index + RECORDS_PER_PAGE;
 
