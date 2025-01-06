@@ -578,6 +578,7 @@ impl Database {
         if let Some(m) = m {
             m.starboard_message_channel = ChannelIdWrapper(new_channel_id);
             m.starboard_message_id = MessageIdWrapper(new_message_id);
+            m.starboard_status = StarboardStatus::Accepted;
         }
 
         Ok(())
