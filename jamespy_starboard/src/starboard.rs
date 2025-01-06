@@ -146,6 +146,13 @@ async fn existing(
         return Ok(());
     }
 
+    // eventually just set to none when its denied/accepted
+    if starboard_msg.starboard_message_channel.get() == 1324437745854316564
+        && starboard_msg.starboard_status != StarboardStatus::InReview
+    {
+        return Ok(());
+    }
+
     starboard_msg.star_count =
         get_reaction_count(ctx, data, reaction, *starboard_msg.user_id, Some(true)).await?;
 
