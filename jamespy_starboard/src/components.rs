@@ -50,7 +50,7 @@ pub async fn handle_component(
 
         let builder = CreateInteractionResponseMessage::new()
             .components(&[])
-            .content("Approved!");
+            .content(format!("Approved by <@{}>", interaction.user.id));
 
         interaction
             .create_response(
@@ -69,7 +69,7 @@ pub async fn handle_component(
     } else if interaction.data.custom_id == "starboard_deny" {
         let builder = CreateInteractionResponseMessage::new()
             .components(&[])
-            .content("Denied!");
+            .content(format!("Denied by <@{}>", interaction.user.id));
 
         interaction
             .create_response(

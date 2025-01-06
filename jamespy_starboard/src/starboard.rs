@@ -24,6 +24,10 @@ pub async fn starboard_add_handler(
     }
 
     if let Ok(starboard) = data.database.get_starboard_msg(reaction.message_id).await {
+        if starboard.starboard_status == StarboardStatus::Denied {
+            return Ok(());
+        }
+
         existing(ctx, data, reaction, starboard).await?;
     } else if !data.database.handle_starboard(reaction.message_id) {
         let _ = new(ctx, data, reaction).await;
@@ -143,13 +147,6 @@ async fn existing(
     mut starboard_msg: StarboardMessage,
 ) -> Result<(), Error> {
     if *starboard_msg.user_id == reaction.user_id.unwrap() {
-        return Ok(());
-    }
-
-    // eventually just set to none when its denied/accepted
-    if starboard_msg.starboard_message_channel.get() == 1324437745854316564
-        && starboard_msg.starboard_status != StarboardStatus::InReview
-    {
         return Ok(());
     }
 

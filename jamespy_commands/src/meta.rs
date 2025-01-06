@@ -2,7 +2,8 @@ use std::collections::HashSet;
 use std::time::Instant;
 
 use ::serenity::all::{
-    ChannelId, ChannelType, GuildChannel, Mentionable, PermissionOverwriteType, RoleId, UserId,
+    ChannelId, ChannelType, CreateEmbed, GuildChannel, Mentionable, PermissionOverwriteType,
+    RoleId, UserId,
 };
 use poise::serenity_prelude as serenity;
 use sysinfo::{Pid, System};
@@ -364,19 +365,10 @@ pub async fn scawy(
 
 #[poise::command(prefix_command, hide_in_help, guild_only, owners_only)]
 pub async fn dbg(ctx: Context<'_>) -> Result<(), Error> {
-    let mentions = serenity::CreateAllowedMentions::new()
-        .all_users(false)
-        .everyone(false)
-        .all_roles(false);
-
     let string = format!("{:?}", ctx.data().database.starboard);
 
-    ctx.send(
-        poise::CreateReply::new()
-            .content(string)
-            .allowed_mentions(mentions),
-    )
-    .await?;
+    ctx.send(poise::CreateReply::new().embed(CreateEmbed::new().description(string)))
+        .await?;
     Ok(())
 }
 
