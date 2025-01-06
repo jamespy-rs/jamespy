@@ -13,5 +13,6 @@ pub async fn setup() -> Arc<Data> {
         reqwest: reqwest::Client::new(),
         config: parking_lot::RwLock::new(config),
         anti_delete_cache: jamespy_data::structs::AntiDeleteCache::default(),
+        perspective_queue: parking_lot::Mutex::new(vec![]),
     })
 }

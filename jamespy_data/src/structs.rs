@@ -1,5 +1,6 @@
 use dashmap::DashMap;
-use parking_lot::RwLock;
+use parking_lot::{Mutex, RwLock};
+use serenity::small_fixed_array::FixedString;
 use std::{collections::HashMap, time::Instant};
 
 use chrono::{NaiveDateTime, Utc};
@@ -25,6 +26,8 @@ pub struct Data {
     pub config: RwLock<jamespy_config::JamespyConfig>,
     /// Experimental anti mass message deletion tracking.
     pub anti_delete_cache: AntiDeleteCache,
+    #[allow(clippy::type_complexity)]
+    pub perspective_queue: Mutex<Vec<(UserId, FixedString<u8>, FixedString<u16>)>>,
 }
 
 /// A struct only used to track if an error comes from a cooldown.

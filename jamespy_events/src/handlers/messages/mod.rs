@@ -52,6 +52,13 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
     );
 
     let guild_name = get_guild_name(ctx, guild_id);
+
+    data.perspective_queue.lock().push((
+        msg.author.id,
+        msg.author.name.clone(),
+        msg.content.clone(),
+    ));
+
     let _ = tokio::join!(
         data.check_or_insert_user(&msg.author),
         maybe_names(&data, msg.author.id, msg.guild_id, msg.member.as_ref()),
