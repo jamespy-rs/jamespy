@@ -23,14 +23,14 @@ pub async fn charinfo(
         if let Some(name) = unicode_names2::name(c) {
             writeln!(
                 result,
-                "[`\\U{digit:08x}`](http://www.fileformat.info/info/unicode/char/{digit:08x}): \
+                "[`\\U{digit:08x}`](<http://www.fileformat.info/info/unicode/char/{digit:08x}>): \
                  {name} — {c}",
             )
             .unwrap();
         } else {
             writeln!(
                 result,
-                "[`\\U{digit:08x}`](http://www.fileformat.info/info/unicode/char/{digit:08x}): \
+                "[`\\U{digit:08x}`](<http://www.fileformat.info/info/unicode/char/{digit:08x}>): \
                  Name not found. — {c}"
             )
             .unwrap();
