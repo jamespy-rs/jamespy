@@ -1,6 +1,10 @@
 use dashmap::DashMap;
 use parking_lot::{Mutex, RwLock};
-use serenity::small_fixed_array::FixedString;
+use perspective_api::client::PerspectiveClient;
+
+use ::serenity::small_fixed_array;
+use poise::serenity_prelude as serenity;
+
 use std::{collections::HashMap, time::Instant};
 
 use chrono::{NaiveDateTime, Utc};
@@ -27,7 +31,8 @@ pub struct Data {
     /// Experimental anti mass message deletion tracking.
     pub anti_delete_cache: AntiDeleteCache,
     #[allow(clippy::type_complexity)]
-    pub perspective_queue: Mutex<Vec<(UserId, FixedString<u8>, FixedString<u16>)>>,
+    pub perspective_queue: Mutex<Vec<PartialMessage>>,
+    pub perspective: Option<PerspectiveClient>,
 }
 
 /// A struct only used to track if an error comes from a cooldown.
@@ -500,5 +505,44 @@ impl Data {
         )
         .execute(&self.database.db)
         .await;
+    }
+}
+
+#[derive(Clone)]
+pub struct PartialMessage {
+    pub user_id: serenity::UserId,
+    pub user_name: small_fixed_array::FixedString<u8>,
+    pub user_avatar_hash: Option<serenity::ImageHash>,
+    pub content: small_fixed_array::FixedString<u16>,
+    pub id: serenity::MessageId,
+    pub channel_id: serenity::ChannelId,
+    pub guild_id: Option<serenity::GuildId>,
+}
+
+impl PartialMessage {
+    #[must_use]
+    pub fn avatar_url(&self) -> Option<String> {
+        self.user_avatar_hash.map(|hash| {
+            let ext = if hash.is_animated() { "gif" } else { "webp" };
+            format!(
+                "https://cdn.discordapp.com/avatars/{}/{hash}.{ext}?size=1024",
+                self.user_id
+            )
+        })
+    }
+
+    #[must_use]
+    pub fn message_link(&self) -> String {
+        if let Some(guild_id) = self.guild_id {
+            format!(
+                "https://discord.com/channels/{guild_id}/{}/{}",
+                self.channel_id, self.id
+            )
+        } else {
+            format!(
+                "https://discord.com/channels/@me/{}/{}",
+                self.channel_id, self.id
+            )
+        }
     }
 }

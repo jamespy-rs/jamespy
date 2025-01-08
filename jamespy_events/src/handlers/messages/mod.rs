@@ -5,6 +5,7 @@ mod anti_delete;
 mod database;
 pub use database::EMOJI_REGEX;
 use invites::moderate_invites;
+use jamespy_data::structs::PartialMessage;
 mod invites;
 
 use crate::helper::{get_channel_name, get_guild_name, get_guild_name_override};
@@ -53,11 +54,24 @@ pub async fn message(ctx: &serenity::Context, msg: &Message, data: Arc<Data>) ->
 
     let guild_name = get_guild_name(ctx, guild_id);
 
-    data.perspective_queue.lock().push((
-        msg.author.id,
-        msg.author.name.clone(),
-        msg.content.clone(),
-    ));
+    if let Some(member) = &msg.member {
+        if msg.guild_id == Some(98226572468690944.into())
+            && !member
+                .roles
+                .contains(&serenity::RoleId::new(98459030455853056))
+            && !msg.author.bot()
+        {
+            data.perspective_queue.lock().push(PartialMessage {
+                user_id: msg.author.id,
+                user_name: msg.author.name.clone(),
+                user_avatar_hash: msg.author.avatar,
+                content: msg.content.clone(),
+                id: msg.id,
+                channel_id: msg.channel_id,
+                guild_id: msg.guild_id,
+            });
+        }
+    }
 
     let _ = tokio::join!(
         data.check_or_insert_user(&msg.author),

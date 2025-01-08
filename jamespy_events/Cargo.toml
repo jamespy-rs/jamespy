@@ -34,3 +34,4 @@ unicode-segmentation.workspace = true
 emojis.workspace = true
 rustrict.workspace = true
 aformat = "0.1.8"
+perspective_api.workspace = true

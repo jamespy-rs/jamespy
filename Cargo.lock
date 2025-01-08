@@ -1542,6 +1542,7 @@ dependencies = [
  "jamespy_data",
  "jamespy_events",
  "parking_lot",
+ "perspective_api",
  "poise",
  "reqwest",
  "serenity",
@@ -1605,6 +1606,7 @@ dependencies = [
  "dashmap 5.5.3",
  "jamespy_config",
  "parking_lot",
+ "perspective_api",
  "poise",
  "rand",
  "reqwest",
@@ -1632,6 +1634,7 @@ dependencies = [
  "jamespy_filter",
  "jamespy_starboard",
  "nonmax",
+ "perspective_api",
  "poise",
  "regex",
  "resvg",
@@ -2140,6 +2143,19 @@ name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
+
+[[package]]
+name = "perspective_api"
+version = "1.0.0"
+source = "git+https://github.com/jamespy-rs/perspective_api#90a2d1988aa80f3127a82038ecadf784b60afd14"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+ "url",
+]
 
 [[package]]
 name = "phf"
@@ -4374,7 +4390,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

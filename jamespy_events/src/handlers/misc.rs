@@ -1,6 +1,10 @@
+use crate::helper::get_channel_name;
 use crate::{Data, Error};
+use ::serenity::all::{ChannelId, CreateEmbed, CreateEmbedAuthor, CreateMessage};
+use perspective_api::client::{AnalyzeCommentRequest, Comment, RequestedAttributes, ScoreOptions};
 use poise::serenity_prelude::{self as serenity, Ready};
-use serde::{Deserialize, Serialize};
+
+use std::fmt::Write;
 
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -29,125 +33,130 @@ fn finalize_start(ctx: serenity::Context, data: &Arc<Data>) {
         }
     });
 
-    if let Ok(key) = std::env::var("PERSPECTIVE_KEY") {
+    if data.perspective.is_some() {
         let data_clone = data.clone();
+
         tokio::spawn(async move {
             let mut interval: tokio::time::Interval = tokio::time::interval(Duration::from_secs(1));
             loop {
                 interval.tick().await;
-                handle_next_perspective(&ctx, &data_clone, &key).await;
+                handle_next_perspective(&ctx, &data_clone).await;
             }
         });
     }
 }
 
-async fn handle_next_perspective(ctx: &serenity::Context, data: &Arc<Data>, key: &str) {
-    let Some((user_id, user_name, content)) = data.perspective_queue.lock().first().cloned() else {
-        println!("no entry.");
+async fn handle_next_perspective(ctx: &serenity::Context, data: &Arc<Data>) {
+    // Kinda scuff, but i'm never gonna set this to none at runtime soooooo...
+    let perspective = data.perspective.as_ref().unwrap();
+
+    let Some(partial_message) = data.perspective_queue.lock().first().cloned() else {
         return;
     };
 
+    let default_option = Some(ScoreOptions {
+        score_type: None,
+        score_threshold: Some(0.8),
+    });
 
-    use std::collections::HashMap;
-let mut query_params = HashMap::new();
-query_params.insert("key", key);
-.query(&query_params)
+    let request = AnalyzeCommentRequest {
+        comment: Comment {
+            text: partial_message.content.to_string(),
+            comment_type: None,
+        },
+        requested_attributes: RequestedAttributes {
+            toxicity: default_option.clone(),
+            severe_toxicity: default_option.clone(),
+            identity_attack: Some(ScoreOptions {
+                score_type: None,
+                score_threshold: Some(0.65),
+            }),
+            insult: default_option.clone(),
+            profanity: Some(ScoreOptions {
+                score_type: None,
+                score_threshold: Some(0.9),
+            }),
+            threat: default_option.clone(),
+            sexually_explicit: default_option.clone(),
+            flirtation: default_option.clone(),
+            toxicity_experimental: None,
+            severe_toxicity_experimental: None,
+            identity_attack_experimental: None,
+            insult_experimental: None,
+            profanity_experimental: None,
+            threat_experimental: None,
+        },
+        languages: Some(vec!["en".to_string()]),
+        do_not_store: Some(true),
+        ..Default::default()
+    };
 
-
-    let Ok(result) = dbg!(
-        data.reqwest
-            .post("https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze")
-            .query(&["key", key])
-            .json(&AnalyzeRequest {
-                comment: Comment { text: &content },
-                do_not_store: true,
-                requested_attributes: RequestedAttributes {
-                    toxicity: (),
-                    inflammatory: (),
-                    sexually_explicit: (),
-                },
-                languages: "en",
-            })
-            .send()
-            .await
-    ) else {
-        println!("failed to send request");
+    let Ok(result) = perspective.analyze(request).await else {
         data.perspective_queue.lock().remove(0);
         return;
     };
 
-    let Ok(json) = result.json::<AttributeScores>().await else {
-        println!("Failed to deserialize.");
-        return;
-    };
+    let mut msg_response = String::new();
 
-    println!("{json:?}");
-}
+    if let Some(scores) = &result.attribute_scores {
+        let attributes = [
+            ("TOXICITY", &scores.toxicity),
+            ("IDENTITY_ATTACK", &scores.identity_attack),
+            ("SEXUALLY_EXPLICIT", &scores.sexually_explicit),
+            ("SEVERE_TOXICITY", &scores.severe_toxicity),
+            ("PROFANITY", &scores.profanity),
+            ("THREAT", &scores.threat),
+            ("FLIRTATION", &scores.flirtation),
+            ("INSULT", &scores.insult),
+            ("TOXICITY_EXPERIMENTAL", &scores.toxicity_experimental),
+            (
+                "SEVERE_TOXICITY_EXPERIMENTAL",
+                &scores.severe_toxicity_experimental,
+            ),
+            (
+                "IDENTITY_ATTACK_EXPERIMENTAL",
+                &scores.identity_attack_experimental,
+            ),
+            ("INSULT_EXPERIMENTAL", &scores.insult_experimental),
+            ("PROFANITY_EXPERIMENTAL", &scores.profanity_experimental),
+            ("THREAT_EXPERIMENTAL", &scores.threat_experimental),
+        ];
 
-#[derive(Serialize)]
-struct AnalyzeRequest<'a> {
-    comment: Comment<'a>,
-    #[serde(rename = "camelCase")]
-    requested_attributes: RequestedAttributes,
-    languages: &'a str,
-    #[serde(rename = "camelCase")]
-    do_not_store: bool,
-}
+        for (label, score_option) in attributes {
+            if let Some(score) = score_option {
+                let score = score
+                    .summary_score
+                    .as_ref()
+                    .map_or(0.0, |s| s.value.unwrap_or_default());
 
-#[derive(Serialize)]
-struct Comment<'a> {
-    text: &'a str,
-}
+                writeln!(msg_response, "{label}: {score:.2}").unwrap();
+            }
+        }
 
-#[derive(Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-struct RequestedAttributes {
-    toxicity: (),
-    inflammatory: (),
-    sexually_explicit: (),
-}
+        let name =
+            get_channel_name(ctx, partial_message.guild_id, partial_message.channel_id).await;
 
-#[derive(Deserialize, Serialize, Debug)]
-struct AttributeScores {
-    #[serde(rename = "SEXUALLY_EXPLICIT")]
-    sexually_explicit: ScoreDetail,
+        if !msg_response.is_empty() {
+            let mut author = CreateEmbedAuthor::new(&partial_message.user_name);
 
-    #[serde(rename = "INFLAMMATORY")]
-    inflammatory: ScoreDetail,
+            if let Some(url) = partial_message.avatar_url() {
+                author = author.icon_url(url);
+            }
 
-    #[serde(rename = "TOXICITY")]
-    toxicity: ScoreDetail,
+            let embed = CreateEmbed::new()
+                .author(author)
+                .title(format!("Message in #{name}"))
+                .description(&partial_message.content)
+                .fields([
+                    ("Link", partial_message.message_link(), false),
+                    ("Score", msg_response, false),
+                ]);
 
-    languages: Vec<String>,
+            let _ = ChannelId::new(1325934163014058004)
+                .send_message(&ctx.http, CreateMessage::new().embed(embed))
+                .await;
+        }
+    }
 
-    detected_languages: Vec<String>,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-struct ScoreDetail {
-    span_scores: Vec<SpanScore>,
-    summary_score: SummaryScore,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-struct SpanScore {
-    begin: usize,
-    end: usize,
-    score: Score,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-struct Score {
-    value: f64,
-
-    #[serde(rename = "type")]
-    score_type: String,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-struct SummaryScore {
-    value: f64,
-
-    #[serde(rename = "type")]
-    score_type: String,
+    data.perspective_queue.lock().remove(0);
 }

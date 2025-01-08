@@ -19,6 +19,7 @@ dashmap = { workspace = true }
 
 tracing-subscriber = "0.3.18"
 dotenvy = "0.15.7"
+perspective_api.workspace = true
 
 
 [workspace]
@@ -40,6 +41,7 @@ emojis = "0.6.4"
 tracing = "0.1.40"
 rustrict = "0.7.33"
 regex = "1.11.1"
+perspective_api = { git  = "https://github.com/jamespy-rs/perspective_api"}
 
 [workspace.dependencies.serenity]
 git = "https://github.com/serenity-rs/serenity"

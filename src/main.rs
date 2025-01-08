@@ -14,7 +14,6 @@ async fn main() {
     dotenvy::dotenv().unwrap();
 
     let options = poise::FrameworkOptions {
-        commands: jamespy_commands::commands(),
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
             edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(
