@@ -140,6 +140,49 @@ async fn get_reaction_count(
     Ok(count as i16)
 }
 
+async fn remove_reaction(ctx: &serenity::Context, reaction: &serenity::Reaction) {
+    let has_permissions = has_permissions(ctx, reaction);
+
+    if has_permissions {
+        let _ = ctx
+            .http
+            .delete_reaction(
+                reaction.channel_id,
+                reaction.message_id,
+                reaction
+                    .user_id
+                    .expect("This will only be called with messages from the gateway."),
+                &reaction.emoji,
+            )
+            .await;
+    }
+}
+
+/// Checks if the bot has manage messages in the channel that the reaction was in.
+fn has_permissions(ctx: &serenity::Context, reaction: &serenity::Reaction) -> bool {
+    if let Some(guild) = ctx.cache.guild(
+        reaction
+            .guild_id
+            .expect("This will only be called from a guild."),
+    ) {
+        let channel = guild
+            .channels
+            .get(&reaction.channel_id)
+            .or(guild.threads.iter().find(|t| t.id == reaction.channel_id));
+
+        if let Some(channel) = channel {
+            let permissions = guild.user_permissions_in(
+                channel,
+                guild.members.get(&ctx.cache.current_user().id).unwrap(),
+            );
+
+            return permissions.manage_messages();
+        }
+    }
+
+    false
+}
+
 async fn existing(
     ctx: &serenity::Context,
     data: &Arc<Data>,
@@ -147,6 +190,7 @@ async fn existing(
     mut starboard_msg: StarboardMessage,
 ) -> Result<(), Error> {
     if *starboard_msg.user_id == reaction.user_id.unwrap() {
+        remove_reaction(ctx, reaction).await;
         return Ok(());
     }
 
@@ -175,6 +219,7 @@ async fn new(
     let msg = reaction.message(ctx).await?;
 
     if msg.author.id == reaction.user_id.unwrap() {
+        remove_reaction(ctx, reaction).await;
         return Ok(());
     }
 
