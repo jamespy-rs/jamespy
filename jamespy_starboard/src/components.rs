@@ -38,50 +38,77 @@ pub async fn handle_component(
             .await?;
     }
 
+    // on the race condition case i should probably send a response?
     if interaction.data.custom_id == "starboard_accept" {
         // create new message
         // run approve function
-        let mut starboard = data
-            .database
-            .get_starboard_msg_by_starboard_id(interaction.message.id)
-            .await?;
-
-        starboard.starboard_status = StarboardStatus::Accepted;
-
-        let builder = CreateInteractionResponseMessage::new()
-            .components(&[])
-            .content(format!("Approved by <@{}>", interaction.user.id));
-
-        interaction
-            .create_response(
-                &ctx.http,
-                serenity::CreateInteractionResponse::UpdateMessage(builder),
-            )
-            .await?;
-
-        let new_msg = STARBOARD_CHANNEL
-            .send_message(&ctx.http, starboard_message(ctx, &starboard))
-            .await?;
-
-        data.database
-            .approve_starboard(interaction.message.id, new_msg.id, new_msg.channel_id)
-            .await?;
+        if !data.database.handle_starboard(interaction.message.id) {
+            let _ = accept(ctx, &data, interaction).await;
+            data.database.stop_handle_starboard(&interaction.message.id);
+        }
     } else if interaction.data.custom_id == "starboard_deny" {
-        let builder = CreateInteractionResponseMessage::new()
-            .components(&[])
-            .content(format!("Denied by <@{}>", interaction.user.id));
-
-        interaction
-            .create_response(
-                &ctx.http,
-                serenity::CreateInteractionResponse::UpdateMessage(builder),
-            )
-            .await?;
-
-        data.database.deny_starboard(interaction.message.id).await?;
+        if !data.database.handle_starboard(interaction.message.id) {
+            let _ = deny(ctx, &data, interaction).await;
+            data.database.stop_handle_starboard(&interaction.message.id);
+        }
     } else {
         return Ok(());
     }
+
+    Ok(())
+}
+
+async fn accept(
+    ctx: &serenity::Context,
+    data: &Arc<Data>,
+    interaction: &serenity::ComponentInteraction,
+) -> Result<(), Error> {
+    let mut starboard = data
+        .database
+        .get_starboard_msg_by_starboard_id(interaction.message.id)
+        .await?;
+
+    starboard.starboard_status = StarboardStatus::Accepted;
+
+    let builder = CreateInteractionResponseMessage::new()
+        .components(&[])
+        .content(format!("Approved by <@{}>", interaction.user.id));
+
+    interaction
+        .create_response(
+            &ctx.http,
+            serenity::CreateInteractionResponse::UpdateMessage(builder),
+        )
+        .await?;
+
+    let new_msg = STARBOARD_CHANNEL
+        .send_message(&ctx.http, starboard_message(ctx, &starboard))
+        .await?;
+
+    data.database
+        .approve_starboard(interaction.message.id, new_msg.id, new_msg.channel_id)
+        .await?;
+
+    Ok(())
+}
+
+async fn deny(
+    ctx: &serenity::Context,
+    data: &Arc<Data>,
+    interaction: &serenity::ComponentInteraction,
+) -> Result<(), Error> {
+    let builder = CreateInteractionResponseMessage::new()
+        .components(&[])
+        .content(format!("Denied by <@{}>", interaction.user.id));
+
+    interaction
+        .create_response(
+            &ctx.http,
+            serenity::CreateInteractionResponse::UpdateMessage(builder),
+        )
+        .await?;
+
+    data.database.deny_starboard(interaction.message.id).await?;
 
     Ok(())
 }

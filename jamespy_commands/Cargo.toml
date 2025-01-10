@@ -34,3 +34,4 @@ tokio.workspace = true
 emojis.workspace = true
 regex.workspace = true
 unicode-segmentation.workspace = true
+itertools = "0.14.0"

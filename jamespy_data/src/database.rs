@@ -607,6 +607,25 @@ impl Database {
         Ok(())
     }
 
+    pub async fn get_all_starboard(&self) -> Result<Vec<StarboardMessage>, Error> {
+        let messages = sqlx::query_as!(StarboardMessage,
+            r#"
+            SELECT id, user_id, username, avatar_url, content, channel_id, message_id, attachment_urls, star_count, starboard_message_id, starboard_message_channel, starboard_status as "starboard_status: StarboardStatus"
+            FROM starboard"#)
+                .fetch_all(&self.db)
+                .await?;
+
+        let mut guard = self.starboard.lock();
+
+        for message in messages {
+            if !guard.messages.iter().any(|m| m.id == message.id) {
+                guard.messages.push(message);
+            }
+        }
+
+        Ok(guard.messages.clone())
+    }
+
     // temporary function to give access to the inner command overwrites while i figure something out.
     #[must_use]
     pub fn inner_overwrites(&self) -> &Checks {
