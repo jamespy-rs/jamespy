@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use crate::{Data, Error};
 use ::serenity::all::{CreateInteractionResponseMessage, UserId};
@@ -88,6 +88,16 @@ async fn accept(
         .post_channel
         .send_message(&ctx.http, starboard_message(ctx, data, &starboard))
         .await?;
+
+    let _ = new_msg
+        .react(
+            &ctx.http,
+            serenity::ReactionType::Unicode(
+                small_fixed_array::FixedString::from_str(&data.starboard_config.star_emoji)
+                    .unwrap(),
+            ),
+        )
+        .await;
 
     data.database
         .approve_starboard(interaction.message.id, new_msg.id, new_msg.channel_id)

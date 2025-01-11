@@ -1,4 +1,5 @@
 mod components;
+mod reactions;
 pub mod starboard;
 
 pub use components::handle_component;

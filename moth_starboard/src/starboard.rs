@@ -1,10 +1,12 @@
-use crate::{Data, Error};
+use crate::{
+    Data, Error,
+    reactions::{get_reaction_count, get_unique_reaction_count},
+};
 use moth_data::database::{
     ChannelIdWrapper, MessageIdWrapper, StarboardMessage, StarboardStatus, UserIdWrapper,
 };
 use poise::serenity_prelude as serenity;
-use small_fixed_array::FixedString;
-use std::{collections::hash_map::Entry, str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 pub async fn starboard_add_handler(
     ctx: &serenity::Context,
@@ -15,13 +17,26 @@ pub async fn starboard_add_handler(
         return Ok(());
     }
 
-    if let Ok(starboard) = data.database.get_starboard_msg(reaction.message_id).await {
-        if starboard.starboard_status == StarboardStatus::Denied {
+    if reaction.user_id.unwrap() == ctx.cache.current_user().id {
+        return Ok(());
+    }
+
+    if let Ok(starboard_msg) = data.database.get_starboard_msg(reaction.message_id).await {
+        if starboard_msg.starboard_status == StarboardStatus::Denied {
             return Ok(());
         }
 
-        existing(ctx, data, reaction, starboard).await?;
+        existing(ctx, data, reaction, starboard_msg).await?;
+    } else if let Ok(starboard_msg_by_id) = data
+        .database
+        .get_starboard_msg_by_starboard_id(reaction.message_id)
+        .await
+    {
+        if starboard_msg_by_id.starboard_status != StarboardStatus::Denied {
+            existing(ctx, data, reaction, starboard_msg_by_id).await?;
+        }
     } else if !data.database.handle_starboard(reaction.message_id) {
+        // If no existing starboard message is found, handle the new starboard message
         let _ = new(ctx, data, reaction).await;
         data.database.stop_handle_starboard(&reaction.message_id);
     }
@@ -38,13 +53,17 @@ pub async fn starboard_remove_handler(
         return Ok(());
     }
 
+    if reaction.user_id.unwrap() == ctx.cache.current_user().id {
+        return Ok(());
+    }
+
     if let Ok(mut starboard) = data.database.get_starboard_msg(reaction.message_id).await {
         if *starboard.user_id == reaction.user_id.unwrap() {
             return Ok(());
         }
 
         starboard.star_count =
-            get_reaction_count(ctx, data, reaction, *starboard.user_id, Some(false)).await?;
+            get_unique_reaction_count(ctx, data, &starboard, reaction, Some(false)).await?;
 
         let message = starboard_edit_message(ctx, data, &starboard);
 
@@ -62,76 +81,6 @@ pub async fn starboard_remove_handler(
     }
 
     Ok(())
-}
-
-/// Get the reaction count from the cache or fetch it from http if its not available.
-///
-/// Returns the count, optionally incrementing or decreasing reaction value internally if cached.
-/// Panics if `Reaction` is not from the gateway.
-async fn get_reaction_count(
-    ctx: &serenity::Context,
-    data: &Arc<Data>,
-    reaction: &serenity::Reaction,
-    author_id: serenity::UserId,
-    state: Option<bool>,
-) -> Result<i16, Error> {
-    let reaction_user = reaction.user_id.unwrap();
-
-    // If Some(true), add reaction_user, if Some(false), remove.
-    let reactions = {
-        let mut guard = data.database.starboard.lock();
-        guard
-            .reactions_cache
-            .entry(reaction.message_id)
-            .and_modify(|(_, vec)| {
-                if let Some(true) = state {
-                    if !vec.contains(&reaction_user) {
-                        vec.push(reaction_user);
-                    }
-                } else if let Some(false) = state {
-                    vec.retain(|&user_id| user_id != reaction_user);
-                }
-            });
-        guard.reactions_cache.get(&reaction.message_id).cloned()
-    };
-
-    if let Some((_, reactors)) = reactions {
-        return Ok(reactors.len() as i16);
-    }
-
-    // TODO: paginate this.
-    let users = ctx
-        .http
-        .get_reaction_users(
-            reaction.channel_id,
-            reaction.message_id,
-            &serenity::ReactionType::Unicode(
-                FixedString::from_str(&data.starboard_config.star_emoji).unwrap(),
-            ),
-            100,
-            None,
-        )
-        .await?;
-
-    let filtered = users
-        .into_iter()
-        .filter(|user| user.id != author_id)
-        .map(|u| u.id)
-        .collect::<Vec<_>>();
-
-    let count = filtered.len();
-
-    let mut guard = data.database.starboard.lock();
-    match guard.reactions_cache.entry(reaction.message_id) {
-        Entry::Occupied(mut entry) => {
-            *entry.get_mut() = (author_id, filtered);
-        }
-        Entry::Vacant(entry) => {
-            entry.insert((author_id, filtered));
-        }
-    }
-
-    Ok(count as i16)
 }
 
 async fn remove_reaction(ctx: &serenity::Context, reaction: &serenity::Reaction) {
@@ -189,7 +138,7 @@ async fn existing(
     }
 
     starboard_msg.star_count =
-        get_reaction_count(ctx, data, reaction, *starboard_msg.user_id, Some(true)).await?;
+        get_unique_reaction_count(ctx, data, &starboard_msg, reaction, Some(true)).await?;
 
     let message = starboard_edit_message(ctx, data, &starboard_msg);
 
