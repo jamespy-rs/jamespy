@@ -6,8 +6,6 @@ use poise::serenity_prelude as serenity;
 use small_fixed_array::FixedString;
 use std::{collections::hash_map::Entry, str::FromStr, sync::Arc};
 
-const STARBOARD_QUEUE: serenity::ChannelId = serenity::ChannelId::new(1324543000600383549);
-
 pub async fn starboard_add_handler(
     ctx: &serenity::Context,
     reaction: &serenity::Reaction,
@@ -247,12 +245,16 @@ async fn new(
         starboard_status: StarboardStatus::InReview,
         // gets corrected on insert.
         starboard_message_id: MessageIdWrapper(0.into()),
-        starboard_message_channel: ChannelIdWrapper(STARBOARD_QUEUE),
+        starboard_message_channel: ChannelIdWrapper(data.starboard_config.queue_channel),
     };
 
     let message = starboard_message(ctx, data, &starboard_msg);
 
-    let msg = STARBOARD_QUEUE.send_message(&ctx.http, message).await?;
+    let msg = data
+        .starboard_config
+        .queue_channel
+        .send_message(&ctx.http, message)
+        .await?;
 
     starboard_msg.starboard_message_id = MessageIdWrapper(msg.id);
 
