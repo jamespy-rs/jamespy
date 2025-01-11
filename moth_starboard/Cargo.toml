@@ -1,0 +1,11 @@
+[package]
+name = "moth_starboard"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+moth_data = { path = "../moth_data" }
+poise.workspace = true
+regex.workspace = true
+serenity.workspace = true
+small-fixed-array.workspace = true

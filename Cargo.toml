@@ -1,13 +1,13 @@
 [package]
-name = "jamespy"
-version = "0.2.0"
+name = "moth"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]
-jamespy_data = { path = "jamespy_data" }
-jamespy_events = { path = "jamespy_events" }
-jamespy_config = { path = "jamespy_config" }
-jamespy_commands = { path = "jamespy_commands" }
+moth_data = { path = "moth_data" }
+moth_events = { path = "moth_events" }
+moth_config = { path = "moth_config" }
+moth_commands = { path = "moth_commands" }
 
 sqlx = { workspace = true }
 tokio = { workspace = true }
@@ -22,7 +22,7 @@ dotenvy = "0.15.7"
 
 
 [workspace]
-members = [ "jamespy_config", "jamespy_data", "jamespy_events", "jamespy_config", "jamespy_commands", "jamespy_filter", "jamespy_ansi", "jamespy_starboard"]
+members = [ "moth_config", "moth_data", "moth_events", "moth_config", "moth_commands", "moth_filter", "moth_ansi", "moth_starboard"]
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "signal", "parking_lot"] }

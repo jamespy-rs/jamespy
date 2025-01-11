@@ -1,5 +1,5 @@
-use jamespy_commands::utils::handle_cooldown;
-use jamespy_data::structs::{Data, Error, InvocationData};
+use moth_commands::utils::handle_cooldown;
+use moth_data::structs::{Data, Error, InvocationData};
 use poise::serenity_prelude as serenity;
 
 pub async fn handler(error: poise::FrameworkError<'_, Data, Error>) {

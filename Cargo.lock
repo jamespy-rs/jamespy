@@ -1541,143 +1541,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d75a2a4b1b190afb6f5425f10f6a8f959d2ea0b9c2b1d79553551850539e4674"
 
 [[package]]
-name = "jamespy"
-version = "0.2.0"
-dependencies = [
- "dashmap 5.5.3",
- "dotenvy",
- "jamespy_commands",
- "jamespy_config",
- "jamespy_data",
- "jamespy_events",
- "parking_lot",
- "poise",
- "reqwest",
- "serenity",
- "sqlx",
- "tokio",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "jamespy_ansi"
-version = "0.1.0"
-
-[[package]]
-name = "jamespy_commands"
-version = "0.2.0"
-dependencies = [
- "aformat",
- "chrono",
- "emojis",
- "futures",
- "itertools 0.14.0",
- "jamespy_ansi",
- "jamespy_config",
- "jamespy_data",
- "jamespy_events",
- "jamespy_filter",
- "libc",
- "poise",
- "rand",
- "regex",
- "reqwest",
- "serde",
- "serde_json",
- "serenity",
- "small-fixed-array",
- "sqlx",
- "sysinfo",
- "tokio",
- "tracing",
- "unicode-segmentation",
- "unicode_names2",
- "url",
-]
-
-[[package]]
-name = "jamespy_config"
-version = "0.2.0"
-dependencies = [
- "base64 0.21.7",
- "poise",
- "regex",
- "serde",
- "serde_json",
- "serenity",
-]
-
-[[package]]
-name = "jamespy_data"
-version = "0.2.0"
-dependencies = [
- "chrono",
- "dashmap 5.5.3",
- "jamespy_config",
- "parking_lot",
- "poise",
- "rand",
- "reqwest",
- "rustrict",
- "serenity",
- "sqlx",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "jamespy_events"
-version = "0.2.0"
-dependencies = [
- "aformat",
- "chrono",
- "emojis",
- "fs_extra",
- "futures-channel",
- "futures-util",
- "image",
- "jamespy_ansi",
- "jamespy_config",
- "jamespy_data",
- "jamespy_filter",
- "jamespy_starboard",
- "nonmax",
- "poise",
- "regex",
- "resvg",
- "rustrict",
- "serde",
- "serde_json",
- "serenity",
- "small-fixed-array",
- "sqlx",
- "tokio",
- "unicode-segmentation",
- "usvg",
-]
-
-[[package]]
-name = "jamespy_filter"
-version = "0.1.0"
-dependencies = [
- "jamespy_ansi",
- "regex",
- "rustrict",
- "serenity",
-]
-
-[[package]]
-name = "jamespy_starboard"
-version = "0.1.0"
-dependencies = [
- "jamespy_data",
- "poise",
- "regex",
- "serenity",
- "small-fixed-array",
-]
-
-[[package]]
 name = "jobserver"
 version = "0.1.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1888,6 +1751,143 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "moth"
+version = "0.3.0"
+dependencies = [
+ "dashmap 5.5.3",
+ "dotenvy",
+ "moth_commands",
+ "moth_config",
+ "moth_data",
+ "moth_events",
+ "parking_lot",
+ "poise",
+ "reqwest",
+ "serenity",
+ "sqlx",
+ "tokio",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "moth_ansi"
+version = "0.1.0"
+
+[[package]]
+name = "moth_commands"
+version = "0.3.0"
+dependencies = [
+ "aformat",
+ "chrono",
+ "emojis",
+ "futures",
+ "itertools 0.14.0",
+ "libc",
+ "moth_ansi",
+ "moth_config",
+ "moth_data",
+ "moth_events",
+ "moth_filter",
+ "poise",
+ "rand",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "serenity",
+ "small-fixed-array",
+ "sqlx",
+ "sysinfo",
+ "tokio",
+ "tracing",
+ "unicode-segmentation",
+ "unicode_names2",
+ "url",
+]
+
+[[package]]
+name = "moth_config"
+version = "0.3.0"
+dependencies = [
+ "base64 0.21.7",
+ "poise",
+ "regex",
+ "serde",
+ "serde_json",
+ "serenity",
+]
+
+[[package]]
+name = "moth_data"
+version = "0.3.0"
+dependencies = [
+ "chrono",
+ "dashmap 5.5.3",
+ "moth_config",
+ "parking_lot",
+ "poise",
+ "rand",
+ "reqwest",
+ "rustrict",
+ "serenity",
+ "sqlx",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moth_events"
+version = "0.3.0"
+dependencies = [
+ "aformat",
+ "chrono",
+ "emojis",
+ "fs_extra",
+ "futures-channel",
+ "futures-util",
+ "image",
+ "moth_ansi",
+ "moth_config",
+ "moth_data",
+ "moth_filter",
+ "moth_starboard",
+ "nonmax",
+ "poise",
+ "regex",
+ "resvg",
+ "rustrict",
+ "serde",
+ "serde_json",
+ "serenity",
+ "small-fixed-array",
+ "sqlx",
+ "tokio",
+ "unicode-segmentation",
+ "usvg",
+]
+
+[[package]]
+name = "moth_filter"
+version = "0.1.0"
+dependencies = [
+ "moth_ansi",
+ "regex",
+ "rustrict",
+ "serenity",
+]
+
+[[package]]
+name = "moth_starboard"
+version = "0.1.0"
+dependencies = [
+ "moth_data",
+ "poise",
+ "regex",
+ "serenity",
+ "small-fixed-array",
 ]
 
 [[package]]

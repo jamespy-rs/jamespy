@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic)]
+#![allow(clippy::unreadable_literal)]
 
 mod data;
 mod error;
@@ -6,15 +7,13 @@ mod error;
 use poise::serenity_prelude::{self as serenity};
 use std::{sync::Arc, time::Duration};
 
-// false positive.
-#[allow(clippy::needless_return)]
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
     dotenvy::dotenv().unwrap();
 
     let options = poise::FrameworkOptions {
-        commands: jamespy_commands::commands(),
+        commands: moth_commands::commands(),
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("-".into()),
             edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(
@@ -25,17 +24,17 @@ async fn main() {
 
         on_error: |error| Box::pin(error::handler(error)),
 
-        command_check: Some(|ctx| Box::pin(jamespy_commands::command_check(ctx))),
+        command_check: Some(|ctx| Box::pin(moth_commands::command_check(ctx))),
 
         skip_checks_for_owners: false,
-        event_handler: |framework, event| Box::pin(jamespy_events::event_handler(framework, event)),
+        event_handler: |framework, event| Box::pin(moth_events::event_handler(framework, event)),
         ..Default::default()
     };
 
     let framework = poise::Framework::new(options);
 
-    let token = serenity::Token::from_env("JAMESPY_TOKEN")
-        .expect("Missing `JAMESPY_TOKEN` environment variable.");
+    let token = serenity::Token::from_env("MOTH_TOKEN")
+        .expect("Missing `MOTH_TOKEN` environment variable.");
     let intents = serenity::GatewayIntents::non_privileged()
         | serenity::GatewayIntents::MESSAGE_CONTENT
         | serenity::GatewayIntents::GUILD_MEMBERS
