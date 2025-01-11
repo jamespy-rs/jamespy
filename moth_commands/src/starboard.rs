@@ -24,8 +24,10 @@ pub async fn list_queued(ctx: Context<'_>) -> Result<(), Error> {
     for entry in sorted_starboard {
         // hardcoded GuildId because its a single guild bot
         let link = format!(
-            "https://discord.com/channels/98226572468690944/{}/{}",
-            *entry.starboard_message_channel, *entry.starboard_message_id
+            "https://discord.com/channels/{}/{}/{}",
+            ctx.data().starboard_config.guild_id,
+            *entry.starboard_message_channel,
+            *entry.starboard_message_id
         );
         writeln!(description, "{} ⭐ {link}", entry.star_count).unwrap();
     }

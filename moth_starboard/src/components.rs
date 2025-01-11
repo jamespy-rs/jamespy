@@ -7,21 +7,23 @@ use poise::serenity_prelude as serenity;
 
 use super::starboard::starboard_message;
 
-pub const STARBOARD_CHANNEL: serenity::ChannelId = serenity::ChannelId::new(1324437745854316564);
-
 pub async fn handle_component(
     ctx: &serenity::Context,
     data: Arc<Data>,
     interaction: &serenity::ComponentInteraction,
 ) -> Result<(), Error> {
-    if !std::env::var("STARBOARD_ACTIVE").map(|e| e.parse::<bool>())?? {
+    if !data.starboard_config.active {
         return Ok(());
-    };
+    }
 
     if !matches!(
         interaction.data.custom_id.as_str(),
         "starboard_accept" | "starboard_deny"
     ) {
+        return Ok(());
+    }
+
+    if interaction.channel_id != data.starboard_config.queue_channel {
         return Ok(());
     }
 
@@ -81,8 +83,10 @@ async fn accept(
         )
         .await?;
 
-    let new_msg = STARBOARD_CHANNEL
-        .send_message(&ctx.http, starboard_message(ctx, &starboard))
+    let new_msg = data
+        .starboard_config
+        .post_channel
+        .send_message(&ctx.http, starboard_message(ctx, data, &starboard))
         .await?;
 
     data.database

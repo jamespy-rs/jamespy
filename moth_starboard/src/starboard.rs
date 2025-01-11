@@ -6,8 +6,6 @@ use poise::serenity_prelude as serenity;
 use small_fixed_array::FixedString;
 use std::{collections::hash_map::Entry, str::FromStr, sync::Arc};
 
-use super::components::STARBOARD_CHANNEL;
-
 const STARBOARD_QUEUE: serenity::ChannelId = serenity::ChannelId::new(1324543000600383549);
 
 pub async fn starboard_add_handler(
@@ -15,11 +13,7 @@ pub async fn starboard_add_handler(
     reaction: &serenity::Reaction,
     data: &Arc<Data>,
 ) -> Result<(), Error> {
-    if !std::env::var("STARBOARD_ACTIVE").map(|e| e.parse::<bool>())?? {
-        return Ok(());
-    };
-
-    if reaction.channel_id == STARBOARD_CHANNEL {
+    if !data.starboard_config.active {
         return Ok(());
     }
 
@@ -42,9 +36,9 @@ pub async fn starboard_remove_handler(
     reaction: &serenity::Reaction,
     data: &Arc<Data>,
 ) -> Result<(), Error> {
-    if !std::env::var("STARBOARD_ACTIVE").map(|e| e.parse::<bool>())?? {
+    if !data.starboard_config.active {
         return Ok(());
-    };
+    }
 
     if let Ok(mut starboard) = data.database.get_starboard_msg(reaction.message_id).await {
         if *starboard.user_id == reaction.user_id.unwrap() {
@@ -54,7 +48,7 @@ pub async fn starboard_remove_handler(
         starboard.star_count =
             get_reaction_count(ctx, data, reaction, *starboard.user_id, Some(false)).await?;
 
-        let message = starboard_edit_message(ctx, &starboard);
+        let message = starboard_edit_message(ctx, data, &starboard);
 
         starboard
             .starboard_message_channel
@@ -113,7 +107,9 @@ async fn get_reaction_count(
         .get_reaction_users(
             reaction.channel_id,
             reaction.message_id,
-            &serenity::ReactionType::Unicode(FixedString::from_str("⭐").unwrap()),
+            &serenity::ReactionType::Unicode(
+                FixedString::from_str(&data.starboard_config.star_emoji).unwrap(),
+            ),
             100,
             None,
         )
@@ -197,7 +193,7 @@ async fn existing(
     starboard_msg.star_count =
         get_reaction_count(ctx, data, reaction, *starboard_msg.user_id, Some(true)).await?;
 
-    let message = starboard_edit_message(ctx, &starboard_msg);
+    let message = starboard_edit_message(ctx, data, &starboard_msg);
 
     starboard_msg
         .starboard_message_channel
@@ -254,7 +250,7 @@ async fn new(
         starboard_message_channel: ChannelIdWrapper(STARBOARD_QUEUE),
     };
 
-    let message = starboard_message(ctx, &starboard_msg);
+    let message = starboard_message(ctx, data, &starboard_msg);
 
     let msg = STARBOARD_QUEUE.send_message(&ctx.http, message).await?;
 
@@ -262,18 +258,15 @@ async fn new(
 
     // woo hardcoding
     data.database
-        .insert_starboard_msg(
-            starboard_msg,
-            Some(serenity::GuildId::new(98226572468690944)),
-        )
+        .insert_starboard_msg(starboard_msg, Some(data.starboard_config.guild_id))
         .await?;
 
     Ok(())
 }
 
 macro_rules! starboard_message_macro {
-    ($ctx:expr, $msg_type:ty, $new_fn:expr, $starboard_msg:expr) => {{
-        let guild = $ctx.cache.guild(98226572468690944.into());
+    ($ctx:expr, $data:expr, $msg_type:ty, $new_fn:expr, $starboard_msg:expr) => {{
+        let guild = $ctx.cache.guild($data.starboard_config.guild_id);
 
         let name = if let Some(guild) = guild {
             guild
@@ -295,10 +288,10 @@ macro_rules! starboard_message_macro {
 
         let mut message = $new_fn()
             .content(format!(
-                ":star: **{} | #{name}**",
-                $starboard_msg.star_count
+                "{} **{} | #{name}**",
+                $data.starboard_config.star_emoji, $starboard_msg.star_count
             ))
-            .embeds(starboard_embeds($starboard_msg));
+            .embeds(starboard_embeds($data, $starboard_msg));
 
         if $starboard_msg.starboard_status == StarboardStatus::InReview {
             let components = serenity::CreateActionRow::Buttons(std::borrow::Cow::Owned(vec![
@@ -312,9 +305,11 @@ macro_rules! starboard_message_macro {
             message = message.components(vec![components]);
 
             message = message.content(format!(
-                ":star: **{} |** <#{}> <@101090238067113984> <@291089948709486593> \
+                "{} **{} |** <#{}> <@101090238067113984> <@291089948709486593> \
                  <@158567567487795200>",
-                $starboard_msg.star_count, *$starboard_msg.channel_id
+                $data.starboard_config.star_emoji,
+                $starboard_msg.star_count,
+                *$starboard_msg.channel_id
             ));
         }
 
@@ -324,10 +319,12 @@ macro_rules! starboard_message_macro {
 
 pub(super) fn starboard_message<'a>(
     ctx: &'a serenity::Context,
+    data: &Arc<Data>,
     starboard_msg: &'a StarboardMessage,
 ) -> serenity::CreateMessage<'a> {
     starboard_message_macro!(
         ctx,
+        data,
         serenity::CreateMessage<'_>,
         serenity::CreateMessage::new,
         starboard_msg
@@ -336,10 +333,12 @@ pub(super) fn starboard_message<'a>(
 
 fn starboard_edit_message<'a>(
     ctx: &'a serenity::Context,
+    data: &Arc<Data>,
     starboard_msg: &'a StarboardMessage,
 ) -> serenity::EditMessage<'a> {
     starboard_message_macro!(
         ctx,
+        data,
         serenity::EditMessage<'_>,
         serenity::EditMessage::new,
         starboard_msg
@@ -350,7 +349,10 @@ fn starboard_edit_message<'a>(
 pub static LINK_REGEX: std::sync::LazyLock<regex::Regex> =
     std::sync::LazyLock::new(|| regex::Regex::new(r"\.([a-zA-Z0-9]+)$").unwrap());
 
-fn starboard_embeds(starboard_msg: &StarboardMessage) -> Vec<serenity::CreateEmbed<'_>> {
+fn starboard_embeds<'a>(
+    data: &Arc<Data>,
+    starboard_msg: &'a StarboardMessage,
+) -> Vec<serenity::CreateEmbed<'a>> {
     let mut author = serenity::CreateEmbedAuthor::new(&starboard_msg.username);
     if let Some(url) = &starboard_msg.avatar_url {
         author = author.icon_url(url);
@@ -377,7 +379,7 @@ fn starboard_embeds(starboard_msg: &StarboardMessage) -> Vec<serenity::CreateEmb
         "Original",
         starboard_msg.message_id.link(
             *starboard_msg.channel_id,
-            Some(serenity::GuildId::new(98226572468690944)),
+            Some(data.starboard_config.guild_id),
         ),
         false,
     );

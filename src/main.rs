@@ -1,4 +1,5 @@
 #![warn(clippy::pedantic)]
+#![allow(clippy::unreadable_literal)]
 
 mod data;
 mod error;

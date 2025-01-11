@@ -3,7 +3,7 @@ use parking_lot::RwLock;
 use std::{collections::HashMap, time::Instant};
 
 use chrono::{NaiveDateTime, Utc};
-use poise::serenity_prelude::{GuildId, MessageId, User, UserId};
+use poise::serenity_prelude::{ChannelId, GuildId, MessageId, User, UserId};
 use sqlx::query;
 
 use std::{collections::VecDeque, sync::atomic::AtomicBool};
@@ -25,11 +25,24 @@ pub struct Data {
     pub config: RwLock<moth_config::MothConfig>,
     /// Experimental anti mass message deletion tracking.
     pub anti_delete_cache: AntiDeleteCache,
+    pub starboard_config: StarboardConfig,
 }
 
 /// A struct only used to track if an error comes from a cooldown.
 pub struct InvocationData {
     pub cooldown_remaining: Option<std::time::Duration>,
+}
+
+pub struct StarboardConfig {
+    pub active: bool,
+    /// The review queue channel.
+    pub queue_channel: ChannelId,
+    /// The channel to post the starboard in once reviewed.
+    pub post_channel: ChannelId,
+    /// The star emoji to look for.
+    pub star_emoji: String,
+    /// The single guild the starboard is configured for.
+    pub guild_id: GuildId,
 }
 
 #[derive(Clone, Default, Debug)]
