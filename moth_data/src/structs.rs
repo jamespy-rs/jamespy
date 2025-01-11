@@ -43,6 +43,7 @@ pub struct StarboardConfig {
     pub star_emoji: String,
     /// The single guild the starboard is configured for.
     pub guild_id: GuildId,
+    pub threshold: u8,
 }
 
 #[derive(Clone, Default, Debug)]

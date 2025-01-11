@@ -221,7 +221,7 @@ async fn new(
 
     let star_count = get_reaction_count(ctx, data, reaction, msg.author.id, Some(true)).await?;
 
-    if star_count < 3 {
+    if star_count < data.starboard_config.threshold as i16 {
         return Ok(());
     }
 

@@ -38,5 +38,9 @@ fn starboard_config() -> StarboardConfig {
         post_channel: get_env_or_default!("STARBOARD_CHANNEL", ChannelId, 1324437745854316564),
         guild_id: get_env_or_default!("STARBOARD_GUILD", GuildId, 98226572468690944),
         star_emoji: std::env::var("STARBOARD_EMOJI").unwrap_or("⭐".to_owned()),
+        threshold: std::env::var("STARBOARD_THRESHOLD")
+            .ok()
+            .and_then(|val| val.parse::<u8>().ok())
+            .unwrap_or(5),
     }
 }
