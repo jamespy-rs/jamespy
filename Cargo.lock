@@ -1755,7 +1755,7 @@ dependencies = [
 
 [[package]]
 name = "moth"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "dashmap 5.5.3",
  "dotenvy",
@@ -1778,7 +1778,7 @@ version = "0.1.0"
 
 [[package]]
 name = "moth_commands"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "aformat",
  "chrono",
@@ -1810,7 +1810,7 @@ dependencies = [
 
 [[package]]
 name = "moth_config"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "base64 0.21.7",
  "poise",
@@ -1822,7 +1822,7 @@ dependencies = [
 
 [[package]]
 name = "moth_data"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "dashmap 5.5.3",
@@ -1840,7 +1840,7 @@ dependencies = [
 
 [[package]]
 name = "moth_events"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "aformat",
  "chrono",
