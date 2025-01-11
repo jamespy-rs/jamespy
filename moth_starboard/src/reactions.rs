@@ -109,9 +109,10 @@ async fn fetch_and_store_uncached(
         )
         .await?;
 
+    let bot_id = ctx.cache.current_user().id;
     let filtered = users
         .into_iter()
-        .filter(|user| user.id != author_id)
+        .filter(|user| user.id != author_id && user.id != bot_id)
         .map(|u| u.id)
         .collect::<Vec<_>>();
 

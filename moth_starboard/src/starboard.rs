@@ -57,28 +57,36 @@ pub async fn starboard_remove_handler(
         return Ok(());
     }
 
-    if let Ok(mut starboard) = data.database.get_starboard_msg(reaction.message_id).await {
-        if *starboard.user_id == reaction.user_id.unwrap() {
+    let mut starboard =
+        if let Ok(starboard) = data.database.get_starboard_msg(reaction.message_id).await {
+            starboard
+        } else if let Ok(starboard) = data
+            .database
+            .get_starboard_msg_by_starboard_id(reaction.message_id)
+            .await
+        {
+            starboard
+        } else {
             return Ok(());
-        }
+        };
 
-        starboard.star_count =
-            get_unique_reaction_count(ctx, data, &starboard, reaction, Some(false)).await?;
-
-        let message = starboard_edit_message(ctx, data, &starboard);
-
-        starboard
-            .starboard_message_channel
-            .edit_message(&ctx.http, *starboard.starboard_message_id, message)
-            .await?;
-
-        data.database
-            .update_star_count(starboard.id, starboard.star_count)
-            .await?;
-    } else {
-        let msg = reaction.message(ctx).await?;
-        let _ = get_reaction_count(ctx, data, reaction, msg.author.id, Some(false)).await?;
+    if *starboard.user_id == reaction.user_id.unwrap() {
+        return Ok(());
     }
+
+    starboard.star_count =
+        get_unique_reaction_count(ctx, data, &starboard, reaction, Some(false)).await?;
+
+    let message = starboard_edit_message(ctx, data, &starboard);
+
+    starboard
+        .starboard_message_channel
+        .edit_message(&ctx.http, *starboard.starboard_message_id, message)
+        .await?;
+
+    data.database
+        .update_star_count(starboard.id, starboard.star_count)
+        .await?;
 
     Ok(())
 }
