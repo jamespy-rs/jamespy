@@ -1,0 +1,37 @@
+[package]
+name = "moth_commands"
+version = "0.2.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+moth_data = { path = "../moth_data" }
+moth_events = { path = "../moth_events" }
+moth_config = { path = "../moth_config" }
+moth_ansi = { path = "../moth_ansi" }
+moth_filter = { path = "../moth_filter" }
+
+serenity = { workspace = true }
+poise = { workspace = true }
+sqlx = { workspace = true }
+reqwest.workspace = true
+chrono = { workspace = true }
+unicode_names2 = { workspace = true }
+
+small-fixed-array = { workspace = true, features = ["to-arraystring"] }
+rand = { workspace = true }
+tracing = { workspace = true }
+
+libc = "0.2.152"
+sysinfo = "0.30.5"
+url = "2.5.0"
+serde = "1.0"
+serde_json = "1.0"
+aformat = "0.1.4"
+futures = "0.3.30"
+tokio.workspace = true
+emojis.workspace = true
+regex.workspace = true
+unicode-segmentation.workspace = true
+itertools = "0.14.0"

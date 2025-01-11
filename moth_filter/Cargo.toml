@@ -1,0 +1,11 @@
+[package]
+name = "moth_filter"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+moth_ansi = { path = "../moth_ansi" }
+regex.workspace = true
+rustrict.workspace = true
+serenity.workspace = true
+
