@@ -6,6 +6,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 pub async fn ready(ctx: &serenity::Context, ready: &Ready, data: Arc<Data>) -> Result<(), Error> {
+    let activity_data = serenity::ActivityData {
+        name: small_fixed_array::FixedString::from_str_trunc("Banging myself against your window."),
+        kind: serenity::ActivityType::Custom,
+        state: None,
+        url: None,
+    };
+    ctx.set_activity(Some(activity_data));
+
     let shard_count = ctx.cache.shard_count();
     let is_last_shard = (ctx.shard_id.0 + 1) == shard_count.get();
 
