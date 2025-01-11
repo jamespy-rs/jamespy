@@ -32,8 +32,8 @@ async fn main() {
 
     let framework = poise::Framework::new(options);
 
-    let token = serenity::Token::from_env("moth_TOKEN")
-        .expect("Missing `moth_TOKEN` environment variable.");
+    let token = serenity::Token::from_env("MOTH_TOKEN")
+        .expect("Missing `MOTH_TOKEN` environment variable.");
     let intents = serenity::GatewayIntents::non_privileged()
         | serenity::GatewayIntents::MESSAGE_CONTENT
         | serenity::GatewayIntents::GUILD_MEMBERS
