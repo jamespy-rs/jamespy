@@ -145,8 +145,14 @@ async fn existing(
         return Ok(());
     }
 
-    starboard_msg.star_count =
+    let new_count =
         get_unique_reaction_count(ctx, data, &starboard_msg, reaction, Some(true)).await?;
+
+    if new_count == starboard_msg.star_count {
+        return Ok(());
+    }
+
+    starboard_msg.star_count = new_count;
 
     let message = starboard_edit_message(ctx, data, &starboard_msg);
 
